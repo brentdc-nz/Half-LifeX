@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MenuUI", "MenuUI.vcproj", "{2A4BB28E-E8BC-47A5-923F-DF7099549991}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Profile = Profile
+		Profile_FastCap = Profile_FastCap
+		Release = Release
+		Release_LTCG = Release_LTCG
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{2A4BB28E-E8BC-47A5-923F-DF7099549991}.Debug.ActiveCfg = Debug|Xbox
+		{2A4BB28E-E8BC-47A5-923F-DF7099549991}.Debug.Build.0 = Debug|Xbox
+		{2A4BB28E-E8BC-47A5-923F-DF7099549991}.Profile.ActiveCfg = Profile|Xbox
+		{2A4BB28E-E8BC-47A5-923F-DF7099549991}.Profile.Build.0 = Profile|Xbox
+		{2A4BB28E-E8BC-47A5-923F-DF7099549991}.Profile_FastCap.ActiveCfg = Profile_FastCap|Xbox
+		{2A4BB28E-E8BC-47A5-923F-DF7099549991}.Profile_FastCap.Build.0 = Profile_FastCap|Xbox
+		{2A4BB28E-E8BC-47A5-923F-DF7099549991}.Release.ActiveCfg = Release|Xbox
+		{2A4BB28E-E8BC-47A5-923F-DF7099549991}.Release.Build.0 = Release|Xbox
+		{2A4BB28E-E8BC-47A5-923F-DF7099549991}.Release_LTCG.ActiveCfg = Release_LTCG|Xbox
+		{2A4BB28E-E8BC-47A5-923F-DF7099549991}.Release_LTCG.Build.0 = Release_LTCG|Xbox
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

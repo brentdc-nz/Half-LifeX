@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XashXT CL", "XashXT CL.vcproj", "{90A8D4DB-E978-498B-8EB0-15BAE2424824}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Profile = Profile
+		Profile_FastCap = Profile_FastCap
+		Release = Release
+		Release_LTCG = Release_LTCG
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{90A8D4DB-E978-498B-8EB0-15BAE2424824}.Debug.ActiveCfg = Debug|Xbox
+		{90A8D4DB-E978-498B-8EB0-15BAE2424824}.Debug.Build.0 = Debug|Xbox
+		{90A8D4DB-E978-498B-8EB0-15BAE2424824}.Profile.ActiveCfg = Profile|Xbox
+		{90A8D4DB-E978-498B-8EB0-15BAE2424824}.Profile.Build.0 = Profile|Xbox
+		{90A8D4DB-E978-498B-8EB0-15BAE2424824}.Profile_FastCap.ActiveCfg = Profile_FastCap|Xbox
+		{90A8D4DB-E978-498B-8EB0-15BAE2424824}.Profile_FastCap.Build.0 = Profile_FastCap|Xbox
+		{90A8D4DB-E978-498B-8EB0-15BAE2424824}.Release.ActiveCfg = Release|Xbox
+		{90A8D4DB-E978-498B-8EB0-15BAE2424824}.Release.Build.0 = Release|Xbox
+		{90A8D4DB-E978-498B-8EB0-15BAE2424824}.Release_LTCG.ActiveCfg = Release_LTCG|Xbox
+		{90A8D4DB-E978-498B-8EB0-15BAE2424824}.Release_LTCG.Build.0 = Release_LTCG|Xbox
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
