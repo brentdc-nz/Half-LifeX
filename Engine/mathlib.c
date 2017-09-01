@@ -225,6 +225,7 @@ void VectorAngles( const float *forward, float *angles )
 		pitch = ( atan2( forward[2], tmp ) * 180 / M_PI );
 		if( pitch < 0 ) pitch += 360;
 	}
+
 	VectorSet( angles, pitch, yaw, 0 ); 
 }
 
@@ -271,8 +272,8 @@ ClearBounds
 void ClearBounds( vec3_t mins, vec3_t maxs )
 {
 	// make bogus range
-	mins[0] = mins[1] = mins[2] =  999999;
-	maxs[0] = maxs[1] = maxs[2] = -999999;
+	mins[0] = mins[1] = mins[2] =  999999.0f;
+	maxs[0] = maxs[1] = maxs[2] = -999999.0f;
 }
 
 /*
@@ -408,13 +409,13 @@ QuaternionSlerp
 */
 void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt )
 {
-	float	omega, cosom, sinom, sclp, sclq;
+	float	omega, sclp, sclq;
+	float	cosom, sinom;
+	float	a = 0.0f;
+	float	b = 0.0f;
 	int	i;
 
 	// decide if one of the quaternions is backwards
-	float a = 0;
-	float b = 0;
-
 	for( i = 0; i < 4; i++ )
 	{
 		a += (p[i] - q[i]) * (p[i] - q[i]);
@@ -433,7 +434,7 @@ void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt )
 
 	if(( 1.0 + cosom ) > 0.000001f )
 	{
-		if(( 1.0 - cosom ) > 0.000001f )
+		if(( 1.0f - cosom ) > 0.000001f )
 		{
 			omega = acos( cosom );
 			sinom = sin( omega );

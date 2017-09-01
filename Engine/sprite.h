@@ -38,7 +38,7 @@ typedef enum
 {
 	FRAME_SINGLE = 0,
 	FRAME_GROUP,
-	FRAME_ANGLED		// Xash3D ext
+	FRAME_ANGLED			// Xash3D ext
 } frametype_t;
 
 typedef enum

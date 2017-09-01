@@ -22,7 +22,7 @@ typedef struct suffix_s
 {
 	const char	*suf;
 	uint		flags;
-	image_hint_t	hint;
+	side_hint_t	hint;
 } suffix_t;
 
 static const suffix_t skybox_qv1[6] =
@@ -123,7 +123,7 @@ rgbdata_t *ImagePack( void )
 
 	if( image.cubemap && image.num_sides != 6 )
 	{
-		// this neved be happens, just in case
+		// this never be happens, just in case
 		MsgDev( D_NOTE, "ImagePack: inconsistent cubemap pack %d\n", image.num_sides );
 		FS_FreeImage( pack );
 		return NULL;
@@ -373,7 +373,7 @@ qboolean FS_SaveImage( const char *filename, rgbdata_t *pix )
 	Q_strncpy( savename, filename, sizeof( savename ));
 	FS_StripExtension( savename ); // remove extension if needed
 
-	if( pix->flags & (IMAGE_CUBEMAP|IMAGE_SKYBOX) && Q_stricmp( ext, "dds" ))
+	if( pix->flags & (IMAGE_CUBEMAP|IMAGE_SKYBOX))
 	{
 		size_t		realSize = pix->size; // keep real pic size
 		byte		*picBuffer; // to avoid corrupt memory on free data
@@ -391,7 +391,7 @@ qboolean FS_SaveImage( const char *filename, rgbdata_t *pix )
 			return false;	// do not happens
 		}
 
-		pix->size /= 6;	// now set as side size 
+		pix->size /= 6; // now set as side size 
 		picBuffer = pix->buffer;
 
 		// save all sides seperately

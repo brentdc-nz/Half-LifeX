@@ -23,7 +23,6 @@ extern "C" {
 #include <setjmp.h>
 #include <stdio.h>
 #include <time.h>
-
 #ifndef _XBOX //MARTY
 #include <windows.h>
 #else

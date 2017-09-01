@@ -84,7 +84,7 @@ void GL_BackendEndFrame( void )
 		break;
 	case 4:
 		Q_snprintf( r_speeds_msg, sizeof( r_speeds_msg ), "%3i static entities\n%3i normal entities",
-		r_numStatics, r_numEntities );
+		r_numStatics, r_numEntities - r_numStatics );
 		break;
 	case 5:
 		Q_snprintf( r_speeds_msg, sizeof( r_speeds_msg ), "%3i tempents\n%3i viewbeams\n%3i particles",
@@ -161,6 +161,7 @@ void GL_SelectTexture( GLenum texture )
 	if( !GL_Support( GL_ARB_MULTITEXTURE ))
 		return;
 
+#ifndef _USEFAKEGL01 //MARTY FIXME WIP
 	// don't allow negative texture units
 	if((GLint)texture < 0 ) texture = 0;
 	if( glState.activeTMU == texture )
@@ -177,6 +178,7 @@ void GL_SelectTexture( GLenum texture )
 	{
 		pglSelectTextureSGIS( texture + GL_TEXTURE0_SGIS );
 	}
+#endif
 }
 
 /*
@@ -325,6 +327,7 @@ void GL_SetRenderMode( int mode )
 		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
 		break;
 	case kRenderTransColor:
+	case kRenderTransTexture:
 		/*p*/glEnable( GL_BLEND );
 		/*p*/glDisable( GL_ALPHA_TEST );
 		/*p*/glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -335,18 +338,7 @@ void GL_SetRenderMode( int mode )
 		/*p*/glEnable( GL_ALPHA_TEST );
 		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 		break;
-	case kRenderTransTexture:
-		/*p*/glEnable( GL_BLEND );
-		/*p*/glDisable( GL_ALPHA_TEST );
-		/*p*/glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-		break;
 	case kRenderGlow:
-		/*p*/glEnable( GL_BLEND );
-		/*p*/glDisable( GL_ALPHA_TEST );
-		/*p*/glBlendFunc( GL_SRC_ALPHA, GL_ONE );
-		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-		break;
 	case kRenderTransAdd:
 		/*p*/glEnable( GL_BLEND );
 		/*p*/glDisable( GL_ALPHA_TEST );
@@ -387,7 +379,7 @@ const envmap_t r_envMapInfo[6] =
 {{  0,  90,   0}, 0 },
 {{  0, 270, 180}, 0 },
 {{-90, 180, -90}, 0 },
-{{ 90, 180,  90}, 0 }
+{{ 90,   0,  90}, 0 }
 };
 
 /*
@@ -405,7 +397,7 @@ void VID_ImageAdjustGamma( byte *in, uint width, uint height )
 	// rebuild the gamma table	
 	for( i = 0; i < 256; i++ )
 	{
-		if ( g == 1.0f ) r_gammaTable[i] = i;
+		if( g == 1.0f ) r_gammaTable[i] = i;
 		else r_gammaTable[i] = bound( 0, 255 * pow((i + 0.5) / 255.5f, g ) + 0.5f, 255 );
 	}
 
@@ -435,7 +427,7 @@ qboolean VID_ScreenShot( const char *filename, int shot_type )
 	r_shot->buffer = Mem_Alloc( r_temppool, r_shot->size );
 
 	// get screen frame
-	/*p*/glReadPixels( 0, 0, glState.width, glState.height, GL_RGB, GL_UNSIGNED_BYTE, r_shot->buffer );
+	/*p*/glReadPixels( 0, 0, r_shot->width, r_shot->height, GL_RGB, GL_UNSIGNED_BYTE, r_shot->buffer );
 
 	switch( shot_type )
 	{
@@ -512,10 +504,13 @@ qboolean VID_CubemapShot( const char *base, uint size, const float *vieworg, qbo
 	r_side = Mem_Alloc( r_temppool, sizeof( rgbdata_t ));
 
 	// use client vieworg
-	if( !vieworg ) vieworg = r_lastRefdef.vieworg;
+	if( !vieworg ) vieworg = cl.refdef.vieworg;
 
 	for( i = 0; i < 6; i++ )
 	{
+		// go into 3d mode
+		R_Set2DMode( false );
+
 		if( skyshot )
 		{
 			R_DrawCubemapView( vieworg, r_skyBoxInfo[i].angles, size );
@@ -554,7 +549,7 @@ qboolean VID_CubemapShot( const char *base, uint size, const float *vieworg, qbo
 	FS_StripExtension( basename );
 	FS_DefaultExtension( basename, ".tga" );
 
-	// write image as dds packet
+	// write image as 6 sides
 	result = FS_SaveImage( basename, r_shot );
 	FS_FreeImage( r_shot );
 	FS_FreeImage( r_side );

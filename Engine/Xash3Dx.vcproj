@@ -24,8 +24,8 @@
 				EnableIntrinsicFunctions="FALSE"
 				FavorSizeOrSpeed="0"
 				OptimizeForProcessor="2"
-				AdditionalIncludeDirectories="&quot;C:\Documents and Settings\Marty\Desktop\SDLx\SDL\include&quot;"
-				PreprocessorDefinitions="_DEBUG;_XBOX;_HARDLINKED;_USEFAKEGL;_SDL_SOUND;_TEMPSAVEHACK"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_DEBUG;_XBOX;_HARDLINKED;_USEFAKEGL09"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -41,7 +41,7 @@
 				AdditionalDependencies="xapilibd.lib d3d8d.lib d3dx8d.lib xgraphicsd.lib dsoundd.lib dmusicd.lib xactengd.lib xsndtrkd.lib xvoiced.lib xonlined.lib xboxkrnl.lib xbdm.lib hl.lib hlcl.lib libSDLx.lib mpeg.lib menuui.lib"
 				OutputFile="$(OutDir)/$(ProjectName).exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="soundlib\;&quot;C:\Documents and Settings\Marty\Desktop\SDLx\Release&quot;;&quot;..\Server_Valve SDK 2.3\dlls\Releasehl&quot;;..\Client_XashXT\client\Debug;..\MenuUI\Debug"
+				AdditionalLibraryDirectories="soundlib\;&quot;..\Server_Valve SDK 2.3\dlls\Releasehl&quot;;..\Client_XashXT\client\Debug;..\MenuUI\Debug"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/$(ProjectName).pdb"
 				SubSystem="2"
@@ -181,8 +181,8 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="FALSE"
 				OptimizeForProcessor="2"
-				AdditionalIncludeDirectories="&quot;C:\Documents and Settings\Marty\Desktop\SDLx\SDL\include&quot;"
-				PreprocessorDefinitions="NDEBUG;_XBOX;_HARDLINKED;_USEFAKEGL;_SDL_SOUND;_TEMPSAVEHACK"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="NDEBUG;_XBOX;_HARDLINKED;_USEFAKEGL09"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
@@ -196,10 +196,10 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="xapilib.lib d3d8.lib d3dx8.lib xgraphics.lib dsound.lib dmusic.lib xacteng.lib xsndtrk.lib xvoice.lib xonlines.lib xboxkrnl.lib hl.lib hlcl.lib libSDLx.lib mpeg.lib menuui.lib"
+				AdditionalDependencies="xapilib.lib d3d8.lib d3dx8.lib xgraphics.lib dsound.lib dmusic.lib xacteng.lib xsndtrk.lib xvoice.lib xonlines.lib xboxkrnl.lib hl.lib hlcl.lib mpeg.lib menuui.lib"
 				OutputFile="$(OutDir)/$(ProjectName).exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="soundlib\;&quot;C:\Documents and Settings\Marty\Desktop\SDLx\Release&quot;;..\Client_XashXT\client\Release;&quot;..\Server_Valve SDK 2.3\dlls\Releasehl&quot;;..\MenuUI\Release"
+				AdditionalLibraryDirectories="soundlib\;..\Client_XashXT\client\Release;&quot;..\Server_Valve SDK 2.3\dlls\Releasehl&quot;;..\MenuUI\Release"
 				GenerateDebugInformation="FALSE"
 				ProgramDatabaseFile="$(OutDir)/$(ProjectName).pdb"
 				SubSystem="2"
@@ -272,6 +272,231 @@
 			<Tool
 				Name="XboxImageTool"
 				StackSize="65536"/>
+		</Configuration>
+		<Configuration
+			Name="Release FakeGLx01|Xbox"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			WholeProgramOptimization="TRUE">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="4"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="FALSE"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="TRUE"
+				EnableFiberSafeOptimizations="TRUE"
+				OptimizeForProcessor="2"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="NDEBUG;_XBOX;_HARDLINKED;_USEFAKEGL01"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="FALSE"
+				EnableEnhancedInstructionSet="1"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="xapilib.lib d3d8.lib d3dx8.lib xgraphics.lib dsound.lib dmusic.lib xacteng.lib xsndtrk.lib xvoice.lib xonlines.lib xboxkrnl.lib hl.lib hlcl.lib mpeg.lib menuui.lib"
+				OutputFile="$(OutDir)/$(ProjectName).exe"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="soundlib\;..\Client_XashXT\client\Release;&quot;..\Server_Valve SDK 2.3\dlls\Releasehl&quot;;..\MenuUI\Release"
+				GenerateDebugInformation="FALSE"
+				ProgramDatabaseFile="$(OutDir)/$(ProjectName).pdb"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
+				SetChecksum="TRUE"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="XboxDeploymentTool"/>
+			<Tool
+				Name="XboxImageTool"
+				StackSize="425536"
+				SuppressStartupBanner="FALSE"
+				DontModifyHD="FALSE"
+				NoLibWarn="TRUE"
+				TitleName="Half-LifeX"/>
+		</Configuration>
+		<Configuration
+			Name="Release FakeGLx09|Xbox"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			WholeProgramOptimization="TRUE">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="FALSE"
+				OptimizeForProcessor="2"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="NDEBUG;_XBOX;_HARDLINKED;_USEFAKEGL09"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="FALSE"
+				EnableEnhancedInstructionSet="1"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="xapilib.lib d3d8.lib d3dx8.lib xgraphics.lib dsound.lib dmusic.lib xacteng.lib xsndtrk.lib xvoice.lib xonlines.lib xboxkrnl.lib hl.lib hlcl.lib mpeg.lib menuui.lib"
+				OutputFile="$(OutDir)/$(ProjectName).exe"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="soundlib\;..\Client_XashXT\client\Release;&quot;..\Server_Valve SDK 2.3\dlls\Releasehl&quot;;..\MenuUI\Release"
+				GenerateDebugInformation="FALSE"
+				ProgramDatabaseFile="$(OutDir)/$(ProjectName).pdb"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
+				SetChecksum="TRUE"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="XboxDeploymentTool"/>
+			<Tool
+				Name="XboxImageTool"
+				StackSize="425536"
+				SuppressStartupBanner="FALSE"
+				DontModifyHD="FALSE"
+				NoLibWarn="TRUE"
+				TitleName="Half-LifeX"/>
+		</Configuration>
+		<Configuration
+			Name="Debug FakeGLx01|Xbox"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				GlobalOptimizations="FALSE"
+				EnableIntrinsicFunctions="FALSE"
+				FavorSizeOrSpeed="0"
+				OptimizeForProcessor="2"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_DEBUG;_XBOX;_HARDLINKED;_USEFAKEGL01"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				EnableEnhancedInstructionSet="1"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="xapilibd.lib d3d8d.lib d3dx8d.lib xgraphicsd.lib dsoundd.lib dmusicd.lib xactengd.lib xsndtrkd.lib xvoiced.lib xonlined.lib xboxkrnl.lib xbdm.lib hl.lib hlcl.lib mpeg.lib menuui.lib"
+				OutputFile="$(OutDir)/$(ProjectName).exe"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="soundlib\;&quot;..\Server_Valve SDK 2.3\dlls\debughl&quot;;..\Client_XashXT\client\Debug;..\MenuUI\Debug"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/$(ProjectName).pdb"
+				SubSystem="2"
+				OptimizeForWindows98="1"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="XboxDeploymentTool"/>
+			<Tool
+				Name="XboxImageTool"
+				FileName="$(TargetDir)$(TargetName).xbe"
+				StackSize="425536"
+				IncludeDebugInfo="TRUE"
+				LimitAvailableMemoryTo64MB="FALSE"
+				NoLibWarn="TRUE"
+				TitleName="Half-LifeX"/>
+		</Configuration>
+		<Configuration
+			Name="Debug FakeGLx09|Xbox"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				GlobalOptimizations="FALSE"
+				EnableIntrinsicFunctions="FALSE"
+				FavorSizeOrSpeed="0"
+				OptimizeForProcessor="2"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="_DEBUG;_XBOX;_HARDLINKED;_USEFAKEGL09"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				EnableEnhancedInstructionSet="1"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="xapilibd.lib d3d8d.lib d3dx8d.lib xgraphicsd.lib dsoundd.lib dmusicd.lib xactengd.lib xsndtrkd.lib xvoiced.lib xonlined.lib xboxkrnl.lib xbdm.lib hl.lib hlcl.lib mpeg.lib menuui.lib"
+				OutputFile="$(OutDir)/$(ProjectName).exe"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="soundlib\;&quot;..\Server_Valve SDK 2.3\dlls\Debughl&quot;;..\Client_XashXT\client\Debug;..\MenuUI\Debug"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/$(ProjectName).pdb"
+				SubSystem="2"
+				OptimizeForWindows98="1"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="XboxDeploymentTool"/>
+			<Tool
+				Name="XboxImageTool"
+				FileName="$(TargetDir)$(TargetName).xbe"
+				StackSize="425536"
+				IncludeDebugInfo="TRUE"
+				LimitAvailableMemoryTo64MB="FALSE"
+				NoLibWarn="TRUE"
+				TitleName="Half-LifeX"/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -724,7 +949,7 @@
 						RelativePath=".\sv_world.c">
 					</File>
 					<File
-						RelativePath=".\sys_win.c">
+						RelativePath=".\sys_xbox.c">
 					</File>
 					<Filter
 						Name="common"
@@ -784,6 +1009,30 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Release_LTCG|Xbox">
+								<Tool
+									Name="VCCLCompilerTool"
+									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+							</FileConfiguration>
+							<FileConfiguration
+								Name="Release FakeGLx01|Xbox">
+								<Tool
+									Name="VCCLCompilerTool"
+									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+							</FileConfiguration>
+							<FileConfiguration
+								Name="Release FakeGLx09|Xbox">
+								<Tool
+									Name="VCCLCompilerTool"
+									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+							</FileConfiguration>
+							<FileConfiguration
+								Name="Debug FakeGLx01|Xbox">
+								<Tool
+									Name="VCCLCompilerTool"
+									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+							</FileConfiguration>
+							<FileConfiguration
+								Name="Debug FakeGLx09|Xbox">
 								<Tool
 									Name="VCCLCompilerTool"
 									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
@@ -853,9 +1102,6 @@
 								RelativePath=".\imagelib\img_bmp.c">
 							</File>
 							<File
-								RelativePath=".\imagelib\img_jpg.c">
-							</File>
-							<File
 								RelativePath=".\imagelib\img_main.c">
 							</File>
 							<File
@@ -901,39 +1147,36 @@
 				</Filter>
 			</Filter>
 			<Filter
-				Name="Launcher"
-				Filter="">
-				<File
-					RelativePath=".\main.c">
-				</File>
-			</Filter>
-			<Filter
 				Name="FakeGLx"
 				Filter="">
 				<File
-					RelativePath=".\FakeGLx.c">
+					RelativePath=".\fakeglx\fakeglx01.cpp">
 				</File>
 				<File
-					RelativePath=".\FakeGLx.h">
+					RelativePath=".\fakeglx\fakeglx01.h">
+				</File>
+				<File
+					RelativePath=".\fakeglx\fakeglx09.c">
+				</File>
+				<File
+					RelativePath=".\fakeglx\fakeglx09.h">
 				</File>
 			</Filter>
 			<Filter
 				Name="HelperFuncs"
 				Filter="">
 				<File
-					RelativePath=".\SavedFunc.h">
+					RelativePath=".\xbox\utils.cpp">
 				</File>
 				<File
-					RelativePath=".\TempSaveHack.cpp">
+					RelativePath=".\xbox\utils.h">
 				</File>
+			</Filter>
+			<Filter
+				Name="Launcher"
+				Filter="">
 				<File
-					RelativePath=".\TempSaveHack.h">
-				</File>
-				<File
-					RelativePath=".\Utils.cpp">
-				</File>
-				<File
-					RelativePath=".\Utils.h">
+					RelativePath=".\main.c">
 				</File>
 			</Filter>
 		</Filter>

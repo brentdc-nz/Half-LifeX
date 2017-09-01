@@ -23,42 +23,42 @@ static char	*rgpparseword[CVOXWORDMAX];	// array of pointers to parsed words
 static char	voxperiod[] = "_period";	// vocal pause
 static char	voxcomma[] = "_comma";	// vocal pause
 
-static int IsNextWord( char c )
+static int IsNextWord( const char c )
 {
 	if( c == '.' || c == ',' || c == ' ' || c == '(' )
 		return 1;
 	return 0;
 }
 
-static int IsSkipSpace( char c )
+static int IsSkipSpace( const char c )
 {
 	if( c == ',' || c == '.' || c == ' ' )
 		return 1;
 	return 0;
 }
 
-static int IsWhiteSpace( char space )
+static int IsWhiteSpace( const char space )
 {
 	if( space == ' ' || space == '\t' || space == '\r' || space == '\n' )
 		return 1;
 	return 0;
 }
 
-static int IsCommandChar( char c )
+static int IsCommandChar( const char c )
 {
 	if( c == 'v' || c == 'p' || c == 's' || c == 'e' || c == 't' )
 		return 1;
 	return 0;
 }
 
-static int IsDelimitChar( char c )
+static int IsDelimitChar( const char c )
 {
 	if( c == '(' || c == ')' )
 		return 1;
 	return 0;
 }
 
-static char *ScanForwardUntil( char *string, char scan )
+static char *ScanForwardUntil( char *string, const char scan )
 {
 	while( string[0] )
 	{
@@ -122,6 +122,7 @@ char *VOX_LookupString( const char *pSentenceName, int *psentencenum )
 			return (g_Sentences[i].pName + Q_strlen( g_Sentences[i].pName ) + 1 );
 		}
 	}
+
 	return NULL;
 }
 
@@ -184,6 +185,7 @@ char **VOX_ParseString( char *psz )
 			else rgpparseword[i++] = p;
 		}
 	}
+
 	return rgpparseword;
 }
 
@@ -197,6 +199,7 @@ float VOX_GetVolumeScale( channel_t *pchan )
 			if( volume < 1.0f ) return volume;
 		}
 	}
+
 	return 1.0f;
 }
 
@@ -223,6 +226,7 @@ float VOX_ModifyPitch( channel_t *ch, float pitch )
 			pitch += ( ch->words[ch->wordIndex].pitch - PITCH_NORM ) * 0.01f;
 		}
 	}
+
 	return pitch;
 }
 
@@ -334,6 +338,7 @@ int VOX_ParseWordParams( char *psz, voxword_t *pvoxword, int fFirst )
 		voxwordDefault = *pvoxword;
 		return 0;
 	}
+
 	return 1;
 }
 
@@ -378,14 +383,14 @@ void VOX_FreeWord( channel_t *pchan )
 	pchan->currentWord = NULL; // sentence is finished
 	Q_memset( &pchan->pMixer, 0, sizeof( pchan->pMixer ));
 
-	// release unused sounds ?
-#if 0
+#if 0	// release unused sounds ?
 	if( pchan->words[pchan->wordIndex].sfx )
 	{
 		// If this wave wasn't precached by the game code
 		if( !pchan->words[pchan->wordIndex].fKeepCached )
 		{
 			S_FreeSound( pchan->words[pchan->wordIndex].sfx );
+			pchan->words[pchan->wordIndex].sfx = NULL;
 		}
 	}
 #endif

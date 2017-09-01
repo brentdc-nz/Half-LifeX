@@ -366,7 +366,7 @@ static void MemoryFreeLibrary( void *hInstance )
 
 void *MemoryLoadLibrary( const char *name )
 {
-	MEMORYMODULE	*result;
+	MEMORYMODULE	*result = NULL;
 	PIMAGE_DOS_HEADER	dos_header;
 	PIMAGE_NT_HEADERS	old_header;
 	byte		*code, *headers;
@@ -805,6 +805,7 @@ void *Com_LoadLibraryExt( const char *dllname, int build_ordinals_table, qboolea
 			return NULL;
 		}
 	}
+
 	MsgDev( D_NOTE, "Sys_LoadLibrary: Loading %s - ok\n", dllname );
 #else 
 	hInst = &FakeDll; //MARTY
@@ -826,8 +827,9 @@ void *Com_GetProcAddress( void *hInstance, const char *name )
 		return NULL;
 
 #ifndef _HARDLINKED //MARTY FIXME WIP
-	if( !hInst->custom_loader )
-		return GetProcAddress( hInst->hInstance, name );
+	if( hInst->custom_loader )
+		return (void *)MemoryGetProcAddress( hInst->hInstance, name );
+	return (void *)GetProcAddress( hInst->hInstance, name );
 #endif
 
 	return NULL;
@@ -849,8 +851,9 @@ void Com_FreeLibrary( void *hInstance )
 	}
 	else MsgDev( D_NOTE, "Sys_FreeLibrary: Unloading %s\n", hInst->dllName );
 	
-	if( !hInst->custom_loader )
-		FreeLibrary( hInst->hInstance );
+	if( hInst->custom_loader )
+		MemoryFreeLibrary( hInst->hInstance );
+	else FreeLibrary( hInst->hInstance );
 
 	hInst->hInstance = NULL;
 

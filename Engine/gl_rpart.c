@@ -203,7 +203,8 @@ CL_FreeParticles
 */
 void CL_FreeParticles( void )
 {
-	if( cl_particles ) Mem_Free( cl_particles );
+	if( cl_particles )
+		Mem_Free( cl_particles );
 	cl_particles = NULL;
 }
 
@@ -657,15 +658,15 @@ void CL_ParticleExplosion( const vec3_t org )
 
 		p->die += 5.0f;
 		p->color = ramp1[0];
-		p->ramp = Com_RandomLong( 0, 4 );
+		p->ramp = rand() & 3;
 
 		if( i & 1 )
 		{
 			p->type = pt_explode;
 			for( j = 0; j < 3; j++ )
 			{
-				p->org[j] = org[j] + Com_RandomFloat( -16.0f, 16.0f );
-				p->vel[j] = Com_RandomFloat( -256.0f, 256.0f );
+				p->org[j] = org[j] + ((rand() % 32) - 16);
+				p->vel[j] = (rand() % 512) - 256;
 			}
 		}
 		else
@@ -673,8 +674,8 @@ void CL_ParticleExplosion( const vec3_t org )
 			p->type = pt_explode2;
 			for( j = 0; j < 3; j++ )
 			{
-				p->org[j] = org[j] + Com_RandomFloat( -16.0f, 16.0f );
-				p->vel[j] = Com_RandomFloat( -256.0f, 256.0f );
+				p->org[j] = org[j] + ((rand() % 32) - 16);
+				p->vel[j] = (rand() % 512) - 256;
 			}
 		}
 	}
@@ -711,8 +712,8 @@ void CL_ParticleExplosion2( const vec3_t org, int colorStart, int colorLength )
 
 		for( j = 0; j < 3; j++ )
 		{
-			p->org[j] = org[j] + Com_RandomFloat( -16.0f, 16.0f );
-			p->vel[j] = Com_RandomFloat( -256.0f, 256.0f );
+			p->org[j] = org[j] + ((rand() % 32) - 16);
+			p->vel[j] = (rand() % 512) - 256;
 		}
 	}
 }
@@ -739,7 +740,7 @@ void CL_BlobExplosion( const vec3_t org )
 		p = CL_AllocParticle( NULL );
 		if( !p ) return;
 
-		p->die += 1.0f + Com_RandomFloat( 0, 0.4f );
+		p->die += 1.0f + (rand() & 8) * 0.05f;
 
 		if( i & 1 )
 		{
@@ -748,8 +749,8 @@ void CL_BlobExplosion( const vec3_t org )
 
 			for( j = 0; j < 3; j++ )
 			{
-				p->org[j] = org[j] + Com_RandomFloat( -16.0f, 16.0f );
-				p->vel[j] = Com_RandomFloat( -256.0f, 256.0f );
+				p->org[j] = org[j] + ((rand() % 32) - 16);
+				p->vel[j] = (rand() % 512) - 256;
 			}
 		}
 		else
@@ -759,8 +760,8 @@ void CL_BlobExplosion( const vec3_t org )
 
 			for( j = 0; j < 3; j++ )
 			{
-				p->org[j] = org[j] + Com_RandomFloat( -16.0f, 16.0f );
-				p->vel[j] = Com_RandomFloat( -256.0f, 256.0f );
+				p->org[j] = org[j] + ((rand() % 32) - 16);
+				p->vel[j] = (rand() % 512) - 256;
 			}
 		}
 	}
@@ -790,13 +791,13 @@ void CL_RunParticleEffect( const vec3_t org, const vec3_t dir, int color, int co
 		p = CL_AllocParticle( NULL );
 		if( !p ) return;
 
-		p->die += Com_RandomFloat( 0.0f, 0.5f );
-		p->color = ( color & ~7 ) + Com_RandomLong( 0, 8 );
+		p->die += 0.1f * (rand() % 5);
+		p->color = (color & ~7) + (rand() & 7);
 		p->type = pt_slowgrav;
 
 		for( j = 0; j < 3; j++ )
 		{
-			p->org[j] = org[j] + Com_RandomFloat( -8, 8 );
+			p->org[j] = org[j] + ((rand() & 15) - 8);
 			p->vel[j] = dir[j] * 15;
 		}
 	}
@@ -882,20 +883,20 @@ void CL_LavaSplash( const vec3_t org )
 				p = CL_AllocParticle( NULL );
 				if( !p ) return;
 
-				p->die += 2.0f + Com_RandomFloat( 0.0f, 0.65f );
-				p->color = 224 + Com_RandomLong( 0, 8 );
+				p->die += 2.0f + (rand() & 31) * 0.02f;
+				p->color = 224 + (rand() & 7);
 				p->type = pt_slowgrav;
 				
-				dir[0] = j * 8 + Com_RandomLong( 0, 8 );
-				dir[1] = i * 8 + Com_RandomLong( 0, 8 );
+				dir[0] = j * 8.0f + (rand() & 7);
+				dir[1] = i * 8.0f + (rand() & 7);
 				dir[2] = 256;
 
 				p->org[0] = org[0] + dir[0];
 				p->org[1] = org[1] + dir[1];
-				p->org[2] = org[2] + Com_RandomLong( 0, 64 );
+				p->org[2] = org[2] + (rand() & 63);
 
 				VectorNormalize( dir );
-				vel = 50 + Com_RandomLong( 0, 64 );
+				vel = 50 + (rand() & 63);
 				VectorScale( dir, vel, p->vel );
 			}
 		}
@@ -924,20 +925,20 @@ void CL_ParticleBurst( const vec3_t org, int size, int color, float life )
 				p = CL_AllocParticle( NULL );
 				if( !p ) return;
 
-				p->die += life + Com_RandomFloat( 0.0f, 0.1f );
+				p->die += life + (rand() & 31) * 0.02f;
 				p->color = color;
 				p->type = pt_slowgrav;
 				
-				dir[0] = j * 8 + Com_RandomLong( 0, 8 );
-				dir[1] = i * 8 + Com_RandomLong( 0, 8 );
+				dir[0] = j * 8.0f + (rand() & 7);
+				dir[1] = i * 8.0f + (rand() & 7);
 				dir[2] = 256;
 
 				p->org[0] = org[0] + dir[0];
 				p->org[1] = org[1] + dir[1];
-				p->org[2] = org[2] + Com_RandomLong( 0, 64 );
+				p->org[2] = org[2] + (rand() & 63);
 
 				VectorNormalize( dir );
-				vel = 50 + Com_RandomLong( 0, 64 );
+				vel = 50 + (rand() & 63);
 				VectorScale( dir, vel, p->vel );
 			}
 		}
@@ -965,20 +966,20 @@ void CL_TeleportSplash( const vec3_t org )
 				p = CL_AllocParticle( NULL );
 				if( !p ) return;
 		
-				p->die += Com_RandomFloat( 0.2f, 0.36f );
-				p->color = Com_RandomLong( 7, 14 );
+				p->die += 0.2f + (rand() & 7) * 0.02f;
+				p->color = 7 + (rand() & 7);
 				p->type = pt_slowgrav;
 				
-				dir[0] = j * 8;
-				dir[1] = i * 8;
-				dir[2] = k * 8;
+				dir[0] = j * 8.0f;
+				dir[1] = i * 8.0f;
+				dir[2] = k * 8.0f;
 	
-				p->org[0] = org[0] + i + Com_RandomFloat( -4.0f, 4.0f );
-				p->org[1] = org[1] + j + Com_RandomFloat( -4.0f, 4.0f );
-				p->org[2] = org[2] + k + Com_RandomFloat( -4.0f, 4.0f );
+				p->org[0] = org[0] + i + (rand() & 3);
+				p->org[1] = org[1] + j + (rand() & 3);
+				p->org[2] = org[2] + k + (rand() & 3);
 	
 				VectorNormalize( dir );
-				VectorScale( dir, Com_RandomLong( 50, 114 ), p->vel );
+				VectorScale( dir, (50 + (rand() & 63)), p->vel );
 			}
 		}
 	}
@@ -1023,14 +1024,14 @@ void CL_RocketTrail( vec3_t start, vec3_t end, int type )
 		switch( type )
 		{
 		case 0:	// rocket trail
-			p->ramp = Com_RandomLong( 0, 4 );
+			p->ramp = (rand() & 3);
 			p->color = ramp3[(int)p->ramp];
 			p->type = pt_fire;
 			for( j = 0; j < 3; j++ )
 				p->org[j] = start[j] + ((rand() % 6 ) - 3 );
 			break;
 		case 1:	// smoke smoke
-			p->ramp = Com_RandomLong( 2, 6 );
+			p->ramp = (rand() & 3) + 2;
 			p->color = ramp3[(int)p->ramp];
 			p->type = pt_fire;
 			for( j = 0; j < 3; j++ )
@@ -1038,7 +1039,7 @@ void CL_RocketTrail( vec3_t start, vec3_t end, int type )
 			break;
 		case 2:	// blood
 			p->type = pt_grav;
-			p->color = Com_RandomLong( 67, 71 );
+			p->color = 67 + (rand() & 3);
 			for( j = 0; j < 3; j++ )
 				p->org[j] = start[j] + ((rand() % 6 ) - 3 );
 			break;
@@ -1066,17 +1067,17 @@ void CL_RocketTrail( vec3_t start, vec3_t end, int type )
 			break;
 		case 4:	// slight blood
 			p->type = pt_grav;
-			p->color = Com_RandomLong( 67, 71 );
+			p->color = 67 + (rand() & 3);
 			for( j = 0; j < 3; j++ )
-				p->org[j] = start[j] + Com_RandomFloat( -3.0f, 3.0f );
+				p->org[j] = start[j] + ((rand() % 6) - 3);
 			len -= 3;
 			break;
 		case 6:	// voor trail
-			p->color = Com_RandomLong( 152, 156 );
+			p->color = 9 * 16 + 8 + (rand() & 3);
 			p->type = pt_static;
 			p->die += 0.3f;
 			for( j = 0; j < 3; j++ )
-				p->org[j] = start[j] + Com_RandomFloat( -16.0f, 16.0f );
+				p->org[j] = start[j] + ((rand() & 15) - 8);
 			break;
 		}
 		VectorAdd( start, vec, start );
@@ -1307,7 +1308,7 @@ static qboolean CL_CullTracer( const vec3_t start, const vec3_t end )
 		// don't let it be zero sized
 		if( mins[i] == maxs[i] )
 		{
-			maxs[i] += 1;
+			maxs[i] += 1.0f;
 		}
 	}
 
@@ -1490,7 +1491,7 @@ void CL_TracerEffect( const vec3_t start, const vec3_t end )
 
 /*
 ===============
-CL_TracerEffect
+CL_UserTracerParticle
 
 ===============
 */

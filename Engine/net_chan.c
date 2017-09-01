@@ -700,7 +700,7 @@ void Netchan_CheckForCompletion( netchan_t *chan, int stream, int intotalbuffers
 			if( chan->sock == NS_CLIENT )
 			{
 				MsgDev( D_ERROR, "Lost/dropped fragment would cause stall, retrying connection\n" );
-				Cbuf_AddText( "retry\n" );
+				Cbuf_AddText( "reconnect\n" );
 			}
 		}
 		p = p->next;

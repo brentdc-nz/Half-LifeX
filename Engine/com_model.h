@@ -133,7 +133,7 @@ struct decal_s
 	byte		flags;		// Decal flags  FDECAL_*
 
 	short		entityIndex;	// Entity this is attached to
-
+// Xash3D added
 	vec3_t		position;		// location of the decal center in world space.
 	vec3_t		saxis;		// direction of the s axis in world space
 };

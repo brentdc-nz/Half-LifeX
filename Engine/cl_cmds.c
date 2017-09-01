@@ -135,14 +135,14 @@ void CL_PlayCDTrack_f( void )
 CL_ScreenshotGetName
 ================== 
 */  
-void CL_ScreenshotGetName( int lastnum, char *filename ) //MARTY FIXME WIP
+void CL_ScreenshotGetName( int lastnum, char *filename )
 {
-/*	int	a, b, c, d;
+	int	a, b, c, d;
 
 	if( lastnum < 0 || lastnum > 9999 )
 	{
 		// bound
-		Q_sprintf( filename, "scrshots/%s/!error.bmp", clgame.mapname );
+		Q_sprintf( filename, "scrshots\\%s\\!error.bmp", clgame.mapname );
 		return;
 	}
 
@@ -154,7 +154,7 @@ void CL_ScreenshotGetName( int lastnum, char *filename ) //MARTY FIXME WIP
 	lastnum -= c * 10;
 	d = lastnum;
 
-	Q_sprintf( filename, "scrshots/%s/shot%i%i%i%i.bmp", clgame.mapname, a, b, c, d );*/
+	Q_sprintf( filename, "scrshots\\%s\\shot%i%i%i%i.bmp", clgame.mapname, a, b, c, d );
 }
 
 /* 

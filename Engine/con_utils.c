@@ -17,8 +17,7 @@ GNU General Public License for more details.
 #include "client.h"
 #include "const.h"
 #include "bspfile.h"
-//#include "../cl_dll/kbutton.h" //MARTY
-#include "kbutton.h" //MARTY
+#include "kbutton.h"
 
 extern convar_t	*con_gamemaps;
 
@@ -65,11 +64,10 @@ qboolean Cmd_GetMapList( const char *s, char *completedname, int length )
 	for( i = 0, nummaps = 0; i < t->numfilenames; i++ )
 	{
 		char		entfilename[CS_SIZE];
-		int		ver = -1, lumpofs = 0, lumplen = 0;
+		int		ver = -1, mapver = -1, lumpofs = 0, lumplen = 0;
 		const char	*ext = FS_FileExtension( t->filenames[i] ); 
 		char		*ents = NULL, *pfile;
 		qboolean		gearbox = false;
-		qboolean		xash_ext = false;
 			
 		if( Q_stricmp( ext, "bsp" )) continue;
 		Q_strncpy( message, "^1error^7", sizeof( message ));
@@ -78,7 +76,6 @@ qboolean Cmd_GetMapList( const char *s, char *completedname, int length )
 		if( f )
 		{
 			dheader_t	*header, tmphdr;
-			int xash_ident;
 
 			Q_memset( &tmphdr, 0, sizeof( tmphdr ));
 			FS_Read( f, &tmphdr, sizeof( tmphdr ));
@@ -89,6 +86,7 @@ qboolean Cmd_GetMapList( const char *s, char *completedname, int length )
 			{
 			case Q1BSP_VERSION:
 			case HLBSP_VERSION:
+			case XTBSP_VERSION:
 				if( header->lumps[LUMP_ENTITIES].fileofs <= 1024 && !(header->lumps[LUMP_ENTITIES].filelen % sizeof(dplane_t)))
 				{
 					lumpofs = header->lumps[LUMP_PLANES].fileofs;
@@ -101,9 +99,6 @@ qboolean Cmd_GetMapList( const char *s, char *completedname, int length )
 					lumplen = header->lumps[LUMP_ENTITIES].filelen;
 					gearbox = false;
 				}
-				FS_Read( f, &xash_ident, sizeof( xash_ident ));
-				if( xash_ident == (('H'<<24)+('S'<<16)+('A'<<8)+'X'))
-					xash_ext = true; // we found extra lumps!
 				break;
 			}
 
@@ -137,6 +132,12 @@ qboolean Cmd_GetMapList( const char *s, char *completedname, int length )
 						// get the message contents
 						pfile = COM_ParseFile( pfile, message );
 					}
+					else if(!Q_strcmp( token, "mapversion" ))
+					{
+						// get the message contents
+						pfile = COM_ParseFile( pfile, token );
+						mapver = Q_atoi( token );
+					}
 				}
 				Mem_Free( ents );
 			}
@@ -148,15 +149,19 @@ qboolean Cmd_GetMapList( const char *s, char *completedname, int length )
 		switch( ver )
 		{
 		case Q1BSP_VERSION:
-			Q_strncpy( buf, "Quake", sizeof( buf ));
+			if( mapver == 220 ) Q_strncpy( buf, "Half-Life Alpha", sizeof( buf ));
+			else Q_strncpy( buf, "Quake", sizeof( buf ));
 			break;
 		case HLBSP_VERSION:
 			if( gearbox ) Q_strncpy( buf, "Blue-Shift", sizeof( buf ));
-			else if( xash_ext ) Q_strncpy( buf, "Xash3D", sizeof( buf ));
 			else Q_strncpy( buf, "Half-Life", sizeof( buf ));
+			break;
+		case XTBSP_VERSION:
+			Q_strncpy( buf, "Xash3D", sizeof( buf ));
 			break;
 		default:	Q_strncpy( buf, "??", sizeof( buf )); break;
 		}
+
 		Msg( "%16s (%s) ^3%s^7\n", matchbuf, buf, message );
 		nummaps++;
 	}
@@ -167,7 +172,7 @@ qboolean Cmd_GetMapList( const char *s, char *completedname, int length )
 	// cut shortestMatch to the amount common with s
 	for( i = 0; matchbuf[i]; i++ )
 	{
-		if(Q_tolower( completedname[i] ) != Q_tolower( matchbuf[i] ))
+		if( Q_tolower( completedname[i] ) != Q_tolower( matchbuf[i] ))
 			completedname[i] = 0;
 	}
 	return true;
@@ -613,6 +618,10 @@ qboolean Cmd_GetGamesList( const char *s, char *completedname, int length )
 	string	gamedirs[MAX_MODS];
 	string	matchbuf;
 
+	// stand-alone games doesn't have cmd "game"
+	if( !Cmd_Exists( "game" ))
+		return false;
+
 	// compare gamelist with current keyword
 	for( i = 0, numgamedirs = 0; i < SI.numgames; i++ )
 	{
@@ -661,6 +670,7 @@ qboolean Cmd_CheckMapsList_R( qboolean fRefresh, qboolean onlyingamedir )
 	}
 
 	t = FS_Search( "maps/*.bsp", false, onlyingamedir );
+
 	if( !t && onlyingamedir )
 	{
 		// mod doesn't contain any maps (probably this is a bot)
@@ -668,6 +678,7 @@ qboolean Cmd_CheckMapsList_R( qboolean fRefresh, qboolean onlyingamedir )
 	}
 
 	buffer = Mem_Alloc( host.mempool, t->numfilenames * 2 * sizeof( result ));
+
 	for( i = 0; i < t->numfilenames; i++ )
 	{
 		char		*ents = NULL, *pfile;
@@ -692,6 +703,7 @@ qboolean Cmd_CheckMapsList_R( qboolean fRefresh, qboolean onlyingamedir )
 			{
 			case Q1BSP_VERSION:
 			case HLBSP_VERSION:
+			case XTBSP_VERSION:
 				header = (dheader_t *)buf;
 				if( header->lumps[LUMP_ENTITIES].fileofs <= 1024 )
 				{

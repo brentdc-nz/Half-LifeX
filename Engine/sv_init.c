@@ -351,6 +351,7 @@ void SV_ActivateServer( void )
 
 	sv.state = ss_active;
 	physinfo->modified = true;
+	sv.changelevel = false;
 	sv.paused = false;
 
 	Host_SetServerState( sv.state );
@@ -373,9 +374,9 @@ void SV_DeactivateServer( void )
 {
 	int	i;
 
-	if( !svs.initialized ) return;
+	if( !svs.initialized || sv.state == ss_dead )
+		return;
 
-	if( sv.state == ss_dead ) return;
 	sv.state = ss_dead;
 
 	SV_FreeEdicts ();
@@ -445,9 +446,7 @@ void SV_LevelInit( const char *pMapName, char const *pOldLevel, char const *pLan
 	// always clearing newunit variable
 	Cvar_SetFloat( "sv_newunit", 0 );
 
-	// call before sending baselines into the client
-	svgame.dllFuncs.pfnCreateInstancedBaselines();
-
+	// relese all intermediate entities
 	SV_FreeOldEntities ();
 }
 
@@ -463,17 +462,19 @@ qboolean SV_SpawnServer( const char *mapname, const char *startspot )
 {
 	int	i, current_skill;
 	qboolean	loadgame, paused;
-	qboolean	background;
-
-	Cmd_ExecuteString( "latch\n", src_command );
+	qboolean	background, changelevel;
 
 	// save state
 	loadgame = sv.loadgame;
 	background = sv.background;
+	changelevel = sv.changelevel;
 	paused = sv.paused;
 
 	if( sv.state == ss_dead )
 		SV_InitGame(); // the game is just starting
+	else if( !sv_maxclients->modified )
+		Cmd_ExecuteString( "latch\n", src_command );
+	else MsgDev( D_ERROR, "SV_SpawnServer: while 'maxplayers' was modified.\n" );
 
 	if( !svs.initialized )
 		return false;
@@ -499,6 +500,7 @@ qboolean SV_SpawnServer( const char *mapname, const char *startspot )
 	sv.paused = paused;
 	sv.loadgame = loadgame;
 	sv.background = background;
+	sv.changelevel = changelevel;
 	sv.time = 1.0f;			// server spawn time it's always 1.0 second
 	svgame.globals->time = sv.time;
 	
@@ -524,7 +526,7 @@ qboolean SV_SpawnServer( const char *mapname, const char *startspot )
 
 	Cvar_SetFloat( "skill", (float)current_skill );
 
-	if( sv.background )
+	if( sv.background )	// tell the game parts about background state
 		Cvar_FullSet( "sv_background", "1", CVAR_READ_ONLY );
 	else Cvar_FullSet( "sv_background", "0", CVAR_READ_ONLY );
 
@@ -593,6 +595,9 @@ void SV_InitGame( void )
 		CL_Drop();
 	}
 
+	// now apply latched commands
+	Cmd_ExecuteString( "latch\n", src_command );
+
 	if( Cvar_VariableValue( "coop" ) && Cvar_VariableValue ( "deathmatch" ) && Cvar_VariableValue( "teamplay" ))
 	{
 		MsgDev( D_WARN, "Deathmatch, Teamplay and Coop set, defaulting to Deathmatch\n");
@@ -604,7 +609,7 @@ void SV_InitGame( void )
 	// so unless they explicity set coop, force it to deathmatch
 	if( host.type == HOST_DEDICATED )
 	{
-		if(!Cvar_VariableValue( "coop" ) && !Cvar_VariableValue( "teamplay" ))
+		if( !Cvar_VariableValue( "coop" ) && !Cvar_VariableValue( "teamplay" ))
 			Cvar_FullSet( "deathmatch", "1",  CVAR_LATCH );
 	}
 
@@ -710,6 +715,7 @@ qboolean SV_NewGame( const char *mapName, qboolean loadGame )
 
 	sv.loadgame = loadGame;
 	sv.background = false;
+	sv.changelevel = false;
 
 	if( !SV_SpawnServer( mapName, NULL ))
 		return false;

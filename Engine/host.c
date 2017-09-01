@@ -22,9 +22,6 @@ GNU General Public License for more details.
 #include "features.h"
 #include "host.h" //MARTY
 
-static const char *show_credits = "\n\n\n\n\tCopyright XashXT Group %s ©\n\t\
-          All Rights Reserved\n\n\t           Visit www.xash.ru\n";
-
 typedef void (*pfnChangeGame)( const char *progname );
 
 pfnChangeGame	pChangeGame = NULL;
@@ -92,6 +89,9 @@ void Host_PrintEngineFeatures( void )
 
 	if( host.features & ENGINE_TRANSFORM_TRACE_AABB )
 		MsgDev( D_AICONSOLE, "^3EXT:^7 Transform trace AABB enabled\n" );
+
+	if( host.features & ENGINE_LARGE_LIGHTMAPS )
+		MsgDev( D_AICONSOLE, "^3EXT:^7 Large lightmaps enabled\n" );
 }
 
 /*
@@ -206,7 +206,10 @@ void Host_ChangeGame_f( void )
 	}
 	else
 	{
-		Host_NewInstance( Cmd_Argv( 1 ), va( "change game to '%s'", SI.games[i]->title ));
+		const char *arg1 = va( "%s%s", (host.type == HOST_NORMAL) ? "" : "#", Cmd_Argv( 1 ));
+		const char *arg2 = va( "change game to '%s'", SI.games[i]->title );
+
+		Host_NewInstance( arg1, arg2 );
 	}
 }
 
@@ -356,7 +359,9 @@ Write ambient sounds into demo
 void Host_RestartAmbientSounds( void )
 {
 	soundlist_t	soundInfo[64];
+	string		curtrack, looptrack;
 	int		i, nSounds;
+	fs_offset_t	position;
 
 	if( !SV_Active( ))
 	{
@@ -370,10 +375,16 @@ void Host_RestartAmbientSounds( void )
 		if( !soundInfo[i].looping || soundInfo[i].entnum == -1 )
 			continue;
 
-		Msg( "Restarting sound %s...\n", soundInfo[i].name );
+		MsgDev( D_NOTE, "Restarting sound %s...\n", soundInfo[i].name );
 		S_StopSound( soundInfo[i].entnum, soundInfo[i].channel, soundInfo[i].name );
 		SV_StartSound( pfnPEntityOfEntIndex( soundInfo[i].entnum ), CHAN_STATIC, soundInfo[i].name,
 		soundInfo[i].volume, soundInfo[i].attenuation, 0, soundInfo[i].pitch );
+	}
+
+	// restart soundtrack
+	if( S_StreamGetCurrentState( curtrack, looptrack, &position ))
+	{
+		SV_StartMusic( curtrack, looptrack, position );
 	}
 }
 
@@ -616,6 +627,11 @@ static void Host_Crash_f( void )
 	*(int *)0 = 0xffffffff;
 }
 
+/*
+=================
+Host_InitCommon
+=================
+*/
 void Host_InitCommon( const char *progname, qboolean bChangeGame )
 {
 	MEMORYSTATUS	lpBuffer;
@@ -627,6 +643,21 @@ void Host_InitCommon( const char *progname, qboolean bChangeGame )
 
 	lpBuffer.dwLength = sizeof( MEMORYSTATUS );
 	GlobalMemoryStatus( &lpBuffer );
+
+#ifdef _XBOX //MARTY - 128mb XBox machines needs this to fucntion correctly, taken from XBMC
+	// set MTRRDefType memory type to write-back as done in other XBox apps - seems a bit of a hack as really the def type
+	// should be uncachable and the mtrr/mask for ram instead set up for 128MB with writeback as is done in cromwell.
+	if( lpBuffer.dwTotalPhys > 67108864 ) //Check if > 64mb
+	{
+		__asm
+		{
+			mov ecx, 0x2ff
+			rdmsr
+			mov al, 0x06
+			wrmsr
+		}
+	}
+#endif
 
 	Q_strncpy( host.rootdir, "D:\\", sizeof( host.rootdir )); //MARTY
 #ifndef _XBOX //MARTY
@@ -700,6 +731,7 @@ void Host_InitCommon( const char *progname, qboolean bChangeGame )
 #ifndef _XBOX //MARTY
 		// check for duplicate dedicated server
 		host.hMutex = CreateMutex( NULL, 0, "Xash Dedicated Server" );
+
 		if( !host.hMutex )
 		{
 			MSGBOX( "Dedicated server already running" );
@@ -713,7 +745,6 @@ void Host_InitCommon( const char *progname, qboolean bChangeGame )
 		host.hMutex = CreateSemaphore( NULL, 0, 1, "Xash Dedicated Server" );
 		if( host.developer < 3 ) host.developer = 3; // otherwise we see empty console
 #endif //_XBOX
-		host.change_game = false;
 	}
 	else
 	{
@@ -731,15 +762,6 @@ void Host_InitCommon( const char *progname, qboolean bChangeGame )
 		FS_FileBase( szTemp, szTemp );
 	
 #ifndef _XBOX //MARTY
-	// protect to rename xash.dll
-	if( Q_stricmp( szTemp, "xash" ) && Com_RandomLong( 0, 1 ))
-	{
-		host.type = HOST_CREDITS;
-		host.con_showalways = true;
-		Con_CreateConsole();
-		Sys_Break( show_credits, Q_timestamp( TIME_YEAR_ONLY ));
-	}
-
 	Con_CreateConsole(); //MARTY - No Windows console on XBox
 #endif
 
@@ -796,7 +818,7 @@ int /*EXPORT*/ Host_Main( const char *progname, int bChangeGame, pfnChangeGame f
 {
 	static double	oldtime, newtime;
 
-	pChangeGame = func;
+	pChangeGame = func;	// may be NULL
 
 	Host_InitCommon( progname, bChangeGame );
 
@@ -807,7 +829,7 @@ int /*EXPORT*/ Host_Main( const char *progname, int bChangeGame, pfnChangeGame f
 		Cmd_AddCommand ( "host_error", Host_Error_f, "just throw a host error to test shutdown procedures");
 		Cmd_AddCommand ( "crash", Host_Crash_f, "a way to force a bus error for development reasons");
 		Cmd_AddCommand ( "net_error", Net_Error_f, "send network bad message from random place");
-          }
+	}
 
 	host_cheats = Cvar_Get( "sv_cheats", "0", CVAR_LATCH, "allow cheat variables to enable" );
 	host_maxfps = Cvar_Get( "fps_max", "72", CVAR_ARCHIVE, "host fps upper limit" );
@@ -856,7 +878,6 @@ int /*EXPORT*/ Host_Main( const char *progname, int bChangeGame, pfnChangeGame f
 #ifndef _XBOX //MARTY
 		Con_InitConsoleCommands ();
 #endif
-
 		Cmd_AddCommand( "quit", Sys_Quit, "quit the game" );
 		Cmd_AddCommand( "exit", Sys_Quit, "quit the game" );
 
@@ -945,7 +966,7 @@ void /*EXPORT*/ Host_Shutdown( void )
 #ifndef _XBOX //MARTY 
 	// restore filter	
 	if( host.oldFilter ) SetUnhandledExceptionFilter( host.oldFilter );
-#endif 
+#endif
 }
 
 #ifndef _XBOX //MARTY

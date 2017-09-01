@@ -199,7 +199,7 @@ Image_LoadSPR
 */
 qboolean Image_LoadSPR( const char *name, const byte *buffer, size_t filesize )
 {
-	dspriteframe_t	*pin;	// indetical for q1\hl sprites
+	dspriteframe_t	*pin;	// identical for q1\hl sprites
 
 	if( image.hint == IL_HINT_HL )
 	{
@@ -213,7 +213,11 @@ qboolean Image_LoadSPR( const char *name, const byte *buffer, size_t filesize )
 	{
 		Image_GetPaletteQ1();
 	}
-	else return false; // unknown mode rejected
+	else
+	{
+		// unknown mode rejected
+		return false;
+	}
 
 	pin = (dspriteframe_t *)buffer;
 	image.width = pin->width;
@@ -226,7 +230,7 @@ qboolean Image_LoadSPR( const char *name, const byte *buffer, size_t filesize )
 	}
 
 	// sorry, can't validate palette rendermode
-	if(!Image_LumpValidSize( name )) return false;
+	if( !Image_LumpValidSize( name )) return false;
 	image.type = PF_INDEXED_32;	// 32-bit palete
 
 	// detect alpha-channel by palette type
@@ -285,6 +289,7 @@ qboolean Image_LoadLMP( const char *name, const byte *buffer, size_t filesize )
 		rendermode = LUMP_NORMAL;
 		fin += sizeof(lmp);
 	}
+
 	pixels = image.width * image.height;
 
 	if( filesize < sizeof( lmp ) + pixels )
@@ -305,12 +310,20 @@ qboolean Image_LoadLMP( const char *name, const byte *buffer, size_t filesize )
 		if( numcolors != 256 ) pal = NULL; // corrupted lump ?
 		else pal += sizeof( short );
 	}
-	else if( image.hint != IL_HINT_HL ) pal = NULL;
-	else return false; // unknown mode rejected
-	if( fin[0] == 255 ) image.flags |= IMAGE_HAS_ALPHA;
+	else if( image.hint != IL_HINT_HL )
+	{
+		pal = NULL;
+	}
+	else
+	{
+		// unknown mode rejected
+		return false;
+	}
 
+	if( fin[0] == 255 ) image.flags |= IMAGE_HAS_ALPHA;
 	Image_GetPaletteLMP( pal, rendermode );
-	image.type = PF_INDEXED_32;	// 32-bit palete
+	image.type = PF_INDEXED_32; // 32-bit palete
+
 	return Image_AddIndexedImageToPack( fin, image.width, image.height );
 }
 
@@ -354,25 +367,10 @@ qboolean Image_LoadMIP( const char *name, const byte *buffer, size_t filesize )
 
 		hl_texture = true;
 
-		// detect rendermode
+		// setup rendermode
 		if( Q_strrchr( name, '{' ))
 		{
-#if 0
-			// auto-detect decals and transparent textures
-			// working fine in 98%
-			color24	*col = (color24 *)pal;
-
-			// check for grayscale palette
-			for( i = 0; i < 255; i++, col++ )
-			{
-				if( col->r != col->g || col->g != col->b )
-					break;
-			}
-
-			if( i != 255 )
-#else
 			if( !host.decal_loading )
-#endif
 			{
 				rendermode = LUMP_TRANSPARENT;
 
@@ -389,6 +387,7 @@ qboolean Image_LoadMIP( const char *name, const byte *buffer, size_t filesize )
 				image.flags |= IMAGE_COLORINDEX;
 				rendermode = LUMP_DECAL;
 			}
+
 			image.flags |= IMAGE_HAS_ALPHA;
 		}
 		else
@@ -412,6 +411,7 @@ qboolean Image_LoadMIP( const char *name, const byte *buffer, size_t filesize )
 					}
 				}
 			}
+
 			rendermode = LUMP_NORMAL;
 		}
 

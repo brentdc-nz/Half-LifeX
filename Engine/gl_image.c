@@ -25,7 +25,7 @@ static gltexture_t	r_textures[MAX_TEXTURES];
 static gltexture_t	*r_texturesHashTable[TEXTURES_HASH_SIZE];
 static int	r_numTextures;
 static byte	*scaledImage = NULL;	// pointer to a scaled image
-static byte	data2D[256*256*4];		// intermediate texbuffer
+static byte	data2D[512*512*4];		// intermediate texbuffer
 static rgbdata_t	r_image;			// generic pixelbuffer used for internal textures
 
 // internal tables
@@ -298,10 +298,11 @@ void R_SetTextureParameters( void )
 	if( /*GL_Support( GL_ANISOTROPY_EXT )*/FGL_GL_ANISOTROPY_EXT) //MARTY FIXME WIP - Hard coded due to FakeGL limitations!
 	{
 		if( gl_texture_anisotropy->value > glConfig.max_texture_anisotropy )
-			Cvar_SetFloat( "r_anisotropy", glConfig.max_texture_anisotropy );
+			Cvar_SetFloat( "gl_anisotropy", glConfig.max_texture_anisotropy );
 		else if( gl_texture_anisotropy->value < 1.0f )
-			Cvar_SetFloat( "r_anisotropy", 1.0f );
+			Cvar_SetFloat( "gl_anisotropy", 1.0f );
 	}
+
 	gl_texture_anisotropy->modified = false;
 
 	if( /*GL_Support( GL_TEXTURE_LODBIAS )*/FGL_GL_TEXTURE_LODBIAS) //MARTY FIXME WIP - Hard coded due to FakeGL limitations!
@@ -311,6 +312,7 @@ void R_SetTextureParameters( void )
 		else if( gl_texture_lodbias->value < -glConfig.max_texture_lodbias )
 			Cvar_SetFloat( "r_texture_lodbias", -glConfig.max_texture_lodbias );
 	}
+
 	gl_texture_lodbias->modified = false;
 
 	// change all the existing mipmapped texture objects
@@ -559,7 +561,8 @@ static GLenum GL_TextureFormat( gltexture_t *tex, int *samples )
 		case 1: format = GL_COMPRESSED_LUMINANCE_ARB; break;
 		case 2: format = GL_COMPRESSED_LUMINANCE_ALPHA_ARB; break;
 		case 3: format = GL_COMPRESSED_RGB_ARB; break;
-		case 4: format = GL_COMPRESSED_RGBA_ARB; break;
+		case 4:
+		default: format = GL_COMPRESSED_RGBA_ARB; break;
 		}
 
 		if( tex->flags & TF_INTENSITY )
@@ -667,8 +670,8 @@ byte *GL_ResampleTexture( const byte *source, int inWidth, int inHeight, int out
 	{
 		for( y = 0; y < outHeight; y++, out += outWidth )
 		{
-			inRow1 = in + inWidth * (int)(((float)y + 0.25) * inHeight/outHeight);
-			inRow2 = in + inWidth * (int)(((float)y + 0.75) * inHeight/outHeight);
+			inRow1 = in + inWidth * (int)(((float)y + 0.25f) * inHeight/outHeight);
+			inRow2 = in + inWidth * (int)(((float)y + 0.75f) * inHeight/outHeight);
 
 			for( x = 0; x < outWidth; x++ )
 			{
@@ -677,11 +680,12 @@ byte *GL_ResampleTexture( const byte *source, int inWidth, int inHeight, int out
 				pix3 = (byte *)inRow2 + p1[x];
 				pix4 = (byte *)inRow2 + p2[x];
 
-				normal[0] = (pix1[0] * (1.0/127) - 1.0) + (pix2[0] * (1.0/127) - 1.0) + (pix3[0] * (1.0/127) - 1.0) + (pix4[0] * (1.0/127) - 1.0);
-				normal[1] = (pix1[1] * (1.0/127) - 1.0) + (pix2[1] * (1.0/127) - 1.0) + (pix3[1] * (1.0/127) - 1.0) + (pix4[1] * (1.0/127) - 1.0);
-				normal[2] = (pix1[2] * (1.0/127) - 1.0) + (pix2[2] * (1.0/127) - 1.0) + (pix3[2] * (1.0/127) - 1.0) + (pix4[2] * (1.0/127) - 1.0);
+				normal[0] = (pix1[0] * (1.0f/127.0f) - 1.0f) + (pix2[0] * (1.0f/127.0f) - 1.0f) + (pix3[0] * (1.0f/127.0f) - 1.0f) + (pix4[0] * (1.0f/127.0f) - 1.0f);
+				normal[1] = (pix1[1] * (1.0f/127.0f) - 1.0f) + (pix2[1] * (1.0f/127.0f) - 1.0f) + (pix3[1] * (1.0f/127.0f) - 1.0f) + (pix4[1] * (1.0f/127.0f) - 1.0f);
+				normal[2] = (pix1[2] * (1.0f/127.0f) - 1.0f) + (pix2[2] * (1.0f/127.0f) - 1.0f) + (pix3[2] * (1.0f/127.0f) - 1.0f) + (pix4[2] * (1.0f/127.0f) - 1.0f);
 
-				if( !VectorNormalizeLength( normal )) VectorSet( normal, 0.0, 0.0, 1.0 );
+				if( !VectorNormalizeLength( normal ))
+					VectorSet( normal, 0.0f, 0.0f, 1.0f );
 
 				((byte *)(out+x))[0] = (byte)(128 + 127 * normal[0]);
 				((byte *)(out+x))[1] = (byte)(128 + 127 * normal[1]);
@@ -694,8 +698,8 @@ byte *GL_ResampleTexture( const byte *source, int inWidth, int inHeight, int out
 	{
 		for( y = 0; y < outHeight; y++, out += outWidth )
 		{
-			inRow1 = in + inWidth * (int)(((float)y + 0.25) * inHeight/outHeight);
-			inRow2 = in + inWidth * (int)(((float)y + 0.75) * inHeight/outHeight);
+			inRow1 = in + inWidth * (int)(((float)y + 0.25f) * inHeight/outHeight);
+			inRow2 = in + inWidth * (int)(((float)y + 0.75f) * inHeight/outHeight);
 
 			for( x = 0; x < outWidth; x++ )
 			{
@@ -727,10 +731,7 @@ byte *GL_ApplyGamma( const byte *source, int pixels, qboolean isNormalMap )
 	byte	*out = (byte *)source;
 	int	i;
 
-	if( isNormalMap )
-	{
-	}
-	else
+	if( !isNormalMap )
 	{
 		for( i = 0; i < pixels; i++, in += 4 )
 		{
@@ -764,9 +765,9 @@ static void GL_BuildMipMap( byte *in, int width, int height, qboolean isNormalMa
 		{
 			for( x = 0; x < width; x += 8, in += 8, out += 4 )
 			{
-				normal[0] = (in[0] * (1.0/127) - 1.0) + (in[4] * (1.0/127) - 1.0) + (in[width+0] * (1.0/127) - 1.0) + (in[width+4] * (1.0/127) - 1.0);
-				normal[1] = (in[1] * (1.0/127) - 1.0) + (in[5] * (1.0/127) - 1.0) + (in[width+1] * (1.0/127) - 1.0) + (in[width+5] * (1.0/127) - 1.0);
-				normal[2] = (in[2] * (1.0/127) - 1.0) + (in[6] * (1.0/127) - 1.0) + (in[width+2] * (1.0/127) - 1.0) + (in[width+6] * (1.0/127) - 1.0);
+				normal[0] = (in[0] * (1.0f/127.0f) - 1.0f) + (in[4] * (1.0f/127.0f) - 1.0f) + (in[width+0] * (1.0f/127.0f) - 1.0f) + (in[width+4] * (1.0f/127.0f) - 1.0f);
+				normal[1] = (in[1] * (1.0f/127.0f) - 1.0f) + (in[5] * (1.0f/127.0f) - 1.0f) + (in[width+1] * (1.0f/127.0f) - 1.0f) + (in[width+5] * (1.0f/127.0f) - 1.0f);
+				normal[2] = (in[2] * (1.0f/127.0f) - 1.0f) + (in[6] * (1.0f/127.0f) - 1.0f) + (in[width+2] * (1.0f/127.0f) - 1.0f) + (in[width+6] * (1.0f/127.0f) - 1.0f);
 
 				if( !VectorNormalizeLength( normal ))
 					VectorSet( normal, 0.0f, 0.0f, 1.0f );
@@ -810,11 +811,11 @@ void GL_GenerateMipmaps( byte *buffer, rgbdata_t *pic, gltexture_t *tex, GLenum 
 	if( tex->flags & TF_NOMIPMAP )
 		return;
 
-	if( /*GL_Support( GL_SGIS_MIPMAPS_EXT )*/FGL_GL_SGIS_MIPMAPS_EXT ) //MARTY FIXME WIP - Hard coded due to FakeGL limitations!
+	if( /*GL_Support( GL_SGIS_MIPMAPS_EXT )*/FGL_GL_SGIS_MIPMAPS_EXT ) //MARTY - Hard coded due to FakeGL limitations!
 	{
 		/*p*/glHint( GL_GENERATE_MIPMAP_HINT_SGIS, GL_NICEST );
 		/*p*/glTexParameteri( glTarget, GL_GENERATE_MIPMAP_SGIS, GL_TRUE );
-		//pglGetError(); // clear error queue on mips generate //MARTY FIXME WIP
+		/*p*/glGetError(); // clear error queue on mips generate
 		return; 
 	}
 
@@ -837,7 +838,7 @@ void GL_GenerateMipmaps( byte *buffer, rgbdata_t *pic, gltexture_t *tex, GLenum 
 
 		if( subImage ) /*p*/glTexSubImage2D( tex->target + side, mipLevel, 0, 0, w, h, inFormat, GL_UNSIGNED_BYTE, buffer );
 		else /*p*/glTexImage2D( tex->target + side, mipLevel, tex->format, w, h, 0, inFormat, GL_UNSIGNED_BYTE, buffer );
-		//if( pglGetError( )) break; // can't create mip levels //MARTY FIXME WIP
+		if( /*p*/glGetError( )) break; // can't create mip levels
 	}
 }
 
@@ -1060,7 +1061,7 @@ static void GL_UploadTexture( rgbdata_t *pic, gltexture_t *tex, qboolean subImag
 		tex->size += texsize;
 
 		// clear gl error
-		//while( pglGetError() != GL_NO_ERROR ); //MARTY FIXME WIP
+		while( /*p*/glGetError() != GL_NO_ERROR );
 	}
 }
 
@@ -1085,7 +1086,7 @@ int GL_LoadTexture( const char *name, const byte *buf, size_t size, int flags )
 		return 0;
 	}
 
-	// get rid of black vertical line on a 'BlackMesa map'
+	// HACKHACK: get rid of black vertical line on a 'BlackMesa map'
 	if( !Q_strcmp( name, "#lab1_map1.mip" ) || !Q_strcmp( name, "#lab1_map2.mip" ))
 	{
 		flags |= TF_NEAREST;
@@ -1141,7 +1142,7 @@ int GL_LoadTexture( const char *name, const byte *buf, size_t size, int flags )
 	GL_UploadTexture( pic, tex, false );
 	GL_TexFilter( tex, false ); // update texture filter, wrap etc
 
-	if(!( flags & (TF_KEEP_8BIT|TF_KEEP_RGBDATA)))
+	if(!( flags & ( TF_KEEP_8BIT|TF_KEEP_RGBDATA )))
 		FS_FreeImage( pic ); // release source texture
 
 	// add to hash table
@@ -1641,8 +1642,25 @@ static rgbdata_t *R_InitBlackTexture( texFlags_t *flags )
 static rgbdata_t *R_InitDlightTexture( texFlags_t *flags )
 {
 	// solid color texture
-	r_image.width = BLOCK_WIDTH; 
-	r_image.height = BLOCK_HEIGHT;
+	r_image.width = BLOCK_SIZE_DEFAULT; 
+	r_image.height = BLOCK_SIZE_DEFAULT;
+	r_image.flags = IMAGE_HAS_COLOR;
+	r_image.type = PF_RGBA_32;
+	r_image.size = r_image.width * r_image.height * 4;
+	r_image.buffer = data2D;
+
+	Q_memset( data2D, 0x00, r_image.size );
+
+	*flags = TF_NOPICMIP|TF_UNCOMPRESSED|TF_NOMIPMAP;
+
+	return &r_image;
+}
+
+static rgbdata_t *R_InitDlightTexture2( texFlags_t *flags )
+{
+	// solid color texture
+	r_image.width = BLOCK_SIZE_MAX; 
+	r_image.height = BLOCK_SIZE_MAX;
 	r_image.flags = IMAGE_HAS_COLOR;
 	r_image.type = PF_RGBA_32;
 	r_image.size = r_image.width * r_image.height * 4;
@@ -1682,6 +1700,7 @@ static void R_InitBuiltinTextures( void )
 	{ "*particle2", &tr.particleTexture2, R_InitParticleTexture2, TEX_SYSTEM },
 	{ "*cintexture", &tr.cinTexture, R_InitCinematicTexture, TEX_NOMIP },	// force linear filter
 	{ "*dlight", &tr.dlightTexture, R_InitDlightTexture, TEX_LIGHTMAP },
+	{ "*dlight2", &tr.dlightTexture2, R_InitDlightTexture2, TEX_LIGHTMAP },
 	{ "*sky", &tr.skyTexture, R_InitSkyTexture, TEX_SYSTEM },
 	{ NULL, NULL, NULL }
 	};
@@ -1726,9 +1745,9 @@ void R_InitImages( void )
 	for( i = 0; i < 256; i++ )
 	{
 		f = (float)i;
-		r_luminanceTable[i][0] = f * 0.299;
-		r_luminanceTable[i][1] = f * 0.587;
-		r_luminanceTable[i][2] = f * 0.114;
+		r_luminanceTable[i][0] = f * 0.299f;
+		r_luminanceTable[i][1] = f * 0.587f;
+		r_luminanceTable[i][2] = f * 0.114f;
 	}
 
 	// set texture parameters

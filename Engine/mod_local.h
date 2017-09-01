@@ -23,27 +23,29 @@ GNU General Public License for more details.
 #include "com_model.h"
 
 // 1/32 epsilon to keep floating point happy
-#define DIST_EPSILON	(1.0f / 32.0f)
-#define FRAC_EPSILON	(1.0f / 1024.0f)
-#define BACKFACE_EPSILON	0.01f
-#define MAX_BOX_LEAFS	256
-#define DVIS_PVS		0
-#define DVIS_PHS		1
-#define ANIM_CYCLE		2
+#define DIST_EPSILON		(1.0f / 32.0f)
+#define FRAC_EPSILON		(1.0f / 1024.0f)
+#define BACKFACE_EPSILON		0.01f
+#define MAX_BOX_LEAFS		256
+#define DVIS_PVS			0
+#define DVIS_PHS			1
+#define ANIM_CYCLE			2
 
 // remapping info
-#define SUIT_HUE_START	192
-#define SUIT_HUE_END	223
-#define PLATE_HUE_START	160
-#define PLATE_HUE_END	191
+#define SUIT_HUE_START		192
+#define SUIT_HUE_END		223
+#define PLATE_HUE_START		160
+#define PLATE_HUE_END		191
+
+#define LM_SAMPLE_SIZE		world.lm_sample_size	// lightmap resoultion
 
 #define SURF_INFO( surf, mod )	((mextrasurf_t *)mod->cache.data + (surf - mod->surfaces)) 
 #define INFO_SURF( surf, mod )	(mod->surfaces + (surf - (mextrasurf_t *)mod->cache.data)) 
 
 // model flags (stored in model_t->flags)
-#define MODEL_CONVEYOR	BIT( 0 )
-#define MODEL_HAS_ORIGIN	BIT( 1 )
-#define MODEL_LIQUID	BIT( 2 )	// model has only point hull
+#define MODEL_CONVEYOR		BIT( 0 )
+#define MODEL_HAS_ORIGIN		BIT( 1 )
+#define MODEL_LIQUID		BIT( 2 )	// model has only point hull
 
 typedef struct leaflist_s
 {
@@ -57,10 +59,11 @@ typedef struct leaflist_s
 
 typedef struct
 {
-	int		version;		// map version
+	int		version;		// bsp version
+	int		mapversion;	// map version (an key-value in worldspawn settings)
 	uint		checksum;		// current map checksum
 	int		load_sequence;	// increace each map change
-	vec3_t		hull_sizes[4];	// actual hull sizes
+	vec3_t		hull_sizes[MAX_MAP_HULLS];	// actual hull sizes
 	msurface_t	**draw_surfaces;	// used for sorting translucent surfaces
 	int		max_surfaces;	// max surfaces per submodel (for all models)
 	size_t		visdatasize;	// actual size of the visdata
@@ -70,6 +73,8 @@ typedef struct
 	qboolean		loading;		// true if worldmodel is loading
 	qboolean		sky_sphere;	// true when quake sky-sphere is used
 	qboolean		has_mirrors;	// one or more brush models contain reflective textures
+	int		lm_sample_size;	// defaulting to 16 (BSP31 uses 8)
+	int		block_size;	// lightmap blocksize
 
 	vec3_t		mins;		// real accuracy world bounds
 	vec3_t		maxs;
@@ -88,7 +93,7 @@ void Mod_Init( void );
 void Mod_ClearAll( void );
 void Mod_Shutdown( void );
 void Mod_PrintBSPFileSizes( void );
-void Mod_SetupHulls( float mins[4][3], float maxs[4][3] );
+void Mod_SetupHulls( vec3_t mins[MAX_MAP_HULLS], vec3_t maxs[MAX_MAP_HULLS] );
 void Mod_GetBounds( int handle, vec3_t mins, vec3_t maxs );
 void Mod_GetFrames( int handle, int *numFrames );
 void Mod_LoadWorld( const char *name, uint *checksum, qboolean force );
@@ -118,6 +123,7 @@ model_t *Mod_Handle( int handle );
 //
 void Mod_InitStudioAPI( void );
 void Mod_InitStudioHull( void );
+void Mod_ResetStudioAPI( void );
 qboolean Mod_GetStudioBounds( const char *name, vec3_t mins, vec3_t maxs );
 void Mod_StudioGetAttachment( const edict_t *e, int iAttachment, float *org, float *ang );
 void Mod_GetBonePosition( const edict_t *e, int iBone, float *org, float *ang );

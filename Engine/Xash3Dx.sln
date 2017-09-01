@@ -6,20 +6,32 @@ EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
+		Debug FakeGLx01 = Debug FakeGLx01
+		Debug FakeGLx09 = Debug FakeGLx09
 		Profile = Profile
 		Profile_FastCap = Profile_FastCap
 		Release = Release
+		Release FakeGLx01 = Release FakeGLx01
+		Release FakeGLx09 = Release FakeGLx09
 		Release_LTCG = Release_LTCG
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
-		{E5A9C30A-826F-46A3-B622-364680210218}.Debug.ActiveCfg = Debug|Xbox
-		{E5A9C30A-826F-46A3-B622-364680210218}.Debug.Build.0 = Debug|Xbox
+		{E5A9C30A-826F-46A3-B622-364680210218}.Debug.ActiveCfg = Release_LTCG|Xbox
+		{E5A9C30A-826F-46A3-B622-364680210218}.Debug.Build.0 = Release_LTCG|Xbox
+		{E5A9C30A-826F-46A3-B622-364680210218}.Debug FakeGLx01.ActiveCfg = Debug FakeGLx01|Xbox
+		{E5A9C30A-826F-46A3-B622-364680210218}.Debug FakeGLx01.Build.0 = Debug FakeGLx01|Xbox
+		{E5A9C30A-826F-46A3-B622-364680210218}.Debug FakeGLx09.ActiveCfg = Debug FakeGLx09|Xbox
+		{E5A9C30A-826F-46A3-B622-364680210218}.Debug FakeGLx09.Build.0 = Debug FakeGLx09|Xbox
 		{E5A9C30A-826F-46A3-B622-364680210218}.Profile.ActiveCfg = Profile|Xbox
 		{E5A9C30A-826F-46A3-B622-364680210218}.Profile.Build.0 = Profile|Xbox
 		{E5A9C30A-826F-46A3-B622-364680210218}.Profile_FastCap.ActiveCfg = Profile_FastCap|Xbox
 		{E5A9C30A-826F-46A3-B622-364680210218}.Profile_FastCap.Build.0 = Profile_FastCap|Xbox
 		{E5A9C30A-826F-46A3-B622-364680210218}.Release.ActiveCfg = Release|Xbox
 		{E5A9C30A-826F-46A3-B622-364680210218}.Release.Build.0 = Release|Xbox
+		{E5A9C30A-826F-46A3-B622-364680210218}.Release FakeGLx01.ActiveCfg = Release FakeGLx01|Xbox
+		{E5A9C30A-826F-46A3-B622-364680210218}.Release FakeGLx01.Build.0 = Release FakeGLx01|Xbox
+		{E5A9C30A-826F-46A3-B622-364680210218}.Release FakeGLx09.ActiveCfg = Release FakeGLx09|Xbox
+		{E5A9C30A-826F-46A3-B622-364680210218}.Release FakeGLx09.Build.0 = Release FakeGLx09|Xbox
 		{E5A9C30A-826F-46A3-B622-364680210218}.Release_LTCG.ActiveCfg = Release_LTCG|Xbox
 		{E5A9C30A-826F-46A3-B622-364680210218}.Release_LTCG.Build.0 = Release_LTCG|Xbox
 	EndGlobalSection

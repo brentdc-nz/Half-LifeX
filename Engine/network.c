@@ -315,14 +315,14 @@ qboolean NET_CompareBaseAdr( const netadr_t a, const netadr_t b )
 
 	if( a.type == NA_IP )
 	{
-		if(!memcmp( a.ip, b.ip, 4 ))
+		if( !Q_memcmp( a.ip, b.ip, 4 ))
 			return true;
 		return false;
 	}
 
 	if( a.type == NA_IPX )
 	{
-		if(!memcmp( a.ipx, b.ipx, 10 ))
+		if( !Q_memcmp( a.ipx, b.ipx, 10 ))
 			return true;
 		return false;
 	}
@@ -335,19 +335,20 @@ qboolean NET_CompareAdr( const netadr_t a, const netadr_t b )
 {
 	if( a.type != b.type )
 		return false;
+
 	if( a.type == NA_LOOPBACK )
 		return true;
 
 	if( a.type == NA_IP )
 	{
-		if(!memcmp( a.ip, b.ip, 4 ) && a.port == b.port )
+		if(!Q_memcmp( a.ip, b.ip, 4 ) && a.port == b.port )
 			return true;
 		return false;
 	}
 
 	if( a.type == NA_IPX )
 	{
-		if(!memcmp( a.ipx, b.ipx, 10 ) && a.port == b.port )
+		if(!Q_memcmp( a.ipx, b.ipx, 10 ) && a.port == b.port )
 			return true;
 		return false;
 	}
@@ -775,7 +776,6 @@ void NET_GetLocalAddress( void )
 	char		buff[512];
 	struct sockaddr_in	address;
 	int		namelen;
-	int		net_error = 0;
 
 	Q_memset( &net_local, 0, sizeof( netadr_t ));
 
@@ -798,7 +798,7 @@ void NET_GetLocalAddress( void )
 #endif
 
 		// ensure that it doesn't overrun the buffer
-		buff[512-1] = 0;
+		buff[511] = 0;
 
 		NET_StringToAdr( buff, &net_local );
 		namelen = sizeof( address );
@@ -813,7 +813,6 @@ void NET_GetLocalAddress( void )
 		{
 			net_local.port = address.sin_port;
 #endif
-			
 			Msg( "Server IP address %s\n", NET_AdrToString( net_local ));
 #ifdef _XBOX_USING_WINSOCK
 		}
@@ -888,7 +887,7 @@ void NET_Sleep( int msec )
 	int		i = 0;
 
 	if( host.type == HOST_NORMAL )
-		return; // we're not a server, just run full speed
+		return; // we're not a dedicated server, just run full speed
 
 	FD_ZERO( &fdset );
 
@@ -897,6 +896,7 @@ void NET_Sleep( int msec )
 		FD_SET( ip_sockets[NS_SERVER], &fdset ); // network socket
 		i = ip_sockets[NS_SERVER];
 	}
+
 	if( ipx_sockets[NS_SERVER] )
 	{
 		FD_SET( ipx_sockets[NS_SERVER], &fdset ); // network socket
@@ -924,6 +924,7 @@ void NET_ShowIP_f( void )
 	struct in_addr	in;
 
 	pGetHostName( s, sizeof( s ));
+
 	if( !( h = pGetHostByName( s )))
 	{
 		Msg( "Can't get host\n" );

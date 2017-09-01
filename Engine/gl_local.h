@@ -16,8 +16,12 @@ GNU General Public License for more details.
 #ifndef GL_LOCAL_H
 #define GL_LOCAL_H
 
-#ifdef _USEFAKEGL //MARTY
-#include "FakeGLx.h"
+#ifdef _USEFAKEGL09 //MARTY
+#include "fakeglx\fakeglx09.h"
+#endif
+
+#ifdef _USEFAKEGL01 //MARTY
+#include "fakeglx\fakeglx01.h"
 #endif
 
 #include "gl_export.h"
@@ -30,8 +34,9 @@ GNU General Public License for more details.
 
 extern byte	*r_temppool;
 
-#define BLOCK_WIDTH		128	// lightmap block width
-#define BLOCK_HEIGHT	128	// lightmap block height
+#define BLOCK_SIZE		world.block_size	// lightmap blocksize
+#define BLOCK_SIZE_DEFAULT	128		// for keep backward compatibility
+#define BLOCK_SIZE_MAX	256
 
 #define MAX_TEXTURES	4096
 #define MAX_DETAIL_TEXTURES	256
@@ -169,6 +174,7 @@ typedef struct
 	int		lightstylevalue[MAX_LIGHTSTYLES];	// value 0 - 65536
 	float		lightcache[MAX_LIGHTSTYLES];
 
+	float		viewplanedist;
 	mplane_t		clipPlane;
 } ref_instance_t;
 
@@ -186,6 +192,7 @@ typedef struct
 	int		alphaskyTexture;	// quake1 alpha-sky layer
 	int		lightmapTextures[MAX_LIGHTMAPS];
 	int		dlightTexture;	// custom dlight texture
+	int		dlightTexture2;	// big dlight texture (for big lightmaps)
 	int		attenuationTexture;	// normal attenuation
 	int		attenuationTexture2;// dark attenuation
 	int		attenuationTexture3;// bright attenuation
@@ -242,6 +249,8 @@ typedef struct
 	uint		c_particle_count;
 
 	uint		c_mirror_passes;
+
+	uint		c_client_ents;	// entities that moved to client
 } ref_speeds_t;
 
 extern ref_speeds_t		r_stats;
@@ -254,8 +263,8 @@ extern mleaf_t		*r_viewleaf, *r_oldviewleaf;
 extern mleaf_t		*r_viewleaf2, *r_oldviewleaf2;
 extern dlight_t		cl_dlights[MAX_DLIGHTS];
 extern dlight_t		cl_elights[MAX_ELIGHTS];
-#define r_numEntities	(tr.num_solid_entities + tr.num_trans_entities + tr.num_child_entities)
-#define r_numStatics	(tr.num_static_entities)
+#define r_numEntities	(tr.num_solid_entities + tr.num_trans_entities + tr.num_child_entities + tr.num_static_entities)
+#define r_numStatics	(r_stats.c_client_ents)
 
 extern struct beam_s	*cl_active_beams;
 extern struct beam_s	*cl_free_beams;
@@ -575,7 +584,7 @@ typedef struct
 	qboolean		wideScreen;
 
 	int		activeTMU;
-	GLuint		currentTextures[MAX_TEXTURE_UNITS];
+	GLint		currentTextures[MAX_TEXTURE_UNITS];
 	GLuint		currentTextureTargets[MAX_TEXTURE_UNITS];
 	GLboolean		texIdentityMatrix[MAX_TEXTURE_UNITS];
 	GLint		genSTEnabled[MAX_TEXTURE_UNITS];	// 0 - disabled, OR 1 - S, OR 2 - T, OR 4 - R
@@ -621,6 +630,7 @@ extern convar_t	*gl_texture_lodbias;
 extern convar_t	*gl_showtextures;
 extern convar_t	*gl_compress_textures;
 extern convar_t	*gl_luminance_textures;
+extern convar_t	*gl_keeptjunctions;
 extern convar_t	*gl_overview;	// draw map in overview mode
 extern convar_t	*gl_wireframe;
 extern convar_t	*gl_allow_static;
@@ -628,6 +638,7 @@ extern convar_t	*gl_allow_mirrors;
 extern convar_t	*gl_picmip;
 extern convar_t	*gl_skymip;
 extern convar_t	*gl_finish;
+extern convar_t	*gl_nosort;
 extern convar_t	*gl_clear;
 extern convar_t	*gl_test;		// cvar to testify new effects
 

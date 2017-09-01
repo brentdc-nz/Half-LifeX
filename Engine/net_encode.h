@@ -21,10 +21,10 @@ GNU General Public License for more details.
 #define DT_FLOAT		BIT( 2 )	// A floating point field
 #define DT_INTEGER		BIT( 3 )	// 4 byte integer
 #define DT_ANGLE		BIT( 4 )	// A floating point angle ( will get masked correctly )
-#define DT_TIMEWINDOW	BIT( 5 )	// A floating point timestamp, relative to sv.time
-				// and re-encoded on the client relative to the client's clock
-#define DT_STRING		BIT( 6 )	// A null terminated string, sent as 8 byte chars
-#define DT_SIGNED		BIT( 7 )	// sign modificator
+#define DT_TIMEWINDOW_8	BIT( 5 )	// A floating point timestamp, relative to sv.time
+#define DT_TIMEWINDOW_BIG	BIT( 6 )	// and re-encoded on the client relative to the client's clock
+#define DT_STRING		BIT( 7 )	// A null terminated string, sent as 8 byte chars
+#define DT_SIGNED		BIT( 8 )	// sign modificator
 
 #define offsetof( s, m )	(size_t)&(((s *)0)->m)
 #define NUM_FIELDS( x )	((sizeof( x ) / sizeof( x[0] )) - 1)
@@ -52,6 +52,7 @@ typedef struct
 	const int		size;
 } delta_field_t;
 
+// one field
 typedef struct delta_s
 {
 	const char	*name;

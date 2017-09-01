@@ -129,7 +129,9 @@ void Cvar_LookupVars( int checkbit, void *buffer, void *ptr, setpair_t callback 
 	// force checkbit to 0 for lookup all cvars
 	for( cvar = cvar_vars; cvar; cvar = cvar->next )
 	{
-		if( checkbit && !( cvar->flags & checkbit )) continue;
+		if( checkbit && !( cvar->flags & checkbit ))
+			continue;
+
 		if( buffer )
 		{
 			callback( cvar->name, cvar->string, buffer, ptr );
@@ -137,7 +139,7 @@ void Cvar_LookupVars( int checkbit, void *buffer, void *ptr, setpair_t callback 
 		else
 		{
 			// NOTE: dlls cvars doesn't have description
-			if( cvar->flags & ( CVAR_EXTDLL|CVAR_CLIENTDLL ))
+			if( cvar->flags & CVAR_EXTDLL )
 				callback( cvar->name, cvar->string, "game cvar", ptr );
 			else callback( cvar->name, cvar->string, cvar->description, ptr );
 		}
@@ -220,9 +222,7 @@ convar_t *Cvar_Get( const char *var_name, const char *var_value, int flags, cons
 		// if we have a latched string, take that value now
 		if( var->latched_string )
 		{
-			char *s;
-
-			s = var->latched_string;
+			char *s = var->latched_string;
 			var->latched_string = NULL; // otherwise cvar_set2 would free it
 			Cvar_Set2( var_name, s, true );
 			Mem_Free( s );
@@ -276,7 +276,7 @@ void Cvar_RegisterVariable( cvar_t *var )
 		return;
 	}
 	
-	// first check to see if it has allready been defined
+	// first check to see if it has already been defined
 	if(( cur = Cvar_FindVar( var->name )) != NULL )
 	{
 		// this cvar is already registered with Cvar_RegisterVariable
@@ -370,7 +370,7 @@ convar_t *Cvar_Set2( const char *var_name, const char *value, qboolean force )
 	}
 
 	// use this check to prevent acessing for unexisting fields
-	// for cvar_t: latechd_string, description, etc
+	// for cvar_t: latched_string, description, etc
 	if( var->flags & CVAR_EXTDLL )
 		dll_variable = true;
 
@@ -595,7 +595,7 @@ void Cvar_FullSet( const char *var_name, const char *value, int flags )
 	var->value = Q_atof( var->string );
 	var->flags = flags;
 
-	if( dll_variable ) return;	// below field doesn't exist in cvar_t
+	if( dll_variable ) return;	// below fields doesn't exist in cvar_t
 
 	var->integer = Q_atoi( var->string );
 	var->modified = true;
@@ -621,7 +621,7 @@ void Cvar_DirectSet( cvar_t *var, const char *value )
 	if( value && !Cvar_ValidateString( value, true ))
 	{
 		MsgDev( D_WARN, "invalid cvar value string: %s\n", value );
-		value = "default";
+		value = "0";
 	}
 
 	if( !value ) value = "0";
@@ -738,6 +738,10 @@ void Cvar_SetCheatState( void )
 	// set all default vars to the safe value
 	for( var = cvar_vars; var; var = var->next )
 	{
+		// can't process dll cvars - missed latched_string, reset_string
+		if( var->flags & CVAR_EXTDLL )
+			continue;
+
 		if( var->flags & CVAR_CHEAT )
 		{
 			// the CVAR_LATCHED|CVAR_CHEAT vars might escape the reset here 
@@ -747,6 +751,7 @@ void Cvar_SetCheatState( void )
 				Mem_Free( var->latched_string );
 				var->latched_string = NULL;
 			}
+
 			if( Q_strcmp( var->reset_string, var->string ))
 			{
 				Cvar_Set( var->name, var->reset_string );
@@ -994,14 +999,17 @@ Cvar_List_f
 void Cvar_List_f( void )
 {
 	convar_t	*var;
-	char	*match;
+	char	*match = NULL;
 	int	i = 0, j = 0;
 
-	if( Cmd_Argc() > 1 ) match = Cmd_Argv(1);
-	else match = NULL;
+	if( Cmd_Argc() > 1 )
+		match = Cmd_Argv( 1 );
 
 	for( var = cvar_vars; var; var = var->next, i++ )
 	{
+		if( var->name[0] == '@' )
+			continue;	// never shows system cvars
+
 		if( match && !Q_stricmpext( match, var->name ))
 			continue;
 
@@ -1034,7 +1042,10 @@ void Cvar_List_f( void )
 
 		if( var->flags & CVAR_CHEAT ) Msg( "CHEAT " );
 		else Msg( " " );
-		Msg(" %s \"%s\" %s\n", var->name, var->string, var->description );
+
+		if( var->flags & CVAR_EXTDLL )
+			Msg(" %s \"%s\" %s\n", var->name, var->string, "game cvar" );
+		else Msg(" %s \"%s\" %s\n", var->name, var->string, var->description );
 		j++;
 	}
 
@@ -1125,7 +1136,7 @@ void Cvar_Latched_f( void )
 
 /*
 ============
-Cvar_Latched_f
+Cvar_LatchedVideo_f
 
 Now all latched video strings is valid
 ============
@@ -1185,7 +1196,7 @@ void Cvar_Unlink_f( void )
 		if( !var ) break;
 
 		// ignore all non-game cvars
-		if(!( var->flags & CVAR_EXTDLL ))
+		if( !( var->flags & CVAR_EXTDLL ))
 		{
 			prev = &var->next;
 			continue;
@@ -1233,7 +1244,12 @@ void Cvar_Unlink( void )
 
 		// throw out any variables the game created
 		*prev = var->next;
+		if( var->name ) Mem_Free( var->name );
 		if( var->string ) Mem_Free( var->string );
+		if( var->latched_string ) Mem_Free( var->latched_string );
+		if( var->reset_string ) Mem_Free( var->reset_string );
+		if( var->description ) Mem_Free( var->description );
+		Mem_Free( var );
 		count++;
 	}
 }

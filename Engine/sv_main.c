@@ -69,6 +69,10 @@ convar_t	*mp_consistency;
 convar_t	*serverinfo;
 convar_t	*physinfo;
 convar_t	*clockwindow;
+convar_t	*deathmatch;
+convar_t	*teamplay;
+convar_t	*skill;
+convar_t	*coop;
 
 // sky variables
 convar_t	*sv_skycolor_r;
@@ -98,8 +102,8 @@ Updates the cl->ping variables
 */
 void SV_CalcPings( void )
 {
-	int		i, j;
 	sv_client_t	*cl;
+	int		i, j;
 	int		total, count;
 
 	if( !svs.clients ) return;
@@ -108,8 +112,9 @@ void SV_CalcPings( void )
 	for( i = 0; i < sv_maxclients->integer; i++ )
 	{
 		cl = &svs.clients[i];
-		if( cl->state != cs_spawned ) continue;
-		if( cl->fakeclient ) continue;
+
+		if( cl->state != cs_spawned || cl->fakeclient )
+			continue;
 
 		total = count = 0;
 
@@ -161,7 +166,7 @@ int SV_CalcPacketLoss( sv_client_t *cl )
 	}
 
 	if( !count ) return 100;
-	losspercent = 100.0 * ( float )lost / ( float )count;
+	losspercent = 100.0f * ( float )lost / ( float )count;
 
 	return (int)losspercent;
 }
@@ -237,7 +242,7 @@ void SV_UpdateMovevars( qboolean initialize )
 	svgame.movevars.wateralpha = sv_wateralpha->value;
 	svgame.movevars.features = host.features; // just in case. not really need
 
-	if( initialize ) return;
+	if( initialize ) return; // too early
 
 	if( MSG_WriteDeltaMovevars( &sv.reliable_datagram, &svgame.oldmovevars, &svgame.movevars ))
 		Q_memcpy( &svgame.oldmovevars, &svgame.movevars, sizeof( movevars_t )); // oldstate changed
@@ -381,7 +386,6 @@ void SV_ReadPackets( void )
 					SV_ProcessFile( cl, cl->netchan.incomingfilename );
 				}
 			}
-
 			break;
 		}
 
@@ -433,6 +437,7 @@ void SV_CheckTimeouts( void )
 			cl->state = cs_free; // can now be reused
 			continue;
 		}
+
 		if(( cl->state == cs_connected || cl->state == cs_spawned ) && cl->lastmessage < droppoint )
 		{
 			SV_BroadcastPrintf( PRINT_HIGH, "%s timed out\n", cl->name );
@@ -488,7 +493,7 @@ SV_IsSimulating
 */
 qboolean SV_IsSimulating( void )
 {
-	if( sv.background && SV_Active() && CL_Active( ))
+	if( sv.background && SV_Active() && CL_Active())
 	{
 		if( CL_IsInConsole( ))
 			return false;
@@ -630,10 +635,10 @@ void SV_Init( void )
 {
 	SV_InitOperatorCommands();
 
-	Cvar_Get ("skill", "1", CVAR_LATCH, "game skill level" );
-	Cvar_Get ("deathmatch", "0", CVAR_LATCH|CVAR_SERVERINFO, "displays deathmatch state" );
-	Cvar_Get ("teamplay", "0", CVAR_LATCH|CVAR_SERVERINFO, "displays teamplay state" );
-	Cvar_Get ("coop", "0", CVAR_LATCH|CVAR_SERVERINFO, "displays cooperative state" );
+	skill = Cvar_Get ("skill", "1", CVAR_LATCH, "game skill level" );
+	deathmatch = Cvar_Get ("deathmatch", "0", CVAR_LATCH|CVAR_SERVERINFO, "displays deathmatch state" );
+	teamplay = Cvar_Get ("teamplay", "0", CVAR_LATCH|CVAR_SERVERINFO, "displays teamplay state" );
+	coop = Cvar_Get ("coop", "0", CVAR_LATCH|CVAR_SERVERINFO, "displays cooperative state" );
 	Cvar_Get ("protocol", va( "%i", PROTOCOL_VERSION ), CVAR_INIT, "displays server protocol version" );
 	Cvar_Get ("defaultmap", "", CVAR_SERVERNOTIFY, "holds the multiplayer mapname" );
 	Cvar_Get ("showtriggers", "0", CVAR_LATCH, "debug cvar shows triggers" );
@@ -745,7 +750,7 @@ void SV_FinalMessage( char *message, qboolean reconnect )
 	{
 		BF_WriteByte( &msg, svc_changing );
 
-		if( sv.loadgame || sv_maxclients->integer > 1 )
+		if( sv.loadgame || sv_maxclients->integer > 1 || sv.changelevel )
 			BF_WriteOneBit( &msg, 1 ); // changelevel
 		else BF_WriteOneBit( &msg, 0 );
 	}
@@ -810,5 +815,6 @@ void SV_Shutdown( qboolean reconnect )
 		svs.num_client_entities = 0;
 		svs.next_client_entities = 0;
 	}
+
 	svs.initialized = false;
 }

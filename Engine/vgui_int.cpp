@@ -64,32 +64,9 @@ void CEngineApp :: getCursorPos( int &x,int &y )
 
 void VGui_RunFrame( void )
 {
-	PROCESSENTRY32	pe32;
-	HANDLE		hSnapshot;
-
-	host.force_draw_version = false;
-
-	if(( hSnapshot = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 )) == INVALID_HANDLE_VALUE )
-		return;
-
-	pe32.dwSize = sizeof( PROCESSENTRY32 );
-
-	if( !Process32First( hSnapshot, &pe32 ))
-	{
-		CloseHandle( hSnapshot );
-		return;
-	}
-
-	do
-	{
-		if( Q_stristr( pe32.szExeFile, "fraps.exe" ))
-		{
-			host.force_draw_version = true;
-			break;
-		}
-	} while( Process32Next( hSnapshot, &pe32 ));
-
-	CloseHandle( hSnapshot );
+	if( GetModuleHandle( "fraps32.dll" ) || GetModuleHandle( "fraps64.dll" ))
+		host.force_draw_version = true;
+	else host.force_draw_version = false;
 }
 
 void VGui_Startup( void )

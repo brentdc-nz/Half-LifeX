@@ -485,6 +485,9 @@ const char *UI_ScrollList_Key( menuScrollList_s *sl, int key, int down )
 	case K_UPARROW:
 	case K_KP_UPARROW:
 	case K_MWHEELUP:
+#ifdef _XBOX //MARTY
+	case K_DPAD_UP:
+#endif
 		if( sl->curItem != 0 )
 		{
 			sl->curItem--;
@@ -494,6 +497,9 @@ const char *UI_ScrollList_Key( menuScrollList_s *sl, int key, int down )
 		break;
 	case K_DOWNARROW:
 	case K_MWHEELDOWN:
+#ifdef _XBOX //MARTY
+	case K_DPAD_DOWN:
+#endif
 		if( sl->numItems > 0 && sl->curItem != sl->numItems - 1 )
 		{
 			sl->curItem++;

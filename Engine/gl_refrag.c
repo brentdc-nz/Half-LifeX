@@ -18,6 +18,7 @@ GNU General Public License for more details.
 #include "gl_local.h"
 #include "mod_local.h"
 #include "entity_types.h"
+#include "studio.h"
 
 /*
 ===============================================================================
@@ -150,10 +151,29 @@ void R_AddEfrags( cl_entity_t *ent )
 	lastlink = &ent->efrag;
 	r_pefragtopnode = NULL;
 
-	for( i = 0; i < 3; i++ )
+	// NOTE: can't copy these bounds directly into model->mins\model->maxs
+	// because all other code don't expected this
+	if( ent->model->type == mod_studio )
 	{
-		r_emins[i] = ent->origin[i] + ent->model->mins[i];
-		r_emaxs[i] = ent->origin[i] + ent->model->maxs[i];
+		studiohdr_t *phdr = (studiohdr_t *)Mod_Extradata( ent->model );
+		mstudioseqdesc_t *pseqdesc;
+
+		if( !phdr ) return;
+		pseqdesc = (mstudioseqdesc_t *)((byte *)phdr + phdr->seqindex);
+
+		for( i = 0; i < 3; i++ )
+		{
+			r_emins[i] = ent->origin[i] + pseqdesc[0].bbmin[i];
+			r_emaxs[i] = ent->origin[i] + pseqdesc[0].bbmax[i];
+		}
+	}
+	else
+	{
+		for( i = 0; i < 3; i++ )
+		{
+			r_emins[i] = ent->origin[i] + ent->model->mins[i];
+			r_emaxs[i] = ent->origin[i] + ent->model->maxs[i];
+		}
 	}
 
 	R_SplitEntityOnNode( cl.worldmodel->nodes );

@@ -144,7 +144,7 @@ hull_t *SV_HullAutoSelect( model_t *model, const vec3_t mins, const vec3_t maxs,
 	hull_t	*hull;
 
 	// select the hull automatically
-	for( i = 0; i < 4; i++ )
+	for( i = 0; i < MAX_MAP_HULLS; i++ )
 	{
 		curdiff = floor( VectorAvg( size )) - floor( VectorAvg( world.hull_sizes[i] ));
 		curdiff = fabs( curdiff );
@@ -294,7 +294,7 @@ hull_t *SV_HullForStudioModel( edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t of
 	{
 		isPointTrace = true;
 
-		if( ent->v.flags & FL_CLIENT )
+		if( ent->v.flags & ( FL_CLIENT|FL_FAKECLIENT ))
 		{
 			if( sv_clienttrace->value == 0.0f )
 			{
@@ -315,7 +315,7 @@ hull_t *SV_HullForStudioModel( edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t of
 		VectorScale( size, scale, size );
 		VectorClear( offset );
 
-		if( ent->v.flags & FL_CLIENT )
+		if( ent->v.flags & ( FL_CLIENT|FL_FAKECLIENT ))
 		{
 			studiohdr_t	*pstudio;
 			mstudioseqdesc_t	*pseqdesc;
@@ -330,7 +330,8 @@ hull_t *SV_HullForStudioModel( edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t of
 
 			SV_StudioPlayerBlend( pseqdesc, &iBlend, &angles[PITCH] );
 
-			controller[0] = controller[1] = controller[2] = controller[3] = 0x7F;
+			controller[0] = controller[1] = 0x7F;
+			controller[2] = controller[3] = 0x7F;
 			blending[0] = (byte)iBlend;
 			blending[1] = 0;
 
@@ -352,7 +353,7 @@ ENTITY AREA CHECKING
 ===============================================================================
 */
 areanode_t	sv_areanodes[AREA_NODES];
-int		sv_numareanodes;
+static int	sv_numareanodes;
 
 /*
 ===============
@@ -504,7 +505,7 @@ void SV_TouchLinks( edict_t *ent, areanode_t *node )
 		}
 
 		// never touch the triggers when "playersonly" is active
-		if(!( sv.hostflags & SVF_PLAYERSONLY ))
+		if( !( sv.hostflags & SVF_PLAYERSONLY ))
 		{
 			svgame.globals->time = sv.time;
 			svgame.dllFuncs.pfnTouch( touch, ent );
@@ -793,7 +794,7 @@ returns true if the entity is in solid currently
 qboolean SV_TestEntityPosition( edict_t *ent, edict_t *blocker )
 {
 	trace_t	trace;
-#if 1
+
 	if( ent->v.flags & (FL_CLIENT|FL_FAKECLIENT))
 	{
 		// to avoid falling through tracktrain update client mins\maxs here
@@ -801,7 +802,7 @@ qboolean SV_TestEntityPosition( edict_t *ent, edict_t *blocker )
 			SV_SetMinMaxSize( ent, svgame.pmove->player_mins[1], svgame.pmove->player_maxs[1] );
 		else SV_SetMinMaxSize( ent, svgame.pmove->player_mins[0], svgame.pmove->player_maxs[0] );
 	}
-#endif
+
 	trace = SV_Move( ent->v.origin, ent->v.mins, ent->v.maxs, ent->v.origin, MOVE_NORMAL|FMOVE_SIMPLEBOX, ent );
 
 	if( SV_IsValidEdict( blocker ) && SV_IsValidEdict( trace.ent ))
@@ -851,7 +852,7 @@ qboolean SV_RecursiveHullCheck( hull_t *hull, int num, float p1f, float p2f, vec
 	}
 
 	if( num < hull->firstclipnode || num > hull->lastclipnode )
-		Sys_Error( "SV_RecursiveHullCheck: bad node number\n" );
+		Host_Error( "SV_RecursiveHullCheck: bad node number\n" );
 
 	// find the point distances
 	node = hull->clipnodes + num;
@@ -954,8 +955,6 @@ void SV_ClipMoveToEntity( edict_t *ent, const vec3_t start, vec3_t mins, vec3_t 
 	int	i, j, hullcount;
 	qboolean	rotated, transform_bbox;
 	matrix4x4	matrix;
-
-	ASSERT( trace );
 
 	Q_memset( trace, 0, sizeof( trace_t ));
 	VectorCopy( end, trace->endpos );
@@ -1178,11 +1177,7 @@ static void SV_ClipToLinks( areanode_t *node, moveclip_t *clip )
 			if( touch->v.flags & ( FL_CLIENT|FL_FAKECLIENT ))
 				continue;
 		}
-#if 0
-		// can't trace dead bodies as hull, only traceline (for damage)
-		if( touch->v.deadflag == DEAD_DEAD && !VectorCompare( clip->mins, clip->maxs ))
-			continue;
-#endif
+
 		// g-cont. make sure what size is really zero - check all the components
 		if( SV_IsValidEdict( clip->passedict ) && !VectorIsNull( clip->passedict->v.size ) && VectorIsNull( touch->v.size ))
 			continue;	// points never interact
@@ -1477,8 +1472,8 @@ static qboolean SV_RecursiveLightPoint( model_t *model, mnode_t *node, const vec
 		back = DotProduct( end, plane->normal ) - plane->dist;
 	}
 
-	side = front < 0;
-	if(( back < 0 ) == side )
+	side = front < 0.0f;
+	if(( back < 0.0f ) == side )
 		return SV_RecursiveLightPoint( model, node->children[side], start, end );
 
 	frac = front / ( front - back );
@@ -1489,7 +1484,7 @@ static qboolean SV_RecursiveLightPoint( model_t *model, mnode_t *node, const vec
 	if( SV_RecursiveLightPoint( model, node->children[side], start, mid ))
 		return true; // hit something
 
-	if(( back < 0 ) == side )
+	if(( back < 0.0f ) == side )
 		return false;// didn't hit anything
 
 	// check for impact on this node
@@ -1505,19 +1500,19 @@ static qboolean SV_RecursiveLightPoint( model_t *model, mnode_t *node, const vec
 		s = DotProduct( mid, tex->vecs[0] ) + tex->vecs[0][3] - surf->texturemins[0];
 		t = DotProduct( mid, tex->vecs[1] ) + tex->vecs[1][3] - surf->texturemins[1];
 
-		if(( s < 0 || s > surf->extents[0] ) || ( t < 0 || t > surf->extents[1] ))
+		if(( s < 0.0f || s > surf->extents[0] ) || ( t < 0.0f || t > surf->extents[1] ))
 			continue;
 
-		s >>= 4;
-		t >>= 4;
+		s /= LM_SAMPLE_SIZE;
+		t /= LM_SAMPLE_SIZE;
 
 		if( !surf->samples )
 			return true;
 
 		VectorClear( sv_pointColor );
 
-		lm = surf->samples + (t * ((surf->extents[0] >> 4) + 1) + s);
-		size = ((surf->extents[0] >> 4) + 1) * ((surf->extents[1] >> 4) + 1);
+		lm = surf->samples + (t * ((surf->extents[0] / LM_SAMPLE_SIZE) + 1) + s);
+		size = ((surf->extents[0] / LM_SAMPLE_SIZE) + 1) * ((surf->extents[1] / LM_SAMPLE_SIZE) + 1);
 
 		for( map = 0; map < MAXLIGHTMAPS && surf->styles[map] != 255; map++ )
 		{
@@ -1566,9 +1561,6 @@ void SV_SetLightStyle( int style, const char* s )
 {
 	int	j, k;
 
-	ASSERT( s );
-	ASSERT( style >= 0 && style < MAX_LIGHTSTYLES );
-
 	Q_strncpy( sv.lightstyles[style].pattern, s, sizeof( sv.lightstyles[0].pattern ));
 
 	j = Q_strlen( s );
@@ -1594,7 +1586,10 @@ needs to get correct working SV_LightPoint
 */
 const char *SV_GetLightStyle( int style )
 {
-	ASSERT( style >= 0 && style < MAX_LIGHTSTYLES );
+	if( style < 0 ) style = 0;
+	if( style >= MAX_LIGHTSTYLES )
+		Host_Error( "SV_GetLightStyle: style: %i >= %d", style, MAX_LIGHTSTYLES );
+
 	return sv.lightstyles[style].pattern;
 }
 
@@ -1626,8 +1621,8 @@ int SV_LightForEntity( edict_t *pEdict )
 	VectorCopy( pEdict->v.origin, end );
 
 	if( pEdict->v.effects & EF_INVLIGHT )
-		end[2] = start[2] + 8192;
-	else end[2] = start[2] - 8192;
+		end[2] = start[2] + world.size[2];
+	else end[2] = start[2] - world.size[2];
 	VectorSet( sv_pointColor, 1.0f, 1.0f, 1.0f );
 
 	SV_RecursiveLightPoint( sv.worldmodel, sv.worldmodel->nodes, start, end );

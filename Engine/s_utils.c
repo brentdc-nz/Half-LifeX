@@ -131,6 +131,7 @@ int S_ZeroCrossingBefore( wavdata_t *pWaveData, int sample )
 			}
 		}
 	}
+
 	return sample;
 }
 
@@ -227,6 +228,7 @@ int S_ZeroCrossingAfter( wavdata_t *pWaveData, int sample )
 			}
 		}
 	}
+
 	return sample;
 }
 
@@ -256,6 +258,7 @@ int S_ConvertLoopedPosition( wavdata_t *pSource, int samplePosition, qboolean us
 		}
 		// ERROR? if no loopSize
 	}
+
 	return samplePosition;
 }
 

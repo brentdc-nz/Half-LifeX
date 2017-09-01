@@ -16,7 +16,7 @@ GNU General Public License for more details.
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
-#define PROTOCOL_VERSION		46
+#define PROTOCOL_VERSION		47
 
 // server to client
 #define svc_bad			0	// immediately crash client when received
@@ -110,9 +110,7 @@ GNU General Public License for more details.
 #define MAX_EDICTS			(1<<MAX_ENTITY_BITS)// 12 bits = 4096 edicts
 
 #define MAX_CUSTOM			1024	// max custom resources per level
-
 #define MAX_USER_MESSAGES		191	// another 63 messages reserved for engine routines
-
 #define MAX_DLIGHTS			32	// dynamic lights (rendered per one frame)
 #define MAX_ELIGHTS			64	// entity only point lights
 #define MAX_LIGHTSTYLES		256	// a byte limit, don't modify
@@ -127,7 +125,7 @@ GNU General Public License for more details.
 #define SND_STOP			(1<<5)	// stop the sound
 #define SND_CHANGE_VOL		(1<<6)	// change sound vol
 #define SND_CHANGE_PITCH		(1<<7)	// change sound pitch
-#define SND_SPAWNING		(1<<8)	// we're spawning, used in some cases for ambients
+#define SND_SPAWNING		(1<<8)	// we're spawning, used in some cases for ambients (not sent across network)
 
 // decal flags
 #define FDECAL_PERMANENT		0x01	// This decal should not be removed in favor of any new decals
@@ -142,28 +140,7 @@ GNU General Public License for more details.
 #define NUM_BACKUP_COMMAND_BITS	4
 #define MAX_BACKUP_COMMANDS		(1 << NUM_BACKUP_COMMAND_BITS)
 
-// world size
-#define MAX_COORD_INTEGER		(16384)	// world half-size, modify with precaution
-#define MIN_COORD_INTEGER		(-MAX_COORD_INTEGER)
-#define MAX_COORD_FRACTION		( 1.0 - ( 1.0 / 16.0 ))
-#define MIN_COORD_FRACTION		(-1.0 + ( 1.0 / 16.0 ))
-
-// network precision
-#define COORD_INTEGER_BITS		14
-#define COORD_FRACTIONAL_BITS		5
-#define COORD_DENOMINATOR		( 1 << ( COORD_FRACTIONAL_BITS ))
-#define COORD_RESOLUTION		(1.0 / ( COORD_DENOMINATOR ))
-
-#define NORMAL_FRACTIONAL_BITS	11
-#define NORMAL_DENOMINATOR		(( 1 << ( NORMAL_FRACTIONAL_BITS )) - 1 )
-#define NORMAL_RESOLUTION		( 1.0 / ( NORMAL_DENOMINATOR ))
-
-// verify that coordsize.h and worldsize.h are consistently defined
-#if( MAX_COORD_INTEGER != ( 1 << COORD_INTEGER_BITS ))
-#error MAX_COORD_INTEGER does not match COORD_INTEGER_BITS
-#endif
-
-#define MAX_RESOURCES	(MAX_MODELS+MAX_SOUNDS+MAX_CUSTOM+MAX_EVENTS)
+#define MAX_RESOURCES		(MAX_MODELS+MAX_SOUNDS+MAX_CUSTOM+MAX_EVENTS)
 
 typedef struct
 {

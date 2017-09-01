@@ -66,7 +66,7 @@ realcheck:
 	// the midpoint must be within 16 of the bottom
 	start[0] = stop[0] = (mins[0] + maxs[0]) * 0.5f;
 	start[1] = stop[1] = (mins[1] + maxs[1]) * 0.5f;
-	stop[2] = start[2] - 2 * svgame.movevars.stepsize;
+	stop[2] = start[2] - 2.0f * svgame.movevars.stepsize;
 
 	if( iMode == WALKMOVE_WORLDONLY )
 		trace = SV_MoveNoEnts( start, vec3_origin, vec3_origin, stop, MOVE_NORMAL, ent );
@@ -74,6 +74,7 @@ realcheck:
 
 	if( trace.fraction == 1.0f )
 		return false;
+
 	mid = bottom = trace.endpos[2];
 
 	// the corners must be within 16 of the midpoint
@@ -169,7 +170,6 @@ void SV_WaterMove( edict_t *ent )
 
 	if( watertype == CONTENTS_LAVA )
 	{
-
 		if((!( flags & ( FL_IMMUNE_LAVA|FL_GODMODE ))) && ent->v.dmgtime < sv.time )
 		{
 			if( ent->v.radsuit_finished < sv.time )
@@ -187,7 +187,7 @@ void SV_WaterMove( edict_t *ent )
 		}
 	}
 
-	if(!( flags & FL_INWATER ))
+	if( !( flags & FL_INWATER ))
 	{
 		if( watertype == CONTENTS_WATER )
 		{
@@ -213,7 +213,7 @@ void SV_WaterMove( edict_t *ent )
 		ent->v.dmgtime = 0.0f;
 	}
 
-	if(!( flags & FL_WATERJUMP ))
+	if( !( flags & FL_WATERJUMP ))
 	{
 		VectorMA( ent->v.velocity, ( ent->v.waterlevel * -0.8f * host.frametime ), ent->v.velocity, ent->v.velocity );
 	}
@@ -232,12 +232,12 @@ float SV_VecToYaw( const vec3_t src )
 
 	if( src[1] == 0.0f && src[0] == 0.0f )
 	{
-		yaw = 0;
+		yaw = 0.0f;
 	}
 	else
 	{
-		yaw = (int)( atan2( src[1], src[0] ) * 180 / M_PI );
-		if( yaw < 0 ) yaw += 360;
+		yaw = (int)( atan2( src[1], src[0] ) * 180.0f / M_PI );
+		if( yaw < 0 ) yaw += 360.0f;
 	}
 	return yaw;
 }
@@ -268,8 +268,8 @@ qboolean SV_MoveStep( edict_t *ent, vec3_t move, qboolean relink )
 			{
 				dz = ent->v.origin[2] - enemy->v.origin[2];
 
-				if( dz > 40 ) neworg[2] -= 8;
-				else if( dz < 30 ) neworg[2] += 8;
+				if( dz > 40.0f ) neworg[2] -= 8.0f;
+				else if( dz < 30.0f ) neworg[2] += 8.0f;
 			}
 
 			trace = SV_Move( ent->v.origin, ent->v.mins, ent->v.maxs, neworg, MOVE_NORMAL, ent );
@@ -426,11 +426,11 @@ qboolean SV_StepDirection( edict_t *ent, float yaw, float dist )
 	float	cSin, cCos;
 	vec3_t	move;
 
-	yaw = yaw * M_PI * 2 / 360;
+	yaw = yaw * M_PI2 / 360.0f;
 	SinCos( yaw, &cSin, &cCos );
 	VectorSet( move, cCos * dist, cSin * dist, 0.0f );
 
-	ret = SV_MoveStep( ent, move, 0 );
+	ret = SV_MoveStep( ent, move, false );
 	SV_LinkEdict( ent, true );
 
 	return ret;
@@ -440,7 +440,7 @@ qboolean SV_FlyDirection( edict_t *ent, vec3_t move )
 {
 	int	ret;
 
-	ret = SV_MoveStep( ent, move, 0 );
+	ret = SV_MoveStep( ent, move, false );
 	SV_LinkEdict( ent, true );
 
 	return ret;
@@ -453,25 +453,25 @@ void SV_NewChaseDir( edict_t *actor, vec3_t destination, float dist )
 	vec3_t	d;
 
 	olddir = anglemod(((int)( actor->v.ideal_yaw / 45.0f )) * 45.0f );
-	turnaround = anglemod( olddir - 180 );
+	turnaround = anglemod( olddir - 180.0f );
 
 	deltax = destination[0] - actor->v.origin[0];
 	deltay = destination[1] - actor->v.origin[1];
 
-	if( deltax > 10 )
+	if( deltax > 10.0f )
 		d[1] = 0.0f;
-	else if( deltax < -10 )
+	else if( deltax < -10.0f )
 		d[1] = 180.0f;
 	else d[1] = -1;
 
-	if( deltay < -10 )
+	if( deltay < -10.0f )
 		d[2] = 270.0f;
-	else if( deltay > 10 )
+	else if( deltay > 10.0f )
 		d[2] = 90.0f;
-	else d[2] = -1;
+	else d[2] = -1.0f;
 
 	// try direct route
-	if( d[1] != -1 && d[2] != -1 )
+	if( d[1] != -1.0f && d[2] != -1.0f )
 	{
 		if( d[1] == 0.0f )
 			tempdir = ( d[2] == 90.0f ) ? 45.0f : 315.0f;
@@ -489,20 +489,20 @@ void SV_NewChaseDir( edict_t *actor, vec3_t destination, float dist )
 		d[2] = tempdir;
 	}
 
-	if( d[1] != -1 && d[1] != turnaround && SV_StepDirection( actor, d[1], dist ))
+	if( d[1] != -1.0f && d[1] != turnaround && SV_StepDirection( actor, d[1], dist ))
 		return;
 
-	if( d[2] != -1 && d[2] != turnaround && SV_StepDirection( actor, d[2], dist ))
+	if( d[2] != -1.0f && d[2] != turnaround && SV_StepDirection( actor, d[2], dist ))
 		return;
 
 	// there is no direct path to the player, so pick another direction
-	if( olddir != -1 && SV_StepDirection( actor, olddir, dist ))
+	if( olddir != -1.0f && SV_StepDirection( actor, olddir, dist ))
 		return;
 
 	// fine, just run somewhere.
 	if( Com_RandomLong( 0, 1 ) != 1 )
 	{
-		for( tempdir = 0; tempdir <= 315; tempdir += 45 )
+		for( tempdir = 0; tempdir <= 315.0f; tempdir += 45.0f )
 		{
 			if( tempdir != turnaround && SV_StepDirection( actor, tempdir, dist ))
 				return;
@@ -510,7 +510,7 @@ void SV_NewChaseDir( edict_t *actor, vec3_t destination, float dist )
 	}
 	else
 	{
-		for( tempdir = 315; tempdir >= 0; tempdir -= 45 )
+		for( tempdir = 315.0f; tempdir >= 0.0f; tempdir -= 45.0f )
 		{
 			if( tempdir != turnaround && SV_StepDirection( actor, tempdir, dist ))
 				return;
@@ -518,7 +518,7 @@ void SV_NewChaseDir( edict_t *actor, vec3_t destination, float dist )
 	}
 
 	// we tried. run backwards. that ought to work...
-	if( turnaround != -1 && SV_StepDirection( actor, turnaround, dist ))
+	if( turnaround != -1.0f && SV_StepDirection( actor, turnaround, dist ))
 		return;
 
 	// well, we're stuck somehow.
@@ -542,7 +542,7 @@ void SV_MoveToOrigin( edict_t *ent, const vec3_t pflGoal, float dist, int iMoveT
 	{
 		if( iMoveType == MOVE_NORMAL )
 		{
-			if( SV_StepDirection( ent, ent->v.ideal_yaw, dist ) == 0 )
+			if( !SV_StepDirection( ent, ent->v.ideal_yaw, dist ))
 			{
 				SV_NewChaseDir( ent, vecDist, dist );
 			}

@@ -346,6 +346,7 @@ typedef struct
 	void	*(*KB_Find)( const char *name );
 	void	(*CAM_Think)( void );		// camera stuff
 	int	(*CL_IsThirdPerson)( void );
+	void	(*CL_CameraOffset)( float *ofs );
 	void	(*CL_CreateMove)( float frametime, usercmd_t *cmd, int active );
 	void	(*IN_ActivateMouse)( void );
 	void	(*IN_DeactivateMouse)( void );
@@ -390,8 +391,8 @@ typedef struct
 	int		old_trace_hull;		// used by PM_Push\Pop state
 	int		oldcount;			// used by PM_Push\Pop state
 
-	vec3_t		player_mins[4];		// 4 hulls allowed
-	vec3_t		player_maxs[4];		// 4 hulls allowed
+	vec3_t		player_mins[MAX_MAP_HULLS];	// 4 hulls allowed
+	vec3_t		player_maxs[MAX_MAP_HULLS];	// 4 hulls allowed
 
 	cl_user_message_t	msg[MAX_USER_MESSAGES];	// keep static to avoid fragment memory
 	cl_user_event_t	*events[MAX_EVENTS];
@@ -444,6 +445,7 @@ typedef struct
 	connstate_t	state;
 	qboolean		initialized;
 	qboolean		changelevel;		// during changelevel
+	qboolean		changedemo;		// during changedemo
 
 	// screen rendering information
 	float		disable_screen;		// showing loading plaque between levels
@@ -622,6 +624,7 @@ void CL_Demos_f( void );
 void CL_DeleteDemo_f( void );
 void CL_Record_f( void );
 void CL_Stop_f( void );
+void CL_FreeDemo( void );
 
 //
 // cl_events.c
@@ -650,6 +653,7 @@ void CL_DrawHUD( int state );
 void CL_InitEdicts( void );
 void CL_FreeEdicts( void );
 void CL_ClearWorld( void );
+void CL_DrawCenterPrint( void );
 void CL_FreeEntity( cl_entity_t *pEdict );
 void CL_CenterPrint( const char *text, float y );
 void CL_TextMessageParse( byte *pMemFile, int fileSize );
@@ -688,9 +692,11 @@ qboolean CL_DispatchUserMessage( const char *pszName, int iSize, void *pbuf );
 void SCR_VidInit( void );
 void SCR_TileClear( void );
 void SCR_AddDirtyPoint( int x, int y );
+void SCR_InstallParticlePalette( void );
 void SCR_EndLoadingPlaque( void );
 void SCR_RebuildGammaTable( void );
-void SCR_RegisterShaders( void );
+void SCR_RegisterTextures( void );
+void SCR_LoadCreditsFont( void );
 void SCR_MakeScreenShot( void );
 void SCR_MakeLevelShot( void );
 void SCR_NetSpeeds( void );
@@ -709,6 +715,7 @@ void V_RenderView( void );
 void V_SetupOverviewState( void );
 void V_ProcessOverviewCmds( usercmd_t *cmd );
 void V_MergeOverviewRefdef( ref_params_t *fd );
+void V_ProcessShowTexturesCmds( usercmd_t *cmd );
 void V_WriteOverviewScript( void );
 
 //
@@ -800,6 +807,7 @@ int Con_DrawString( int x, int y, const char *string, rgba_t setColor );
 int Con_DrawCharacter( int x, int y, int number, rgba_t color );
 void Con_DrawCharacterLen( int number, int *width, int *height );
 void Con_DefaultColor( int r, int g, int b );
+void Con_InvalidateFonts( void );
 void Con_SetFont( int fontNum );
 void Con_CharEvent( int key );
 void Con_RestoreFont( void );

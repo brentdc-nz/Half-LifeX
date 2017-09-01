@@ -85,9 +85,20 @@ static void FindNextChunk( const char *name )
 		iff_dataPtr -= 8;
 		iff_lastChunk = iff_dataPtr + 8 + ((iff_chunkLen + 1) & ~1);
 
-		if(!Q_strncmp( iff_dataPtr, name, 4 ))
+		if( !Q_strncmp( iff_dataPtr, name, 4 ))
 			return;
 	}
+}
+
+/*
+=================
+FindChunk
+=================
+*/
+static void FindChunk( const char *name )
+{
+	iff_lastChunk = iff_data;
+	FindNextChunk( name );
 }
 
 /*
@@ -115,21 +126,12 @@ qboolean StreamFindNextChunk( file_t *file, const char *name, int *last_chunk )
 		FS_Seek( file, -8, SEEK_CUR );
 		*last_chunk = FS_Tell( file ) + 8 + (( iff_chunk_len + 1 ) & ~1 );
 		FS_Read( file, chunkName, 4 );
+
 		if( !Q_strncmp( chunkName, name, 4 ))
 			return true;
 	}
-	return false;
-}
 
-/*
-=================
-FindChunk
-=================
-*/
-static void FindChunk( const char *name )
-{
-	iff_lastChunk = iff_data;
-	FindNextChunk( name );
+	return false;
 }
 
 /*
@@ -142,13 +144,15 @@ qboolean Sound_LoadWAV( const char *name, const byte *buffer, size_t filesize )
 	int	samples, fmt;
 	qboolean	mpeg_stream = false;
 
-	if( !buffer || filesize <= 0 ) return false;
+	if( !buffer || filesize <= 0 )
+		return false;
 
 	iff_data = buffer;
 	iff_end = buffer + filesize;
 
 	// find "RIFF" chunk
 	FindChunk( "RIFF" );
+
 	if( !( iff_dataPtr && !Q_strncmp( iff_dataPtr + 8, "WAVE", 4 )))
 	{
 		MsgDev( D_ERROR, "Sound_LoadWAV: %s missing 'RIFF/WAVE' chunks\n", name );
@@ -158,6 +162,7 @@ qboolean Sound_LoadWAV( const char *name, const byte *buffer, size_t filesize )
 	// get "fmt " chunk
 	iff_data = iff_dataPtr + 12;
 	FindChunk( "fmt " );
+
 	if( !iff_dataPtr )
 	{
 		MsgDev( D_ERROR, "Sound_LoadWAV: %s missing 'fmt ' chunk\n", name );
@@ -166,6 +171,7 @@ qboolean Sound_LoadWAV( const char *name, const byte *buffer, size_t filesize )
 
 	iff_dataPtr += 8;
 	fmt = GetLittleShort();
+
 	if( fmt != 1 )
 	{
 		if( fmt != 85 )
@@ -173,7 +179,11 @@ qboolean Sound_LoadWAV( const char *name, const byte *buffer, size_t filesize )
 			MsgDev( D_ERROR, "Sound_LoadWAV: %s not a microsoft PCM format\n", name );
 			return false;
 		}
-		else mpeg_stream = true;
+		else
+		{
+			// mpeg stream in wav container
+			mpeg_stream = true;
+		}
 	}
 
 	sound.channels = GetLittleShort();
@@ -222,6 +232,7 @@ qboolean Sound_LoadWAV( const char *name, const byte *buffer, size_t filesize )
 
 	// find data chunk
 	FindChunk( "data" );
+
 	if( !iff_dataPtr )
 	{
 		MsgDev( D_WARN, "Sound_LoadWAV: %s missing 'data' chunk\n", name );
@@ -254,7 +265,7 @@ qboolean Sound_LoadWAV( const char *name, const byte *buffer, size_t filesize )
 	// e.g. CAd menu sounds
 	if( mpeg_stream )
 	{
-		int hdr_size = (iff_dataPtr - buffer);
+		int	hdr_size = (iff_dataPtr - buffer);
 
 		if(( filesize - hdr_size ) < 16384 )
 		{
@@ -287,6 +298,7 @@ qboolean Sound_LoadWAV( const char *name, const byte *buffer, size_t filesize )
 			}
 		}
 	}
+
 	return true;
 }
 

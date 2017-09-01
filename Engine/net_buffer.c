@@ -21,7 +21,6 @@ GNU General Public License for more details.
 // precalculated bit masks for WriteUBitLong.
 // Using these tables instead of doing the calculations
 // gives a 33% speedup in WriteUBitLong.
-
 static dword	BitWriteMasks[32][33];
 static dword	ExtraMasks[32];
 
@@ -68,7 +67,6 @@ void BF_InitExt( sizebuf_t *bf, const char *pDebugName, void *pData, int nBytes,
 void BF_StartWriting( sizebuf_t *bf, void *pData, int nBytes, int iStartBit, int nBits )
 {
 	// make sure it's dword aligned and padded.
-//	Assert(( nBytes % 4 ) == 0 );
 	Assert(((dword)pData & 3 ) == 0 );
 
 	bf->pData = (byte *)pData;
@@ -137,14 +135,6 @@ void BF_WriteOneBit( sizebuf_t *bf, int nValue )
 
 void BF_WriteUBitLongExt( sizebuf_t *bf, uint curData, int numbits, qboolean bCheckRange )
 {
-#ifdef _NETDEBUG
-	// make sure it doesn't overflow.
-	if( bCheckRange && numbits < 32 )
-	{
-		if( curData >= (dword)BIT( numbits ))
-			MsgDev( D_ERROR, "Write%s: out of range value!\n", bf->pDebugName );
-	}
-#endif
 	Assert( numbits >= 0 && numbits <= 32 );
 
 	// bounds checking..
@@ -200,20 +190,6 @@ void BF_WriteSBitLong( sizebuf_t *bf, int data, int numbits )
 	// (Some old code writes direct integers right into the buffer).
 	if( data < 0 )
 	{
-#ifdef _NETDEBUG
-	if( numbits < 32 )
-	{
-		// Make sure it doesn't overflow.
-		if( data < 0 )
-		{
-			Assert( data >= -BIT( numbits - 1 ));
-		}
-		else
-		{
-			Assert( data < BIT( numbits - 1 ));
-		}
-	}
-#endif
 		BF_WriteUBitLongExt( bf, (uint)( 0x80000000 + data ), numbits - 1, false );
 		BF_WriteOneBit( bf, 1 );
 	}
@@ -291,43 +267,19 @@ void BF_WriteBitAngle( sizebuf_t *bf, float fAngle, int numbits )
 	BF_WriteUBitLong( bf, (uint)d, numbits );
 }
 
-void BF_WriteBitCoord( sizebuf_t *bf, const float f )
-{
-	int	signbit = ( f <= -COORD_RESOLUTION );
-	int	fractval = abs(( int )( f * COORD_DENOMINATOR )) & ( COORD_DENOMINATOR - 1 );
-	int	intval = (int)abs( f );
-
-	// Send the bit flags that indicate whether we have an integer part and/or a fraction part.
-	BF_WriteOneBit( bf, intval );
-	BF_WriteOneBit( bf, fractval );
-
-	if( intval || fractval )
-	{
-		// send the sign bit
-		BF_WriteOneBit( bf, signbit );
-
-		// send the integer if we have one.
-		if( intval )
-		{
-			// adjust the integers from [1..MAX_COORD_VALUE] to [0..MAX_COORD_VALUE-1]
-			intval--;
-			BF_WriteUBitLong( bf, (uint)intval, COORD_INTEGER_BITS );
-		}
-		
-		// send the fraction if we have one
-		if( fractval )
-		{
-			BF_WriteUBitLong( bf, (uint)fractval, COORD_FRACTIONAL_BITS );
-		}
-	}
-}
-
 void BF_WriteCoord( sizebuf_t *bf, float val )
 {
 	// g-cont. we loose precision here but keep old size of coord variable!
 	if( host.features & ENGINE_WRITE_LARGE_COORD )
 		BF_WriteShort( bf, (int)( val * 2.0f ));
 	else BF_WriteShort( bf, (int)( val * 8.0f ));
+}
+
+void BF_WriteVec3Coord( sizebuf_t *bf, const float *fa )
+{
+	BF_WriteCoord( bf, fa[0] );
+	BF_WriteCoord( bf, fa[1] );
+	BF_WriteCoord( bf, fa[2] );
 }
 
 void BF_WriteBitFloat( sizebuf_t *bf, float val )
@@ -339,57 +291,6 @@ void BF_WriteBitFloat( sizebuf_t *bf, float val )
 
 	intVal = *((long *)&val );
 	BF_WriteUBitLong( bf, intVal, 32 );
-}
-
-void BF_WriteBitVec3Coord( sizebuf_t *bf, const float *fa )
-{
-	int	xflag, yflag, zflag;
-
-	xflag = ( fa[0] >= COORD_RESOLUTION ) || ( fa[0] <= -COORD_RESOLUTION );
-	yflag = ( fa[1] >= COORD_RESOLUTION ) || ( fa[1] <= -COORD_RESOLUTION );
-	zflag = ( fa[2] >= COORD_RESOLUTION ) || ( fa[2] <= -COORD_RESOLUTION );
-
-	BF_WriteOneBit( bf, xflag );
-	BF_WriteOneBit( bf, yflag );
-	BF_WriteOneBit( bf, zflag );
-
-	if( xflag ) BF_WriteBitCoord( bf, fa[0] );
-	if( yflag ) BF_WriteBitCoord( bf, fa[1] );
-	if( zflag ) BF_WriteBitCoord( bf, fa[2] );
-}
-
-void BF_WriteBitNormal( sizebuf_t *bf, float f )
-{
-	int	signbit = ( f <= -NORMAL_RESOLUTION );
-	uint	fractval = abs(( int )(f * NORMAL_DENOMINATOR ));
-
-	if( fractval > NORMAL_DENOMINATOR )
-		fractval = NORMAL_DENOMINATOR;
-
-	// send the sign bit
-	BF_WriteOneBit( bf, signbit );
-
-	// send the fractional component
-	BF_WriteUBitLong( bf, fractval, NORMAL_FRACTIONAL_BITS );
-}
-
-void BF_WriteBitVec3Normal( sizebuf_t *bf, const float *fa )
-{
-	int	xflag, yflag;
-	int	signbit;
-
-	xflag = ( fa[0] >= NORMAL_RESOLUTION ) || ( fa[0] <= -NORMAL_RESOLUTION );
-	yflag = ( fa[1] >= NORMAL_RESOLUTION ) || ( fa[1] <= -NORMAL_RESOLUTION );
-
-	BF_WriteOneBit( bf, xflag );
-	BF_WriteOneBit( bf, yflag );
-
-	if( xflag ) BF_WriteBitNormal( bf, fa[0] );
-	if( yflag ) BF_WriteBitNormal( bf, fa[1] );
-	
-	// Write z sign bit
-	signbit = ( fa[2] <= -NORMAL_RESOLUTION );
-	BF_WriteOneBit( bf, signbit );
 }
 
 void BF_WriteChar( sizebuf_t *bf, int val )
@@ -604,103 +505,6 @@ uint BF_ReadBitLong( sizebuf_t *bf, int numbits, qboolean bSigned )
 	return BF_ReadUBitLong( bf, numbits );
 }
 
-
-// Basic Coordinate Routines (these contain bit-field size AND fixed point scaling constants)
-float BF_ReadBitCoord( sizebuf_t *bf )
-{
-	int	intval = 0, fractval = 0, signbit = 0;
-	float	value = 0.0;
-
-	// read the required integer and fraction flags
-	intval = BF_ReadOneBit( bf );
-	fractval = BF_ReadOneBit( bf );
-
-	// if we got either parse them, otherwise it's a zero.
-	if( intval || fractval )
-	{
-		// read the sign bit
-		signbit = BF_ReadOneBit( bf );
-
-		// if there's an integer, read it in
-		if( intval )
-		{
-			// adjust the integers from [0..MAX_COORD_VALUE-1] to [1..MAX_COORD_VALUE]
-			intval = BF_ReadUBitLong( bf, COORD_INTEGER_BITS ) + 1;
-		}
-
-		// if there's a fraction, read it in
-		if( fractval )
-		{
-			fractval = BF_ReadUBitLong( bf, COORD_FRACTIONAL_BITS );
-		}
-
-		// calculate the correct floating point value
-		value = intval + ((float)fractval * COORD_RESOLUTION );
-
-		// fixup the sign if negative.
-		if( signbit ) value = -value;
-	}
-	return value;
-}
-
-void BF_ReadBitVec3Coord( sizebuf_t *bf, vec3_t fa )
-{
-	int	xflag, yflag, zflag;
-
-	// This vector must be initialized! Otherwise, If any of the flags aren't set, 
-	// the corresponding component will not be read and will be stack garbage.
-	fa[0] = fa[1] = fa[2] = 0.0f;
-
-	xflag = BF_ReadOneBit( bf );
-	yflag = BF_ReadOneBit( bf ); 
-	zflag = BF_ReadOneBit( bf );
-
-	if( xflag ) fa[0] = BF_ReadBitCoord( bf );
-	if( yflag ) fa[1] = BF_ReadBitCoord( bf );
-	if( zflag ) fa[2] = BF_ReadBitCoord( bf );
-}
-
-float BF_ReadBitNormal( sizebuf_t *bf )
-{
-	// read the sign bit
-	int	signbit = BF_ReadOneBit( bf );
-
-	// read the fractional part
-	uint fractval = BF_ReadUBitLong( bf, NORMAL_FRACTIONAL_BITS );
-
-	// calculate the correct floating point value
-	float value = (float)fractval * NORMAL_RESOLUTION;
-
-	// fixup the sign if negative.
-	if( signbit ) value = -value;
-
-	return value;
-}
-
-void BF_ReadBitVec3Normal( sizebuf_t *bf, vec3_t fa )
-{
-	int	xflag = BF_ReadOneBit( bf );
-	int	yflag = BF_ReadOneBit( bf ); 
-	int	znegative;
-	float	fafafbfb;
-
-	if( xflag ) fa[0] = BF_ReadBitNormal( bf );
-	else fa[0] = 0.0f;
-
-	if( yflag ) fa[1] = BF_ReadBitNormal( bf );
-	else fa[1] = 0.0f;
-
-	// the first two imply the third (but not its sign)
-	znegative = BF_ReadOneBit( bf );
-	fafafbfb = fa[0] * fa[0] + fa[1] * fa[1];
-
-	if( fafafbfb < 1.0f )
-		fa[2] = sqrt( 1.0f - fafafbfb );
-	else fa[2] = 0.0f;
-
-	if( znegative ) fa[2] = -fa[2];
-}
-
 int BF_ReadChar( sizebuf_t *bf )
 {
 	return BF_ReadSBitLong( bf, sizeof( char ) << 3 );
@@ -727,6 +531,13 @@ float BF_ReadCoord( sizebuf_t *bf )
 	if( host.features & ENGINE_WRITE_LARGE_COORD )
 		return (float)(BF_ReadShort( bf ) * ( 1.0f / 2.0f ));
 	return (float)(BF_ReadShort( bf ) * ( 1.0f / 8.0f ));
+}
+
+void BF_ReadVec3Coord( sizebuf_t *bf, vec3_t fa )
+{
+	fa[0] = BF_ReadCoord( bf );
+	fa[1] = BF_ReadCoord( bf );
+	fa[2] = BF_ReadCoord( bf );
 }
 
 long BF_ReadLong( sizebuf_t *bf )

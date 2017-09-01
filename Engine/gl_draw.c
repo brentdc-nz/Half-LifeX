@@ -187,7 +187,52 @@ void R_DrawStretchRaw( float x, float y, float w, float h, int cols, int rows, c
 	/*p*/glEnd();
 }
 
+/*
+=============
+R_UploadStretchRaw //MARTY - Not currently used
+=============
+*/
+void R_UploadStretchRaw( int texture, int cols, int rows, int width, int height, const byte *data )
+{
+	byte		*raw = NULL;
+	gltexture_t	*tex;
 
+	if( !GL_Support( GL_ARB_TEXTURE_NPOT_EXT ))
+	{
+		// check the dimensions
+		width = NearestPOW( width, true );
+		height = NearestPOW( height, false );
+	}
+	else
+	{
+		width = bound( 128, width, glConfig.max_2d_texture_size );
+		height = bound( 128, height, glConfig.max_2d_texture_size );
+	}
+
+	if( cols != width || rows != height )
+	{
+		raw = GL_ResampleTexture( data, cols, rows, width, height, false );
+		cols = width;
+		rows = height;
+	}
+	else
+	{
+		raw = (byte *)data;
+	}
+
+	if( cols > glConfig.max_2d_texture_size )
+		Host_Error( "R_UploadStretchRaw: size %i exceeds hardware limits\n", cols );
+	if( rows > glConfig.max_2d_texture_size )
+		Host_Error( "R_UploadStretchRaw: size %i exceeds hardware limits\n", rows );
+
+	tex = R_GetTexture( texture );
+	GL_Bind( GL_TEXTURE0, texture );
+	tex->width = cols;
+	tex->height = rows;
+
+	/*p*/glTexImage2D( GL_TEXTURE_2D, 0, tex->format, cols, rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, raw );
+	GL_TexFilter( tex, false );
+}
 
 /*
 ===============

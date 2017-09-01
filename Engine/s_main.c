@@ -307,7 +307,7 @@ channel_t *SND_PickDynamicChannel( int entnum, int channel, sfx_t *sfx )
 		timeleft = 0;
 		if( ch->sfx )
 		{
-			timeleft = 1;	//ch->end - paintedtime
+			timeleft = 1; // ch->end - paintedtime
 		}
 
 		if( timeleft < life_left )
@@ -358,8 +358,9 @@ channel_t *SND_PickStaticChannel( int entnum, sfx_t *sfx, const vec3_t pos )
 	channel_t	*ch = NULL;
 	int	i, dupe = 0;
 
-#if 1	// TODO: remove this code when predicting is will be done
-	// check for dupliacte sounds
+#if 1	
+	// TODO: remove this code when predicting is will be done
+	// check for duplicate sounds
 	for( i = 0; i < total_channels; i++ )
 	{
 		if( channels[i].sfx == sfx && VectorCompare( channels[i].origin, pos ))
@@ -509,6 +510,7 @@ float SND_FadeToNewGain( channel_t *ch, float gain_new )
 		// close enough, set gain = target
 		ch->ob_gain = ch->ob_gain_target;
 	}
+
 	return ch->ob_gain;
 }
 
@@ -1141,7 +1143,7 @@ void S_AmbientSound( const vec3_t pos, int ent, sound_t handle, float fvol, floa
 	
 	if( pitch == 0 )
 	{
-		MsgDev( D_WARN, "S_StartStaticSound: ( %s ) ignored, called with pitch 0\n", sfx->name );
+		MsgDev( D_WARN, "S_AmbientSound: ( %s ) ignored, called with pitch 0\n", sfx->name );
 		return;
 	}
 
@@ -1465,7 +1467,7 @@ void S_UpdateChannels( void )
 	endtime = soundtime + s_mixahead->value * SOUND_DMA_SPEED;
 	samps = dma.samples >> 1;
 
-	if((int)( endtime - soundtime ) > samps )
+	if((int)(endtime - soundtime) > samps )
 		endtime = soundtime + samps;
 	
 	if(( endtime - paintedtime ) & 0x3 )
@@ -1503,11 +1505,11 @@ Called once each time through the main loop
 void S_RenderFrame( ref_params_t *fd )
 {
 	int		i, j, total;
-	con_nprint_t	info;
 	channel_t		*ch, *combine;
+	con_nprint_t	info;
 
 	if( !dma.initialized ) return;
-	if( !fd ) return;	// too early
+	if( !fd ) return; // too early
 
 	// if the loading plaque is up, clear everything
 	// out to make sure we aren't looping a dirty
@@ -1593,8 +1595,8 @@ void S_RenderFrame( ref_params_t *fd )
 			if( ch->sfx && ( ch->leftvol || ch->rightvol ))
 			{
 				info.index = total;
-				Con_NXPrintf( &info, "chan %i, lv%3i rv%3i %s\n",
-				i, ch->leftvol, ch->rightvol, ch->sfx->name );
+				Con_NXPrintf( &info, "chan %i, pos (%.f %.f %.f) ent %i, lv%3i rv%3i %s\n",
+				i, ch->origin[0], ch->origin[1], ch->origin[2], ch->entnum, ch->leftvol, ch->rightvol, ch->sfx->name );
 				total++;
 			}
 		}
@@ -1650,7 +1652,7 @@ void S_Music_f( void )
 	else if( c == 2 )
 	{
 		string	intro, main, track;
-		char	*ext[] = { "wav", "mp3" };
+		char	*ext[] = { "mp3", "wav" };
 		int	i;
 
 		Q_strncpy( track, Cmd_Argv( 1 ), sizeof( track ));
@@ -1711,6 +1713,8 @@ void S_SoundInfo_f( void )
 	Msg( "%5d bits/sample\n", 16 );
 	Msg( "%5d bytes/sec\n", SOUND_DMA_SPEED );
 	Msg( "%5d total_channels\n", total_channels );
+
+	S_PrintBackgroundTrackState ();
 }
 
 /*

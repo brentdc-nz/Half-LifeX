@@ -88,7 +88,7 @@ void SCR_DrawFPS( void )
 	{
 		Q_snprintf( fpsstring, sizeof( fpsstring ), "%4i fps", (int)(calc + 0.5));
 		MakeRGBA( color, 255, 255, 255, 255 );
-          }
+	}
 
 	Con_DrawStringLen( fpsstring, &offset, NULL );
 	Con_DrawString( scr_width->integer - offset - 2, 4, fpsstring, color );
@@ -207,26 +207,24 @@ void SCR_MakeLevelShot( void )
 	Cbuf_AddText( "levelshot\n" );
 }
 
-void SCR_MakeScreenShot( void )
+void SCR_MakeScreenShot( void ) //MARTY FIXME WIP
 {
 	qboolean	iRet = false;
 
 	switch( cls.scrshot_action )
 	{
-	case scrshot_normal:
+/*	case scrshot_normal:
 		iRet = VID_ScreenShot( cls.shotname, VID_SCREENSHOT );
 		break;
 	case scrshot_snapshot:
-//MARTY FIXME WIP
-//		iRet = VID_ScreenShot( cls.shotname, VID_SNAPSHOT );
+		iRet = VID_ScreenShot( cls.shotname, VID_SNAPSHOT );
 		break;
 	case scrshot_plaque:
 		iRet = VID_ScreenShot( cls.shotname, VID_LEVELSHOT );
 		break;
 	case scrshot_savegame:
 	case scrshot_demoshot:
-//MARTY FIXME WIP - Worry about screenshots latter.
-//		iRet = VID_ScreenShot( cls.shotname, VID_MINISHOT );
+		iRet = VID_ScreenShot( cls.shotname, VID_MINISHOT );
 		break;
 	case scrshot_envshot:
 		iRet = VID_CubemapShot( cls.shotname, cl_envshot_size->integer, cls.envshot_vieworg, false );
@@ -235,9 +233,9 @@ void SCR_MakeScreenShot( void )
 		iRet = VID_CubemapShot( cls.shotname, cl_envshot_size->integer, cls.envshot_vieworg, true );
 		break;
 	case scrshot_mapshot:
-//MARTY FIXME WIP
-//		iRet = VID_ScreenShot( cls.shotname, VID_MAPSHOT );
-		break;
+		iRet = VID_ScreenShot( cls.shotname, VID_MAPSHOT );
+*/		break;
+
 	case scrshot_inactive:
 		return;
 	}
@@ -309,14 +307,10 @@ SCR_AddDirtyPoint
 */
 void SCR_AddDirtyPoint( int x, int y )
 {
-	if (x < scr_dirty.x1)
-		scr_dirty.x1 = x;
-	if (x > scr_dirty.x2)
-		scr_dirty.x2 = x;
-	if (y < scr_dirty.y1)
-		scr_dirty.y1 = y;
-	if (y > scr_dirty.y2)
-		scr_dirty.y2 = y;
+	if( x < scr_dirty.x1 ) scr_dirty.x1 = x;
+	if( x > scr_dirty.x2 ) scr_dirty.x2 = x;
+	if( y < scr_dirty.y1 ) scr_dirty.y1 = y;
+	if( y > scr_dirty.y2 ) scr_dirty.y2 = y;
 }
 
 /*
@@ -346,6 +340,7 @@ void SCR_TileClear( void )
 	// erase rect will be the union of the past three frames
 	// so tripple buffering works properly
 	clear = scr_dirty;
+
 	for( i = 0; i < 2; i++ )
 	{
 		if( scr_old_dirty[i].x1 < clear.x1 )
@@ -441,7 +436,7 @@ void SCR_UpdateScreen( void )
 	V_PostRender();
 }
 
-static void SCR_LoadCreditsFont( void )
+void SCR_LoadCreditsFont( void )
 {
 	int	fontWidth;
 
@@ -482,7 +477,7 @@ static void SCR_LoadCreditsFont( void )
 	}
 }
 
-static void SCR_InstallParticlePalette( void )
+void SCR_InstallParticlePalette( void )
 {
 	rgbdata_t	*pic;
 	int	i;
@@ -516,7 +511,7 @@ static void SCR_InstallParticlePalette( void )
 	}
 }
 
-void SCR_RegisterShaders( void )
+void SCR_RegisterTextures( void )
 {
 	cls.fillImage = GL_LoadTexture( "*white", NULL, 0, TF_IMAGE ); // used for FillRGBA
 	cls.particleImage = GL_LoadTexture( "*particle", NULL, 0, TF_IMAGE );
@@ -528,9 +523,6 @@ void SCR_RegisterShaders( void )
 	else cls.loadingBar = GL_LoadTexture( "gfx.wad/lambda.lmp", NULL, 0, TF_IMAGE ); 
 	cls.tileImage = GL_LoadTexture( "gfx.wad/backtile.lmp", NULL, 0, TF_UNCOMPRESSED|TF_NOPICMIP|TF_NOMIPMAP );
 	cls.hChromeSprite = pfnSPR_Load( "sprites/shellchrome.spr" );
-
-	SCR_LoadCreditsFont ();
-	SCR_InstallParticlePalette ();
 }
 
 /*
@@ -621,19 +613,10 @@ void SCR_Init( void )
 		if( !host.developer ) host.developer = 1; // we need console, because menu is missing
 	}
 
-// MARTY TEST START
-//	Cbuf_AddText( "sv_cheats 1\n" );//MARTY TEST
+	SCR_LoadCreditsFont ();
+	SCR_InstallParticlePalette ();
 
-//	Cbuf_AddText( "map c1a4\n" );//MARTY TEST
-//	Cbuf_AddText( "map c2a3e\n" );//MARTY TEST
-//	Cbuf_AddText( "map c1a1d\n" );//MARTY TEST
-//	Cbuf_AddText( "map c2a2g\n" );//MARTY TEST
-//	Cbuf_AddText( "map c2a4b\n" );//MARTY TEST
-//	Cbuf_AddText( "map c2a5d\n" );//MARTY TEST
-//	Cbuf_AddText( "map c1a0\n" );//MARTY TEST
-// MARTY TEST END
-
-	SCR_RegisterShaders ();
+	SCR_RegisterTextures ();
 	SCR_InitCinematic();
 	SCR_VidInit();
 

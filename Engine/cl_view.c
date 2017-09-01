@@ -79,9 +79,6 @@ void V_SetupRefDef( void )
 	if( cl.refdef.viewport[3] > scr_height->integer )
 		cl.refdef.viewport[3] = scr_height->integer;
 
-	cl.refdef.viewport[2] &= ~7;
-	cl.refdef.viewport[3] &= ~1;
-
 	cl.refdef.viewport[0] = (scr_width->integer - cl.refdef.viewport[2]) / 2;
 	cl.refdef.viewport[1] = (scr_height->integer - sb_lines - cl.refdef.viewport[3]) / 2;
 
@@ -259,6 +256,32 @@ void V_MergeOverviewRefdef( ref_params_t *fd )
 	fd->viewangles[2] = (ov->rotated) ? (ov->flZoom < 0.0f) ? 180.0f : 0.0f : (ov->flZoom < 0.0f) ? -90.0f : 90.0f;
 
 	Mod_SetOrthoBounds( mins, maxs );
+}
+
+/*
+===============
+V_ProcessShowTexturesCmds
+
+navigate around texture atlas
+===============
+*/
+void V_ProcessShowTexturesCmds( usercmd_t *cmd )
+{
+	static int	oldbuttons;
+	int		changed;
+	int		pressed, released;
+
+	if( !gl_showtextures->integer ) return;
+
+	changed = (oldbuttons ^ cmd->buttons);
+	pressed =  changed & cmd->buttons;
+	released = changed & (~cmd->buttons);
+
+	if( released & ( IN_RIGHT|IN_MOVERIGHT ))
+		Cvar_SetFloat( "r_showtextures", gl_showtextures->integer + 1 );
+	if( released & ( IN_LEFT|IN_MOVELEFT ))
+		Cvar_SetFloat( "r_showtextures", max( 1, gl_showtextures->integer - 1 ));
+	oldbuttons = cmd->buttons;
 }
 
 /*

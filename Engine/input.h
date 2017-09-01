@@ -51,7 +51,9 @@ void IN_MouseEvent( int mstate );
 void IN_ActivateMouse( qboolean force );
 void IN_DeactivateMouse( void );
 void IN_ToggleClientMouse( int newstate, int oldstate );
+#ifndef _XBOX //MARTY
 long IN_WndProc( void *hWnd, uint uMsg, uint wParam, long lParam );
+#endif
 void IN_SetCursor( HICON hCursor );
 
 #endif//INPUT_H

@@ -20,6 +20,7 @@ GNU General Public License for more details.
 #include "library.h"
 #include "beamdef.h"
 #include "particledef.h"
+#include "entity_types.h"
 
 #define IsLiquidContents( cnt )	( cnt == CONTENTS_WATER || cnt == CONTENTS_SLIME || cnt == CONTENTS_LAVA )
 
@@ -369,7 +370,7 @@ int R_ComputeFxBlend( cl_entity_t *e )
 		break;	
 	}
 
-	if( RI.currentmodel->type != mod_brush )
+	if( e->model->type != mod_brush )
 	{
 		// NOTE: never pass sprites with rendercolor '0 0 0' it's a stupid Valve Hammer Editor bug
 		if( !e->curstate.rendercolor.r && !e->curstate.rendercolor.g && !e->curstate.rendercolor.b )
@@ -413,10 +414,15 @@ qboolean R_AddEntity( struct cl_entity_s *clent, int entityType )
 	if( clent->curstate.effects & EF_NODRAW )
 		return false; // done
 
+	clent->curstate.renderamt = R_ComputeFxBlend( clent );
+
 	if( clent->curstate.rendermode != kRenderNormal && clent->curstate.renderamt <= 0.0f )
-		return true; // done
+		return true; // invisible
 
 	clent->curstate.entityType = entityType;
+
+	if( entityType == ET_FRAGMENTED )
+		r_stats.c_client_ents++;
 
 	if( R_FollowEntity( clent ))
 	{
@@ -512,7 +518,7 @@ R_GetFarClip
 static float R_GetFarClip( void )
 {
 	if( cl.worldmodel && RI.drawWorld )
-		return RI.refdef.movevars->zmax * 1.5f;
+		return cl.refdef.movevars->zmax * 1.5f;
 	return 2048.0f;
 }
 
@@ -776,9 +782,33 @@ R_SetupFrame
 */
 static void R_SetupFrame( void )
 {
+	vec3_t	viewOrg, viewAng;
+
+	if( RP_NORMALPASS() && cl.thirdperson )
+	{
+		vec3_t	cam_ofs, vpn;
+
+		clgame.dllFuncs.CL_CameraOffset( cam_ofs );
+
+		viewAng[PITCH] = cam_ofs[PITCH];
+		viewAng[YAW] = cam_ofs[YAW];
+		viewAng[ROLL] = 0;
+
+		AngleVectors( viewAng, vpn, NULL, NULL );
+		VectorMA( RI.refdef.vieworg, -cam_ofs[ROLL], vpn, viewOrg );
+	}
+	else
+	{
+		VectorCopy( RI.refdef.vieworg, viewOrg );
+		VectorCopy( RI.refdef.viewangles, viewAng );
+	}
+
 	// build the transformation matrix for the given view angles
-	VectorCopy( RI.refdef.vieworg, RI.vieworg );
-	AngleVectors( RI.refdef.viewangles, RI.vforward, RI.vright, RI.vup );
+	VectorCopy( viewOrg, RI.vieworg );
+	AngleVectors( viewAng, RI.vforward, RI.vright, RI.vup );
+
+	// setup viewplane dist
+	RI.viewplanedist = DotProduct( RI.vieworg, RI.vforward );
 
 	if( !r_lockcull->integer )
 	{
@@ -793,13 +823,16 @@ static void R_SetupFrame( void )
 	// sort opaque entities by model type to avoid drawing model shadows under alpha-surfaces
 	qsort( tr.solid_entities, tr.num_solid_entities, sizeof( cl_entity_t* ), R_SolidEntityCompare );
 
-	// sort translucents entities by rendermode and distance
-	qsort( tr.trans_entities, tr.num_trans_entities, sizeof( cl_entity_t* ), R_TransEntityCompare );
+	if( !gl_nosort->integer )
+	{
+		// sort translucents entities by rendermode and distance
+		qsort( tr.trans_entities, tr.num_trans_entities, sizeof( cl_entity_t* ), R_TransEntityCompare );
+	}
 
 	// current viewleaf
 	if( RI.drawWorld )
 	{
-		RI.waveHeight = RI.refdef.movevars->waveHeight * 2.0f;	// set global waveheight
+		RI.waveHeight = cl.refdef.movevars->waveHeight * 2.0f;	// set global waveheight
 		RI.isSkyVisible = false; // unknown at this moment
 
 		if(!( RI.params & RP_OLDVIEWLEAF ))
@@ -877,11 +910,82 @@ static void R_EndGL( void )
 
 /*
 =============
+R_RecursiveFindWaterTexture
+
+using to find source waterleaf with
+watertexture to grab fog values from it
+=============
+*/
+static gltexture_t *R_RecursiveFindWaterTexture( const mnode_t *node, const mnode_t *ignore, qboolean down )
+{
+	gltexture_t *tex = NULL;
+
+	// assure the initial node is not null
+	// we could check it here, but we would rather check it 
+	// outside the call to get rid of one additional recursion level
+	ASSERT( node != NULL );
+
+	// ignore solid nodes
+	if( node->contents == CONTENTS_SOLID )
+		return NULL;
+
+	if( node->contents < 0 )
+	{
+		mleaf_t		*pleaf;
+		msurface_t	**mark;
+		int		i, c;
+
+		// ignore non-liquid leaves
+		if( node->contents != CONTENTS_WATER && node->contents != CONTENTS_LAVA && node->contents != CONTENTS_SLIME )
+			 return NULL;
+
+		// find texture
+		pleaf = (mleaf_t *)node;
+		mark = pleaf->firstmarksurface;
+		c = pleaf->nummarksurfaces;	
+
+		for( i = 0; i < c; i++, mark++ )
+		{
+			if( (*mark)->flags & SURF_DRAWTURB && (*mark)->texinfo && (*mark)->texinfo->texture )
+				return R_GetTexture( (*mark)->texinfo->texture->gl_texturenum );
+		}
+
+		// texture not found
+		return NULL;
+	}
+
+	// this is a regular node
+	// traverse children
+	if( node->children[0] && ( node->children[0] != ignore ))
+	{
+		tex = R_RecursiveFindWaterTexture( node->children[0], node, true );
+		if( tex ) return tex;
+	}
+
+	if( node->children[1] && ( node->children[1] != ignore ))
+	{
+		tex = R_RecursiveFindWaterTexture( node->children[1], node, true );
+		if( tex )	return tex;
+	}
+
+	// for down recursion, return immediately
+	if( down ) return NULL;
+
+	// texture not found, step up if any
+	if( node->parent )
+		return R_RecursiveFindWaterTexture( node->parent, node, false );
+
+	// top-level node, bail out
+	return NULL;
+}
+
+/*
+=============
 R_CheckFog
 
 check for underwater fog
-FIXME: this code is wrong, we need to compute fog volumes (as water volumes)
-and get fog params from texture water on a surface.
+Using backward recursion to find waterline leaf
+from underwater leaf (idea: XaeroX)
 =============
 */
 static void R_CheckFog( void )
@@ -931,23 +1035,11 @@ static void R_CheckFog( void )
 		}
 		else
 		{
-			msurface_t	**surf;
-
-			count = r_viewleaf->nummarksurfaces;	
-
-			for( i = 0, surf = r_viewleaf->firstmarksurface; i < count; i++, surf++ )
-			{
-				if((*surf)->flags & SURF_DRAWTURB && (*surf)->texinfo && (*surf)->texinfo->texture )
-				{
-					tex = R_GetTexture( (*surf)->texinfo->texture->gl_texturenum );
-					RI.cached_contents = r_viewleaf->contents;
-					break;
-				}
-			}
+			tex = R_RecursiveFindWaterTexture( r_viewleaf->parent, NULL, false );
+			if( tex ) RI.cached_contents = r_viewleaf->contents;
 		}
 
-		if( i == count || !tex )
-			return;	// no valid fogs
+		if( !tex ) return;	// no valid fogs
 
 		// copy fog params
 		RI.fogColor[0] = tex->fogParams[0] / 255.0f;
@@ -1009,8 +1101,6 @@ void R_DrawEntitiesOnList( void )
 		ASSERT( RI.currententity != NULL );
 		ASSERT( RI.currententity->model != NULL );
 
-		RI.currententity->curstate.renderamt = R_ComputeFxBlend( RI.currententity );
-
 		switch( RI.currentmodel->type )
 		{
 		case mod_brush:
@@ -1037,7 +1127,7 @@ void R_DrawEntitiesOnList( void )
 
 	// NOTE: some mods with custom renderer may generate glErrors
 	// so we clear it here
-//	while( pglGetError() != GL_NO_ERROR ); //MARTY FIXME WIP
+	while( /*p*/glGetError() != GL_NO_ERROR );
 
 	// don't fogging translucent surfaces
 	if( !RI.fogCustom )
@@ -1056,8 +1146,6 @@ void R_DrawEntitiesOnList( void )
 	
 		ASSERT( RI.currententity != NULL );
 		ASSERT( RI.currententity->model != NULL );
-
-		RI.currententity->curstate.renderamt = R_ComputeFxBlend( RI.currententity );
 
 		switch( RI.currentmodel->type )
 		{
@@ -1086,7 +1174,7 @@ void R_DrawEntitiesOnList( void )
 
 	// NOTE: some mods with custom renderer may generate glErrors
 	// so we clear it here
-//	while( pglGetError() != GL_NO_ERROR ); //MARTY FIXME WIP
+	while( /*p*/glGetError() != GL_NO_ERROR );
 
 	glState.drawTrans = false;
 	/*p*/glDepthMask( GL_TRUE );
@@ -1195,6 +1283,7 @@ void R_RenderFrame( const ref_params_t *fd, qboolean drawWorld )
 	{
 		if( clgame.drawFuncs.GL_RenderFrame( fd, drawWorld ))
 		{
+			RI.drawWorld = drawWorld;
 			tr.fResetVis = true;
 			return;
 		}
@@ -1265,6 +1354,12 @@ void R_DrawCubemapView( const vec3_t origin, const vec3_t angles, int size )
 {
 	ref_params_t *fd;
 
+	if( clgame.drawFuncs.R_DrawCubemapView != NULL )
+	{
+		if( clgame.drawFuncs.R_DrawCubemapView( origin, angles, size ))
+			return;
+	}
+
 	fd = &RI.refdef;
 	*fd = r_lastRefdef;
 	fd->time = 0;
@@ -1276,8 +1371,6 @@ void R_DrawCubemapView( const vec3_t origin, const vec3_t angles, int size )
 	VectorCopy( origin, fd->vieworg );
 	VectorCopy( angles, fd->viewangles );
 	VectorCopy( fd->vieworg, RI.pvsorigin );
-
-	R_Set2DMode( false );
 		
 	// setup scissor
 	RI.scissor[0] = fd->viewport[0];
@@ -1464,7 +1557,7 @@ static const char *GL_TextureName( unsigned int texnum )
 	return R_GetTexture( texnum )->name;	
 }
 
-/*static render_api_t gRenderAPI =
+/*static render_api_t gRenderAPI =  //MARTY FIXME WIP - Not really needed as we don't care about extensions
 {
 	GL_RenderGetParm,
 	R_GetDetailScaleForTexture,
@@ -1515,8 +1608,11 @@ R_InitRenderAPI
 Initialize client external rendering
 ===============
 */
-qboolean R_InitRenderAPI( void )
+qboolean R_InitRenderAPI( void )  //MARTY FIXME WIP - Not really needed as we don't care about extensions
 {
+	// make sure what render functions is cleared
+	Q_memset( &clgame.drawFuncs, 0, sizeof( clgame.drawFuncs ));
+
 	if( clgame.dllFuncs.pfnGetRenderInterface )
 	{
 /*		if( clgame.dllFuncs.pfnGetRenderInterface( CL_RENDER_INTERFACE_VERSION, &gRenderAPI, &clgame.drawFuncs ))

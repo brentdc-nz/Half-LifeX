@@ -73,7 +73,7 @@ void CL_UpdateEntityFields( cl_entity_t *ent )
 	ent->curstate.msg_time = cl.time;
 
 	if( ent->player ) // stupid Half-Life bug
-		ent->angles[PITCH] = -ent->angles[PITCH] / 3;
+		ent->angles[PITCH] = -ent->angles[PITCH] / 3.0f;
 
 	// make me lerp
 	if( ent->model && ent->model->type == mod_brush && ent->curstate.animtime != 0.0f )
@@ -100,8 +100,8 @@ void CL_UpdateEntityFields( cl_entity_t *ent )
 			ang1 = ent->angles[i];
 			ang2 = ent->latched.prevangles[i];
 			d = ang1 - ang2;
-			if( d > 180 ) d -= 360;
-			else if( d < -180 ) d += 360;
+			if( d > 180.0f ) d -= 360.0f;
+			else if( d < -180.0f ) d += 360.0f;
 			ent->angles[i] += d * f;
 		}
 	}
@@ -132,8 +132,8 @@ void CL_UpdateEntityFields( cl_entity_t *ent )
 				ang1 = ent->curstate.angles[i];
 				ang2 = ent->latched.prevangles[i];
 				d = ang1 - ang2;
-				if( d > 180 ) d -= 360;
-				else if( d < -180 ) d += 360;
+				if( d > 180.0f ) d -= 360.0f;
+				else if( d < -180.0f ) d += 360.0f;
 				ent->angles[i] += d * f;
 			}
 		}
@@ -146,7 +146,7 @@ void CL_UpdateEntityFields( cl_entity_t *ent )
 			{
 				CL_SetTraceHull( 0 ); // g-cont. player hull for better detect moving platforms
 				VectorSet( vecSrc, ent->origin[0], ent->origin[1], ent->origin[2] + ent->model->maxs[2] );
-				VectorSet( vecEnd, vecSrc[0], vecSrc[1], vecSrc[2] - ent->model->mins[2] - 8 );		
+				VectorSet( vecEnd, vecSrc[0], vecSrc[1], vecSrc[2] - ent->model->mins[2] - 8.0f );		
 				CL_PlayerTraceExt( vecSrc, vecEnd, PM_STUDIO_IGNORE, CL_PushMoveFilter, &trace );
 				m_pGround = CL_GetEntityByIndex( pfnIndexFromTrace( &trace ));
 			}
@@ -177,8 +177,8 @@ void CL_UpdateEntityFields( cl_entity_t *ent )
 						ang1 = m_pGround->curstate.angles[i];
 						ang2 = m_pGround->prevstate.angles[i];
 						f = ang1 - ang2;
-						if( d > 180 ) f -= 360;
-						else if( d < -180 ) f += 360;
+						if( d > 180.0f ) f -= 360.0f;
+						else if( d < -180.0f ) f += 360.0f;
 						ent->angles[i] += d * f;
 					}
 				}
@@ -292,7 +292,7 @@ qboolean CL_AddVisibleEntity( cl_entity_t *ent, int entityType )
 	if( ent->curstate.effects & EF_BRIGHTLIGHT )
 	{			
 		dlight_t	*dl = CL_AllocDlight( 0 );
-		VectorSet( dl->origin, ent->origin[0], ent->origin[1], ent->origin[2] + 16 );
+		VectorSet( dl->origin, ent->origin[0], ent->origin[1], ent->origin[2] + 16.0f );
 		dl->die = cl.time + 0.001f; // die at next frame
 		dl->color.r = 255;
 		dl->color.g = 255;
@@ -305,21 +305,21 @@ qboolean CL_AddVisibleEntity( cl_entity_t *ent, int entityType )
 
 	if( ent->model->type == mod_studio )
 	{
-		if (ent->model->flags & STUDIO_ROTATE)
-			ent->angles[1] = anglemod(100 * cl.time);
+		if( ent->model->flags & STUDIO_ROTATE )
+			ent->angles[1] = anglemod( 100.0f * cl.time );
 
-		if (ent->model->flags & STUDIO_GIB)
-			CL_RocketTrail (ent->prevstate.origin, ent->curstate.origin, 2);
-		else if (ent->model->flags & STUDIO_ZOMGIB)
-			CL_RocketTrail (ent->prevstate.origin, ent->curstate.origin, 4);
-		else if (ent->model->flags & STUDIO_TRACER)
-			CL_RocketTrail (ent->prevstate.origin, ent->curstate.origin, 3);
-		else if (ent->model->flags & STUDIO_TRACER2)
-			CL_RocketTrail (ent->prevstate.origin, ent->curstate.origin, 5);
-		else if (ent->model->flags & STUDIO_ROCKET)
+		if( ent->model->flags & STUDIO_GIB )
+			CL_RocketTrail( ent->prevstate.origin, ent->curstate.origin, 2 );
+		else if( ent->model->flags & STUDIO_ZOMGIB )
+			CL_RocketTrail( ent->prevstate.origin, ent->curstate.origin, 4 );
+		else if( ent->model->flags & STUDIO_TRACER )
+			CL_RocketTrail( ent->prevstate.origin, ent->curstate.origin, 3 );
+		else if( ent->model->flags & STUDIO_TRACER2 )
+			CL_RocketTrail( ent->prevstate.origin, ent->curstate.origin, 5 );
+		else if( ent->model->flags & STUDIO_ROCKET )
 		{
-			dlight_t	*dl = CL_AllocDlight (ent->curstate.number);
-			VectorCopy (ent->origin, dl->origin);
+			dlight_t	*dl = CL_AllocDlight( ent->curstate.number );
+			VectorCopy( ent->origin, dl->origin );
 			dl->color.r = 255;
 			dl->color.g = 255;
 			dl->color.b = 255;
@@ -328,14 +328,14 @@ qboolean CL_AddVisibleEntity( cl_entity_t *ent, int entityType )
 			if( ent->curstate.rendermode != kRenderNormal )
 				dl->radius = max( 0, ent->curstate.renderamt - 55 );
 			else dl->radius = 200;
-			dl->die = cl.time + 0.01;
+			dl->die = cl.time + 0.01f;
 
-			CL_RocketTrail (ent->prevstate.origin, ent->curstate.origin, 0);
+			CL_RocketTrail( ent->prevstate.origin, ent->curstate.origin, 0 );
 		}
-		else if (ent->model->flags & STUDIO_GRENADE)
-			CL_RocketTrail (ent->prevstate.origin, ent->curstate.origin, 1);
-		else if (ent->model->flags & STUDIO_TRACER3)
-			CL_RocketTrail (ent->prevstate.origin, ent->curstate.origin, 6);
+		else if( ent->model->flags & STUDIO_GRENADE )
+			CL_RocketTrail( ent->prevstate.origin, ent->curstate.origin, 1 );
+		else if( ent->model->flags & STUDIO_TRACER3 )
+			CL_RocketTrail( ent->prevstate.origin, ent->curstate.origin, 6 );
 	}
 
 	return true;
@@ -368,22 +368,7 @@ void CL_WeaponAnim( int iAnim, int body )
 		// save animtime
 		view->latched.prevanimtime = view->curstate.animtime;
 		view->syncbase = -0.01f; // back up to get 0'th frame animations
-#if 0
-		// lerping between viewmodel sequences.
-		// disabled because SVC_WEAPONANIM in some cases may come early than clientdata_t
-		// with new v_model index, so lerping between change weapons looks ugly
-		if( viewmodel == view->curstate.modelindex && viewmodel != 0 )
-		{
-			view->latched.sequencetime = view->curstate.animtime + 0.1f;
-		}
-		else
-		{
-			viewmodel = view->curstate.modelindex;
-			view->latched.sequencetime = 0.0f;
-		}
-#else
 		view->latched.sequencetime = 0.0f;
-#endif
 	}
 
 	view->curstate.animtime = cl.time;	// start immediately
@@ -397,8 +382,8 @@ void CL_WeaponAnim( int iAnim, int body )
 #if 0	// g-cont. for GlowShell testing
 	view->curstate.renderfx = kRenderFxGlowShell;
 	view->curstate.rendercolor.r = 255;
-	view->curstate.rendercolor.g = 255;
-	view->curstate.rendercolor.b = 255;
+	view->curstate.rendercolor.g = 128;
+	view->curstate.rendercolor.b = 0;
 	view->curstate.renderamt = 100;
 #endif
 }
@@ -443,7 +428,7 @@ void CL_UpdateStudioVars( cl_entity_t *ent, entity_state_t *newstate, qboolean n
 		// save current blends to right lerping from last sequence
 		for( i = 0; i < 2; i++ )
 			ent->latched.prevseqblending[i] = ent->curstate.blending[i];
-		ent->latched.prevsequence = ent->curstate.sequence;	// save old sequence	
+		ent->latched.prevsequence = ent->curstate.sequence; // save old sequence	
 		ent->syncbase = -0.01f; // back up to get 0'th frame animations
 	}
 
@@ -491,7 +476,6 @@ void CL_UpdateBmodelVars( cl_entity_t *ent, entity_state_t *newstate, qboolean n
 	if( newstate->effects & EF_NOINTERP || noInterp )
 	{
 		ent->latched.prevanimtime = newstate->animtime;
-
 		VectorCopy( newstate->origin, ent->latched.prevorigin );
 		VectorCopy( newstate->angles, ent->latched.prevangles );
 		return;
@@ -543,7 +527,6 @@ void CL_DeltaEntity( sizebuf_t *msg, frame_t *frame, int newnum, entity_state_t 
 		{
 			ent->curstate.messagenum = 0;
 			ent->baseline.number = 0;
-//			R_RemoveEfrags( ent );
 		}
 
 		// entity was delta removed
@@ -680,7 +663,6 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 	{
 		// this is a full update that we can start delta compressing from now
 		oldframe = NULL;
-
 		oldpacket = -1;		// delta too old or is initial message
 		cl.force_send_usercmd = true;	// send reply
 		cls.demowaiting = false;	// we can start recording now
@@ -791,6 +773,7 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 		cls.state = ca_active;
 		cl.force_refdef = true;
 		cls.changelevel = false;		// changelevel is done
+		cls.changedemo = false;		// changedemo is done
 
 		SCR_MakeLevelShot();		// make levelshot if needs
 		Cvar_SetFloat( "scr_loading", 0.0f );	// reset progress bar	
@@ -855,18 +838,18 @@ void CL_SetIdealPitch( void )
 	if( !( cl.frame.local.client.flags & FL_ONGROUND ))
 		return;
 		
-	angleval = cl.frame.local.playerstate.angles[YAW] * M_PI * 2 / 360;
+	angleval = cl.frame.local.playerstate.angles[YAW] * M_PI2 / 360.0f;
 	SinCos( angleval, &sinval, &cosval );
 
 	for( i = 0; i < MAX_FORWARD; i++ )
 	{
-		top[0] = cl.frame.local.client.origin[0] + cosval * (i + 3) * 12;
-		top[1] = cl.frame.local.client.origin[1] + sinval * (i + 3) * 12;
+		top[0] = cl.frame.local.client.origin[0] + cosval * (i + 3.0f) * 12.0f;
+		top[1] = cl.frame.local.client.origin[1] + sinval * (i + 3.0f) * 12.0f;
 		top[2] = cl.frame.local.client.origin[2] + cl.frame.local.client.view_ofs[2];
 		
 		bottom[0] = top[0];
 		bottom[1] = top[1];
-		bottom[2] = top[2] - 160;
+		bottom[2] = top[2] - 160.0f;
 
 		// skip any monsters (only world and brush models)
 		tr = CL_TraceLine( top, bottom, PM_STUDIO_IGNORE );
@@ -880,6 +863,7 @@ void CL_SetIdealPitch( void )
 	
 	dir = 0;
 	steps = 0;
+
 	for( j = 1; j < i; j++ )
 	{
 		step = z[j] - z[j-1];
@@ -895,7 +879,7 @@ void CL_SetIdealPitch( void )
 	
 	if( !dir )
 	{
-		cl.refdef.idealpitch = 0;
+		cl.refdef.idealpitch = 0.0f;
 		return;
 	}
 	
@@ -996,9 +980,7 @@ qboolean CL_GetEntitySpatialization( int entnum, vec3_t origin, float *pradius )
 #if 0
 	// uncomment this if you want enable additional check by PVS
 	if( ent->curstate.messagenum != cl.parsecount )
-	{
 		return valid_origin;
-	}
 #endif
 	// setup origin
 	VectorAverage( ent->curstate.mins, ent->curstate.maxs, origin );
@@ -1007,10 +989,8 @@ qboolean CL_GetEntitySpatialization( int entnum, vec3_t origin, float *pradius )
 	// setup radius
 	if( pradius )
 	{
-		if( ent->model != NULL )
-			*pradius = ent->model->radius;
-		else
-			*pradius = RadiusFromBounds( ent->curstate.mins, ent->curstate.maxs );
+		if( ent->model != NULL && ent->model->radius ) *pradius = ent->model->radius;
+		else *pradius = RadiusFromBounds( ent->curstate.mins, ent->curstate.maxs );
 	}
 
 	return true;

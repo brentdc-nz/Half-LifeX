@@ -119,11 +119,11 @@ void Matrix3x4_CreateFromEntity( matrix3x4 out, const vec3_t angles, const vec3_
 
 	if( angles[ROLL] )
 	{
-		angle = angles[YAW] * (M_PI*2 / 360);
+		angle = angles[YAW] * (M_PI2 / 360.0f);
 		SinCos( angle, &sy, &cy );
-		angle = angles[PITCH] * (M_PI*2 / 360);
+		angle = angles[PITCH] * (M_PI2 / 360.0f);
 		SinCos( angle, &sp, &cp );
-		angle = angles[ROLL] * (M_PI*2 / 360);
+		angle = angles[ROLL] * (M_PI2 / 360.0f);
 		SinCos( angle, &sr, &cr );
 
 		out[0][0] = (cp*cy) * scale;
@@ -141,9 +141,9 @@ void Matrix3x4_CreateFromEntity( matrix3x4 out, const vec3_t angles, const vec3_
 	}
 	else if( angles[PITCH] )
 	{
-		angle = angles[YAW] * (M_PI*2 / 360);
+		angle = angles[YAW] * (M_PI2 / 360.0f);
 		SinCos( angle, &sy, &cy );
-		angle = angles[PITCH] * (M_PI*2 / 360);
+		angle = angles[PITCH] * (M_PI2 / 360.0f);
 		SinCos( angle, &sp, &cp );
 
 		out[0][0] = (cp*cy) * scale;
@@ -155,40 +155,40 @@ void Matrix3x4_CreateFromEntity( matrix3x4 out, const vec3_t angles, const vec3_
 		out[1][2] = (sp*sy) * scale;
 		out[1][3] = origin[1];
 		out[2][0] = (-sp) * scale;
-		out[2][1] = 0;
+		out[2][1] = 0.0f;
 		out[2][2] = (cp) * scale;
 		out[2][3] = origin[2];
 	}
 	else if( angles[YAW] )
 	{
-		angle = angles[YAW] * (M_PI*2 / 360);
+		angle = angles[YAW] * (M_PI2 / 360.0f);
 		SinCos( angle, &sy, &cy );
 
 		out[0][0] = (cy) * scale;
 		out[0][1] = (-sy) * scale;
-		out[0][2] = 0;
+		out[0][2] = 0.0f;
 		out[0][3] = origin[0];
 		out[1][0] = (sy) * scale;
 		out[1][1] = (cy) * scale;
-		out[1][2] = 0;
+		out[1][2] = 0.0f;
 		out[1][3] = origin[1];
-		out[2][0] = 0;
-		out[2][1] = 0;
+		out[2][0] = 0.0f;
+		out[2][1] = 0.0f;
 		out[2][2] = scale;
 		out[2][3] = origin[2];
 	}
 	else
 	{
 		out[0][0] = scale;
-		out[0][1] = 0;
-		out[0][2] = 0;
+		out[0][1] = 0.0f;
+		out[0][2] = 0.0f;
 		out[0][3] = origin[0];
-		out[1][0] = 0;
+		out[1][0] = 0.0f;
 		out[1][1] = scale;
-		out[1][2] = 0;
+		out[1][2] = 0.0f;
 		out[1][3] = origin[1];
-		out[2][0] = 0;
-		out[2][1] = 0;
+		out[2][0] = 0.0f;
+		out[2][1] = 0.0f;
 		out[2][2] = scale;
 		out[2][3] = origin[2];
 	}
@@ -211,7 +211,7 @@ void Matrix3x4_Invert_Simple( matrix3x4 out, const matrix3x4 in1 )
 	// (note the lack of sqrt here, because we're trying to undo the scaling,
 	// this means multiplying by the inverse scale twice - squaring it, which
 	// makes the sqrt a waste of time)
-	float	scale = 1.0 / (in1[0][0] * in1[0][0] + in1[0][1] * in1[0][1] + in1[0][2] * in1[0][2]);
+	float	scale = 1.0f / (in1[0][0] * in1[0][0] + in1[0][1] * in1[0][1] + in1[0][2] * in1[0][2]);
 
 	// invert the rotation by transposing and multiplying by the squared
 	// recipricol of the input matrix scale as described above
@@ -324,10 +324,10 @@ void Matrix4x4_FromOriginQuat( matrix4x4 out, const vec4_t quaternion, const vec
 	out[1][2] = 2.0f * quaternion[1] * quaternion[2] - 2.0f * quaternion[3] * quaternion[0];
 	out[2][2] = 1.0f - 2.0f * quaternion[0] * quaternion[0] - 2.0f * quaternion[1] * quaternion[1];
 	out[2][3] = origin[2];
-	out[3][0] = 0;
-	out[3][1] = 0;
-	out[3][2] = 0;
-	out[3][3] = 1;
+	out[3][0] = 0.0f;
+	out[3][1] = 0.0f;
+	out[3][2] = 0.0f;
+	out[3][3] = 1.0f;
 }
 
 void Matrix4x4_CreateFromEntity( matrix4x4 out, const vec3_t angles, const vec3_t origin, float scale )
@@ -336,11 +336,11 @@ void Matrix4x4_CreateFromEntity( matrix4x4 out, const vec3_t angles, const vec3_
 
 	if( angles[ROLL] )
 	{
-		angle = angles[YAW] * (M_PI*2 / 360);
+		angle = angles[YAW] * (M_PI2 / 360.0f);
 		SinCos( angle, &sy, &cy );
-		angle = angles[PITCH] * (M_PI*2 / 360);
+		angle = angles[PITCH] * (M_PI2 / 360.0f);
 		SinCos( angle, &sp, &cp );
-		angle = angles[ROLL] * (M_PI*2 / 360);
+		angle = angles[ROLL] * (M_PI2 / 360.0f);
 		SinCos( angle, &sr, &cr );
 
 		out[0][0] = (cp*cy) * scale;
@@ -355,16 +355,16 @@ void Matrix4x4_CreateFromEntity( matrix4x4 out, const vec3_t angles, const vec3_
 		out[2][1] = (sr*cp) * scale;
 		out[2][2] = (cr*cp) * scale;
 		out[2][3] = origin[2];
-		out[3][0] = 0;
-		out[3][1] = 0;
-		out[3][2] = 0;
-		out[3][3] = 1;
+		out[3][0] = 0.0f;
+		out[3][1] = 0.0f;
+		out[3][2] = 0.0f;
+		out[3][3] = 1.0f;
 	}
 	else if( angles[PITCH] )
 	{
-		angle = angles[YAW] * (M_PI*2 / 360);
+		angle = angles[YAW] * (M_PI2 / 360.0f);
 		SinCos( angle, &sy, &cy );
-		angle = angles[PITCH] * (M_PI*2 / 360);
+		angle = angles[PITCH] * (M_PI2 / 360.0f);
 		SinCos( angle, &sp, &cp );
 
 		out[0][0] = (cp*cy) * scale;
@@ -376,54 +376,54 @@ void Matrix4x4_CreateFromEntity( matrix4x4 out, const vec3_t angles, const vec3_
 		out[1][2] = (sp*sy) * scale;
 		out[1][3] = origin[1];
 		out[2][0] = (-sp) * scale;
-		out[2][1] = 0;
+		out[2][1] = 0.0f;
 		out[2][2] = (cp) * scale;
 		out[2][3] = origin[2];
-		out[3][0] = 0;
-		out[3][1] = 0;
-		out[3][2] = 0;
-		out[3][3] = 1;
+		out[3][0] = 0.0f;
+		out[3][1] = 0.0f;
+		out[3][2] = 0.0f;
+		out[3][3] = 1.0f;
 	}
 	else if( angles[YAW] )
 	{
-		angle = angles[YAW] * (M_PI*2 / 360);
+		angle = angles[YAW] * (M_PI2 / 360.0f);
 		SinCos( angle, &sy, &cy );
 
 		out[0][0] = (cy) * scale;
 		out[0][1] = (-sy) * scale;
-		out[0][2] = 0;
+		out[0][2] = 0.0f;
 		out[0][3] = origin[0];
 		out[1][0] = (sy) * scale;
 		out[1][1] = (cy) * scale;
-		out[1][2] = 0;
+		out[1][2] = 0.0f;
 		out[1][3] = origin[1];
-		out[2][0] = 0;
-		out[2][1] = 0;
+		out[2][0] = 0.0f;
+		out[2][1] = 0.0f;
 		out[2][2] = scale;
 		out[2][3] = origin[2];
-		out[3][0] = 0;
-		out[3][1] = 0;
-		out[3][2] = 0;
-		out[3][3] = 1;
+		out[3][0] = 0.0f;
+		out[3][1] = 0.0f;
+		out[3][2] = 0.0f;
+		out[3][3] = 1.0f;
 	}
 	else
 	{
 		out[0][0] = scale;
-		out[0][1] = 0;
-		out[0][2] = 0;
+		out[0][1] = 0.0f;
+		out[0][2] = 0.0f;
 		out[0][3] = origin[0];
-		out[1][0] = 0;
+		out[1][0] = 0.0f;
 		out[1][1] = scale;
-		out[1][2] = 0;
+		out[1][2] = 0.0f;
 		out[1][3] = origin[1];
-		out[2][0] = 0;
-		out[2][1] = 0;
+		out[2][0] = 0.0f;
+		out[2][1] = 0.0f;
 		out[2][2] = scale;
 		out[2][3] = origin[2];
-		out[3][0] = 0;
-		out[3][1] = 0;
-		out[3][2] = 0;
-		out[3][3] = 1;
+		out[3][0] = 0.0f;
+		out[3][1] = 0.0f;
+		out[3][2] = 0.0f;
+		out[3][3] = 1.0f;
 	}
 }
 
@@ -434,15 +434,15 @@ void Matrix4x4_ConvertToEntity( const matrix4x4 in, vec3_t angles, vec3_t origin
 	// enough here to get angles?
 	if( xyDist > 0.001f )
 	{
-		angles[0] = RAD2DEG( atan2( -in[2][0], xyDist ) );
-		angles[1] = RAD2DEG( atan2( in[1][0], in[0][0] ) );
-		angles[2] = RAD2DEG( atan2( in[2][1], in[2][2] ) );
+		angles[0] = RAD2DEG( atan2( -in[2][0], xyDist ));
+		angles[1] = RAD2DEG( atan2( in[1][0], in[0][0] ));
+		angles[2] = RAD2DEG( atan2( in[2][1], in[2][2] ));
 	}
 	else	// forward is mostly Z, gimbal lock
 	{
-		angles[0] = RAD2DEG( atan2( -in[2][0], xyDist ) );
-		angles[1] = RAD2DEG( atan2( -in[0][1], in[1][1] ) );
-		angles[2] = 0;
+		angles[0] = RAD2DEG( atan2( -in[2][0], xyDist ));
+		angles[1] = RAD2DEG( atan2( -in[0][1], in[1][1] ));
+		angles[2] = 0.0f;
 	}
 
 	origin[0] = in[0][3];
@@ -498,10 +498,10 @@ void Matrix4x4_Invert_Simple( matrix4x4 out, const matrix4x4 in1 )
 	out[2][3] = -(in1[0][3] * out[2][0] + in1[1][3] * out[2][1] + in1[2][3] * out[2][2]);
 
 	// don't know if there's anything worth doing here
-	out[3][0] = 0;
-	out[3][1] = 0;
-	out[3][2] = 0;
-	out[3][3] = 1;
+	out[3][0] = 0.0f;
+	out[3][1] = 0.0f;
+	out[3][2] = 0.0f;
+	out[3][3] = 1.0f;
 }
 
 void Matrix4x4_Transpose( matrix4x4 out, const matrix4x4 in1 )
@@ -541,37 +541,37 @@ qboolean Matrix4x4_Invert_Full( matrix4x4 out, const matrix4x4 in1 )
 	r[0][1] = in1[0][1];
 	r[0][2] = in1[0][2];
 	r[0][3] = in1[0][3];
-	r[0][4] = 1.0;
-	r[0][5] =	0.0;
-	r[0][6] =	0.0;
-	r[0][7] = 0.0;
+	r[0][4] = 1.0f;
+	r[0][5] =	0.0f;
+	r[0][6] =	0.0f;
+	r[0][7] = 0.0f;
 
 	r[1][0] = in1[1][0];
 	r[1][1] = in1[1][1];
 	r[1][2] = in1[1][2];
 	r[1][3] = in1[1][3];
-	r[1][5] = 1.0;
-	r[1][4] =	0.0;
-	r[1][6] =	0.0;
-	r[1][7] = 0.0;
+	r[1][5] = 1.0f;
+	r[1][4] =	0.0f;
+	r[1][6] =	0.0f;
+	r[1][7] = 0.0f;
 
 	r[2][0] = in1[2][0];
 	r[2][1] = in1[2][1];
 	r[2][2] = in1[2][2];
 	r[2][3] = in1[2][3];
-	r[2][6] = 1.0;
-	r[2][4] =	0.0;
-	r[2][5] =	0.0;
-	r[2][7] = 0.0;
+	r[2][6] = 1.0f;
+	r[2][4] =	0.0f;
+	r[2][5] =	0.0f;
+	r[2][7] = 0.0f;
 
 	r[3][0] = in1[3][0];
 	r[3][1] = in1[3][1];
 	r[3][2] = in1[3][2];
 	r[3][3] = in1[3][3];
-	r[3][4] =	0.0;
-	r[3][5] = 0.0;
-	r[3][6] = 0.0;
-	r[3][7] = 1.0;	
+	r[3][4] =	0.0f;
+	r[3][5] = 0.0f;
+	r[3][6] = 0.0f;
+	r[3][7] = 1.0f;	
 
 	if( fabs( r[3][0] ) > fabs( r[2][0] ))
 	{
@@ -716,14 +716,14 @@ qboolean Matrix4x4_Invert_Full( matrix4x4 out, const matrix4x4 in1 )
 
 				if( r[3][3] )
 				{
-					s = 1.0 / r[3][3];
+					s = 1.0f / r[3][3];
 					r[3][4] *= s;
 					r[3][5] *= s;
 					r[3][6] *= s;
 					r[3][7] *= s;
 
 					m[2] = r[2][3];
-					s = 1.0 / r[2][2];
+					s = 1.0f / r[2][2];
 					r[2][4] = s * (r[2][4] - r[3][4] * m[2]);
 					r[2][5] = s * (r[2][5] - r[3][5] * m[2]);
 					r[2][6] = s * (r[2][6] - r[3][6] * m[2]);
@@ -742,7 +742,7 @@ qboolean Matrix4x4_Invert_Full( matrix4x4 out, const matrix4x4 in1 )
 					r[0][7] -= r[3][7] * m[0];
 
 					m[1] = r[1][2];
-					s = 1.0 / r[1][1];
+					s = 1.0f / r[1][1];
 					r[1][4] = s * (r[1][4] - r[2][4] * m[1]);
 					r[1][5] = s * (r[1][5] - r[2][5] * m[1]);
 					r[1][6] = s * (r[1][6] - r[2][6] * m[1]);
@@ -755,7 +755,7 @@ qboolean Matrix4x4_Invert_Full( matrix4x4 out, const matrix4x4 in1 )
 					r[0][7] -= r[2][7] * m[0];
 
 					m[0] = r[0][1];
-					s = 1.0 / r[0][0];
+					s = 1.0f / r[0][0];
 					r[0][4] = s * (r[0][4] - r[1][4] * m[0]);
 					r[0][5] = s * (r[0][5] - r[1][5] * m[0]);
 					r[0][6] = s * (r[0][6] - r[1][6] * m[0]);

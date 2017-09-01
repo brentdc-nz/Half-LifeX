@@ -103,6 +103,7 @@ int Cvar_VariableInteger( const char *var_name );
 char *Cvar_VariableString( const char *var_name );
 void Cvar_DirectSet( cvar_t *var, const char *value );
 void Cvar_Reset( const char *var_name );
+void Cvar_SetCheatState( void );
 qboolean Cvar_Command( void );
 void Cvar_WriteVariables( file_t *f );
 void Cvar_Init( void );
@@ -176,9 +177,11 @@ char *va( const char *format, ... );
 #define Q_memcpy( dest, src, size ) _Q_memcpy( dest, src, size, __FILE__, __LINE__ )
 #define Q_memset( dest, val, size ) _Q_memset( dest, val, size, __FILE__, __LINE__ )
 #define Q_memcmp( src0, src1, siz ) _Q_memcmp( src0, src1, siz, __FILE__, __LINE__ )
+#define Q_memmove( dest, src, size ) _Q_memmove( dest, src, size, __FILE__, __LINE__ )
 void _Q_memset( void *dest, int set, size_t count, const char *filename, int fileline );
 void _Q_memcpy( void *dest, const void *src, size_t count, const char *filename, int fileline );
 int _Q_memcmp( const void *src0, const void *src1, size_t count, const char *filename, int fileline );
+void _Q_memmove( void *dest, const void *src, size_t count, const char *filename, int fileline );
 
 //
 // zone.c

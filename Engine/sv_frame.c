@@ -71,7 +71,8 @@ static void SV_AddEntitiesToPacket( edict_t *pViewEnt, edict_t *pClient, client_
 	if( !sv.state ) return;
 
 	cl = SV_ClientFromEdict( pClient, true );
-	ASSERT( cl );
+
+	ASSERT( cl != NULL );
 
 	if( pClient && !( sv.hostflags & SVF_PORTALPASS ))
 	{
@@ -368,7 +369,7 @@ static void SV_EmitEvents( sv_client_t *cl, client_frame_t *to, sizebuf_t *msg )
 				BF_WriteOneBit( msg, 1 );
 				BF_WriteUBitLong( msg, info->packet_index, MAX_ENTITY_BITS );
 
-				if( !memcmp( &nullargs, &info->args, sizeof( event_args_t )))
+				if( !Q_memcmp( &nullargs, &info->args, sizeof( event_args_t )))
 				{
 					BF_WriteOneBit( msg, 0 );
 				}
@@ -658,7 +659,7 @@ void SV_UpdateToReliableMessages( void )
 	}
 
 	// 1% chanse for simulate random network bugs
-	if( sv.write_bad_message && Com_RandomLong( 0, 512 ) == 443 )
+	if( sv.write_bad_message && Com_RandomLong( 0, 512 ) == 404 )
 	{
 		// just for network debugging (send only for local client)
 		BF_WriteByte( &sv.datagram, svc_bad );
@@ -867,7 +868,8 @@ void SV_InactivateClients( void )
 	// send a message to each connected client
 	for( i = 0, cl = svs.clients; i < sv_maxclients->integer; i++, cl++ )
 	{
-		if( !cl->state || !cl->edict ) continue;
+		if( !cl->state || !cl->edict )
+			continue;
 			
 		if( !cl->edict || (cl->edict->v.flags & FL_FAKECLIENT))
 			continue;

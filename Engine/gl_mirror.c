@@ -38,7 +38,7 @@ void R_BeginDrawMirror( msurface_t *fa )
 	Matrix4x4_Copy( matrix, es->mirrormatrix );
 
 	Matrix4x4_LoadIdentity( m1 );
-	Matrix4x4_ConcatScale( m1, 0.5 );
+	Matrix4x4_ConcatScale( m1, 0.5f );
 	Matrix4x4_Concat( m2, m1, matrix );
 
 	Matrix4x4_LoadIdentity( m1 );
@@ -155,7 +155,7 @@ int R_AllocateMirrorTexture( void )
 
 	if( !texture )
 	{
-		// not iniatlized ?
+		// not initialized ?
 		Q_memset( &r_screen, 0, sizeof( r_screen ));
 		Q_snprintf( txName, sizeof( txName ), "*screen%i", i );
 

@@ -122,27 +122,12 @@ typedef struct
 	float		fadeintime;	// # of seconds to restore
 } soundfade_t;
 
-#ifdef _SDL_SOUND //MARTY
-typedef struct snd_format_s
-{
-	unsigned int	speed;
-	unsigned int	width;
-	unsigned int	channels;
-} snd_format_t;
-#endif
-
 typedef struct
 {
 	int		samples;		// mono samples in buffer
 	int		samplepos;	// in mono samples
-#ifdef _SDL_SOUND //MARTY - Seperate ifdefs to keep structure same as mainline Xash3D
-	int     sampleframes;
-#endif
 	byte		*buffer;
 	qboolean		initialized;	// sound engine is active
-#ifdef _SDL_SOUND //MARTY  - Seperate ifdefs to keep structure same as mainline Xash3D
-	snd_format_t	format;
-#endif
 } dma_t;
 
 #include "vox.h"
@@ -235,7 +220,7 @@ void SNDDMA_Submit( void );
 //====================================================================
 
 #define MAX_DYNAMIC_CHANNELS	(28 + NUM_AMBIENTS)
-#define MAX_CHANNELS	128
+#define MAX_CHANNELS	(128 + MAX_DYNAMIC_CHANNELS)	// Scourge Of Armagon has too many static sounds on hip2m4.bsp
 #define MAX_RAW_SAMPLES	8192
 
 extern sound_t	ambient_sfx[NUM_AMBIENTS];
@@ -296,9 +281,7 @@ void DSP_ClearState( void );
 
 qboolean S_Init( void );
 void S_Shutdown( void );
-#ifndef _XBOX //MARTY - Notr required on XBox
 void S_Activate( qboolean active, void *hInst );
-#endif
 void S_SoundList_f( void );
 void S_SoundInfo_f( void );
 
@@ -325,6 +308,7 @@ void SND_CloseMouth( channel_t *ch );
 void S_StreamSoundTrack( void );
 void S_StreamBackgroundTrack( void );
 qboolean S_StreamGetCurrentState( char *currentTrack, char *loopTrack, int *position );
+void S_PrintBackgroundTrackState( void );
 
 //
 // s_utils.c

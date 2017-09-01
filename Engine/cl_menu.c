@@ -245,6 +245,9 @@ static void UI_ConvertGameInfo( GAMEINFO *out, gameinfo_t *in )
 	Q_strncpy( out->date, in->date, sizeof( out->date ));
 
 	out->gamemode = in->gamemode;
+
+	if( in->nomodels )
+		out->flags |= GFL_NOMODELS;
 }
 
 static qboolean PIC_Scissor( float *x, float *y, float *width, float *height, float *u0, float *v0, float *u1, float *v1 )
@@ -370,7 +373,7 @@ static HIMAGE pfnPIC_Load( const char *szPicName, const byte *image_buf, long im
 	// add default parms to image
 	flags |= TF_IMAGE;
 
-	host.decal_loading = true;
+	host.decal_loading = true; // allow decal images for menu
 	tx = GL_LoadTexture( szPicName, image_buf, image_size, flags );
 	host.decal_loading = false;
 
@@ -431,7 +434,7 @@ pfnPIC_Draw
 */
 void pfnPIC_Draw( int x, int y, int width, int height, const wrect_t *prc )
 {
-	GL_SetRenderMode( kRenderTransTexture );
+	GL_SetRenderMode( kRenderNormal );
 	PIC_DrawGeneric( x, y, width, height, prc );
 }
 

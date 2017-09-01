@@ -90,7 +90,6 @@ typedef struct
 	int	fEnabled;
 	int	fPlayLooping;
 	float	cdvolume;
-	//BYTE 	remap[100];
 	int	fCDRom;
 	int	fPlayTrack;
 } CDStatus;
@@ -288,36 +287,32 @@ typedef struct KeyValueData_s
 
 typedef struct
 {
-	char		mapName[32];
-	char		landmarkName[32];
-	edict_t		*pentLandmark;
-	vec3_t		vecLandmarkOrigin;
+	char	mapName[32];
+	char	landmarkName[32];
+	edict_t	*pentLandmark;
+	vec3_t	vecLandmarkOrigin;
 } LEVELLIST;
-#define MAX_LEVEL_CONNECTIONS	16		// These are encoded in the lower 16bits of ENTITYTABLE->flags
 
 typedef struct 
 {
-	int		id;		// Ordinal ID of this entity (used for entity <--> pointer conversions)
-	edict_t		*pent;		// Pointer to the in-game entity
+	int	id;		// Ordinal ID of this entity (used for entity <--> pointer conversions)
+	edict_t	*pent;		// Pointer to the in-game entity
 
-	int		location;		// Offset from the base data of this entity
-	int		size;		// Byte size of this entity's data
-	int		flags;		// This could be a short -- bit mask of transitions that this entity is in the PVS of
-	string_t		classname;	// entity class name
+	int	location;		// Offset from the base data of this entity
+	int	size;		// Byte size of this entity's data
+	int	flags;		// This could be a short -- bit mask of transitions that this entity is in the PVS of
+	string_t	classname;	// entity class name
 
 } ENTITYTABLE;
+
+#define MAX_LEVEL_CONNECTIONS		16		// These are encoded in the lower 16bits of ENTITYTABLE->flags
 
 #define FENTTABLE_PLAYER		0x80000000
 #define FENTTABLE_REMOVED		0x40000000
 #define FENTTABLE_MOVEABLE		0x20000000
 #define FENTTABLE_GLOBAL		0x10000000
 
-typedef struct saverestore_s SAVERESTOREDATA;
-
-#ifdef _WIN32
-typedef 
-#endif
-struct saverestore_s
+typedef struct saverestore_s
 {
 	char		*pBaseData;		// Start of all entity save data
 	char		*pCurrentData;		// Current buffer pointer for sequential access
@@ -338,12 +333,7 @@ struct saverestore_s
 	vec3_t		vecLandmarkOffset;		// for landmark transitions
 	float		time;
 	char		szCurrentMapName[32];	// To check global entities
-
-} 
-#ifdef _WIN32
-SAVERESTOREDATA 
-#endif
-;
+} SAVERESTOREDATA;
 
 typedef enum _fieldtypes
 {
@@ -380,8 +370,10 @@ typedef enum _fieldtypes
 #define DEFINE_ENTITY_GLOBAL_FIELD(name,fieldtype)	_FIELD(entvars_t, name, fieldtype, 1, FTYPEDESC_GLOBAL )
 #define DEFINE_GLOBAL_FIELD(type,name,fieldtype)		_FIELD(type, name, fieldtype, 1, FTYPEDESC_GLOBAL )
 
-
-#define FTYPEDESC_GLOBAL	0x0001			// This field is masked for global entity save/restore
+#define FTYPEDESC_GLOBAL		0x0001		// This field is masked for global entity save/restore
+#define FTYPEDESC_SAVE		0x0002		// This field is saved to disk
+#define FTYPEDESC_KEY		0x0004		// This field can be requested and written to by string name at load time
+#define FTYPEDESC_FUNCTIONTABLE	0x0008		// This is a table entry for a member function pointer
 
 typedef struct 
 {

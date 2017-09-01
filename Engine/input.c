@@ -25,7 +25,7 @@ GNU General Public License for more details.
 
 HICON	in_mousecursor;
 #endif
-qboolean	in_mouseactive;		// false when not focus app
+qboolean	in_mouseactive;				// false when not focus app
 #ifndef _XBOX //MARTY
 qboolean	in_restore_spi;
 #endif
@@ -64,7 +64,7 @@ static int mouse_buttons[] =
 	MK_XBUTTON4,
 	MK_XBUTTON5
 };
-
+	
 /*
 =======
 Host_MapKey
@@ -362,6 +362,7 @@ void IN_MouseEvent( int mstate )
 		{
 			Key_Event( K_MOUSE1 + i, true );
 		}
+
 		if(!( mstate & ( 1<<i )) && ( in_mouse_oldbuttonstate & ( 1<<i )))
 		{
 			Key_Event( K_MOUSE1 + i, false );
@@ -609,6 +610,7 @@ long IN_WndProc( void *hWnd, uint uMsg, uint wParam, long lParam )
 		}
 		break;
 	}
+
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
 }
 #endif //_XBOX 

@@ -187,6 +187,8 @@ typedef struct render_interface_s
 	int		(*R_CreateStudioDecalList)( decallist_t *pList, int count, qboolean changelevel );
 	// grab r_speeds message
 	qboolean		(*R_SpeedsMessage)( char *out, size_t size );
+	// replace with built-in R_DrawCubemapView for make skyshots or envshots
+	qboolean		(*R_DrawCubemapView)( const float *origin, const float *angles, int size );
 } render_interface_t;
 
 #endif//RENDER_API_H

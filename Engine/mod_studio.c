@@ -40,7 +40,7 @@ typedef struct mstudiocache_s
 #define STUDIO_CACHEMASK		(STUDIO_CACHESIZE - 1)
 
 // trace global variables
-static sv_blending_interface_t	*pBlendAPI;
+static sv_blending_interface_t	*pBlendAPI = NULL;
 static studiohdr_t			*mod_studiohdr;
 static matrix3x4			studio_transform;
 static hull_t			cache_hull[MAXSTUDIOBONES];
@@ -163,7 +163,7 @@ mstudiocache_t *Mod_CheckStudioCache( model_t *model, float frame, int sequence,
 
 		if( pCache->model == model && pCache->frame == frame && pCache->sequence == sequence &&
 		VectorCompare( angles, pCache->angles ) && VectorCompare( origin, pCache->origin ) && VectorCompare( size, pCache->size ) &&
-		!memcmp( pCache->controler, pcontroller, 4 ) && !memcmp( pCache->blending, pblending, 2 ))
+		!Q_memcmp( pCache->controler, pcontroller, 4 ) && !Q_memcmp( pCache->blending, pblending, 2 ))
 		{
 			return pCache;
 		}
@@ -197,6 +197,8 @@ void Mod_SetStudioHullPlane( mplane_t *pl, int bone, int axis, float offset )
 /*
 ====================
 HullForStudio
+
+NOTE: pEdict may be NULL
 ====================
 */
 hull_t *Mod_HullForStudio( model_t *model, float frame, int sequence, vec3_t angles, vec3_t origin, vec3_t size, byte *pcontroller, byte *pblending, int *numhitboxes, edict_t *pEdict )
@@ -205,8 +207,6 @@ hull_t *Mod_HullForStudio( model_t *model, float frame, int sequence, vec3_t ang
 	mstudiocache_t	*bonecache;
 	mstudiobbox_t	*phitbox;
 	int		i, j;
-
-	ASSERT( numhitboxes );
 
 	if( mod_studiocache->integer )
 	{
@@ -226,10 +226,14 @@ hull_t *Mod_HullForStudio( model_t *model, float frame, int sequence, vec3_t ang
 	mod_studiohdr = Mod_Extradata( model );
 	if( !mod_studiohdr ) return NULL; // probably not a studiomodel
 
-	VectorCopy( angles, angles2 );
-	angles2[PITCH] = -angles2[PITCH]; // stupid quake bug
+	ASSERT( pBlendAPI != NULL );
 
-	pBlendAPI->SV_StudioSetupBones( model, frame, sequence, angles2, origin, pcontroller, pblending, -1, pEdict );
+	VectorCopy( angles, angles2 );
+
+	if( !( host.features & ENGINE_COMPENSATE_QUAKE_BUG ))
+		angles2[PITCH] = -angles2[PITCH]; // stupid quake bug
+
+	pBlendAPI->SV_StudioSetupBones( model, frame, sequence, angles2, origin, pcontroller, pblending, pEdict, -1 );
 	phitbox = (mstudiobbox_t *)((byte *)mod_studiohdr + mod_studiohdr->hitboxindex);
 
 	for( i = j = 0; i < mod_studiohdr->numhitboxes; i++, j += 6 )
@@ -251,7 +255,7 @@ hull_t *Mod_HullForStudio( model_t *model, float frame, int sequence, vec3_t ang
 		studio_planes[j+5].dist -= DotProductAbs( studio_planes[j+5].normal, size );
 	}
 
-	// tell trace code about hibox count
+	// tell trace code about hitbox count
 	*numhitboxes = mod_studiohdr->numhitboxes;
 
 	if( mod_studiocache->integer )
@@ -287,7 +291,9 @@ static void Mod_StudioCalcBoneAdj( float *adj, const byte *pcontroller )
 	{
 		i = pbonecontroller[j].index;
 
-		if( i == 4 ) continue; // ignore mouth
+		if( i == STUDIO_MOUTH )
+			continue; // ignore mouth
+
 		if( i <= MAXSTUDIOCONTROLLERS )
 		{
 			// check for 360% wrapping
@@ -489,7 +495,7 @@ static void Mod_StudioCalcRotations( int boneused[], int numbones, const byte *p
 	float		s;
 
 	if( f > pseqdesc->numframes - 1 )
-		f = 0;
+		f = 0.0f;
 	else if( f < -0.01f )
 		f = -0.01f;
 
@@ -524,21 +530,22 @@ static float Mod_StudioEstimateFrame( float frame, mstudioseqdesc_t *pseqdesc )
 	double	f;
 	
 	if( pseqdesc->numframes <= 1 )
-		f = 0;
-	else f = ( frame * ( pseqdesc->numframes - 1 )) / 256.0;
+		f = 0.0f;
+	else f = ( frame * ( pseqdesc->numframes - 1 )) / 256.0f;
  
 	if( pseqdesc->flags & STUDIO_LOOPING ) 
 	{
 		if( pseqdesc->numframes > 1 )
 			f -= (int)(f / (pseqdesc->numframes - 1)) *  (pseqdesc->numframes - 1);
-		if( f < 0 ) f += (pseqdesc->numframes - 1);
+		if( f < 0.0f ) f += (pseqdesc->numframes - 1);
 	}
 	else 
 	{
-		if( f >= pseqdesc->numframes - 1.001 )
-			f = pseqdesc->numframes - 1.001;
-		if( f < 0.0 )  f = 0.0;
+		if( f >= pseqdesc->numframes - 1.001f )
+			f = pseqdesc->numframes - 1.001f;
+		if( f < 0.0f )  f = 0.0f;
 	}
+
 	return f;
 }
 
@@ -626,7 +633,7 @@ NOTE: pEdict is unused
 ====================
 */
 static void SV_StudioSetupBones( model_t *pModel,	float frame, int sequence, const vec3_t angles, const vec3_t origin,
-	const byte *pcontroller, const byte *pblending, int iBone, const edict_t *pEdict )
+	const byte *pcontroller, const byte *pblending, const edict_t *pEdict, int iBone )
 {
 	int		i, j, numbones = 0;
 	int		boneused[MAXSTUDIOBONES];
@@ -734,6 +741,8 @@ void Mod_StudioGetAttachment( const edict_t *e, int iAttachment, float *origin, 
 	if( mod_studiohdr->numattachments <= 0 )
 		return;
 
+	ASSERT( pBlendAPI != NULL );
+
 	if( mod_studiohdr->numattachments > MAXSTUDIOATTACHMENTS )
 	{
 		mod_studiohdr->numattachments = MAXSTUDIOATTACHMENTS; // reduce it
@@ -746,10 +755,12 @@ void Mod_StudioGetAttachment( const edict_t *e, int iAttachment, float *origin, 
 	pAtt = (mstudioattachment_t *)((byte *)mod_studiohdr + mod_studiohdr->attachmentindex);
 
 	VectorCopy( e->v.angles, angles2 );
-	angles2[PITCH] = -angles2[PITCH];
+
+	if( !( host.features & ENGINE_COMPENSATE_QUAKE_BUG ))
+		angles2[PITCH] = -angles2[PITCH];
 
 	pBlendAPI->SV_StudioSetupBones( mod, e->v.frame, e->v.sequence, angles2, e->v.origin,
-		e->v.controller, e->v.blending, pAtt[iAttachment].bone, e );
+		e->v.controller, e->v.blending, e, pAtt[iAttachment].bone );
 
 	// compute pos and angles
 	if( origin != NULL )
@@ -779,8 +790,10 @@ void Mod_GetBonePosition( const edict_t *e, int iBone, float *origin, float *ang
 	mod_studiohdr = (studiohdr_t *)Mod_Extradata( mod );
 	if( !mod_studiohdr ) return;
 
+	ASSERT( pBlendAPI != NULL );
+
 	pBlendAPI->SV_StudioSetupBones( mod, e->v.frame, e->v.sequence, e->v.angles, e->v.origin,
-		e->v.controller, e->v.blending, iBone, e );
+		e->v.controller, e->v.blending, e, iBone );
 
 	if( origin ) Matrix3x4_OriginFromMatrix( studio_bones[iBone], origin );
 	if( angles ) VectorAngles( studio_bones[iBone][0], angles ); // bone forward to angles
@@ -976,5 +989,17 @@ void Mod_InitStudioAPI( void )
 	}
 
 	// just restore pointer to builtin function
+	pBlendAPI = &gBlendAPI;
+}
+
+/*
+===============
+Mod_ResetStudioAPI
+
+Returns to default callbacks
+===============
+*/
+void Mod_ResetStudioAPI( void )
+{
 	pBlendAPI = &gBlendAPI;
 }

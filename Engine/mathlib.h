@@ -18,6 +18,8 @@ GNU General Public License for more details.
 
 #include <math.h>
 
+#pragma warning(disable : 4201)	// nonstandard extension used
+
 // euler angle order
 #define PITCH		0
 #define YAW		1

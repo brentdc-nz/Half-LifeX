@@ -42,7 +42,6 @@ static int IsComment( const char *pText )
 	return 1;
 }
 
-
 // the string "pText" is assumed to have all whitespace from both ends cut out
 static int IsStartOfText( const char *pText )
 {
@@ -53,7 +52,6 @@ static int IsStartOfText( const char *pText )
 	}
 	return 0;
 }
-
 
 // the string "pText" is assumed to have all whitespace from both ends cut out
 static int IsEndOfText( const char *pText )
@@ -85,7 +83,6 @@ static const char *SkipSpace( const char *pText )
 	return NULL;
 }
 
-
 static const char *SkipText( const char *pText )
 {
 	if( pText )
@@ -97,7 +94,6 @@ static const char *SkipText( const char *pText )
 	}
 	return NULL;
 }
-
 
 static int ParseFloats( const char *pText, float *pFloat, int count )
 {
@@ -150,7 +146,6 @@ void TrimSpace( const char *source, char *dest )
 	// terminate the dest string
 	dest[length] = 0;
 }
-
 
 static int IsToken( const char *pText, const char *pTokenName )
 {
@@ -369,9 +364,8 @@ void CL_TextMessageParse( byte *pMemFile, int fileSize )
 		pCurrentText += Q_strlen( pCurrentText ) + 1;
 	}
 
-#if _DEBUG
 	if(( pCurrentText - (char *)clgame.titles ) != ( textHeapSize + nameHeapSize + messageSize ))
 		MsgDev( D_ERROR, "TextMessage: overflow text message buffer!\n" );
-#endif
+
 	clgame.numTitles = messageCount;
 }

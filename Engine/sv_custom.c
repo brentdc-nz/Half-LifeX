@@ -158,7 +158,7 @@ void SV_CreateCustomizationList( sv_client_t *cl )
 
 		for( pCust = cl->customization.pNext; pCust != NULL; pCust = pCust->pNext )
 		{
-			if( !memcmp( pCust->resource.rgucMD5_hash, pRes->rgucMD5_hash, 16 ))
+			if( !Q_memcmp( pCust->resource.rgucMD5_hash, pRes->rgucMD5_hash, 16 ))
 			{
 				duplicated = true;
 				break;
@@ -351,7 +351,7 @@ void SV_SendResources( sizebuf_t *msg )
 			BF_WriteBits( msg, sv.resources[i].rgucMD5_hash, sizeof( sv.resources[i].rgucMD5_hash ));
 		}
 
-		if( memcmp( nullrguc, sv.resources[i].rguc_reserved, sizeof( nullrguc )))
+		if( Q_memcmp( nullrguc, sv.resources[i].rguc_reserved, sizeof( nullrguc )))
 		{
 			BF_WriteOneBit( msg, 1 );
 			BF_WriteBits( msg, sv.resources[i].rguc_reserved, sizeof( sv.resources[i].rguc_reserved ));

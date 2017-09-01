@@ -412,10 +412,9 @@ static void pfnStuckTouch( int hitent, pmtrace_t *tr )
 	for( i = 0; i < clgame.pmove->numtouch; i++ )
 	{
 		if( clgame.pmove->touchindex[i].ent == hitent )
-			break;
+			return;
 	}
 
-	if( i != clgame.pmove->numtouch ) return;
 	if( clgame.pmove->numtouch >= MAX_PHYSENTS )
 	{
 		MsgDev( D_ERROR, "PM_StuckTouch: MAX_TOUCHENTS limit exceeded\n" );
@@ -614,7 +613,7 @@ void CL_InitClientMove( void )
 	Mod_SetupHulls( clgame.player_mins, clgame.player_maxs );
 
 	// enumerate client hulls
-	for( i = 0; i < 4; i++ )
+	for( i = 0; i < MAX_MAP_HULLS; i++ )
 	{
 		if( clgame.dllFuncs.pfnGetHullBounds( i, clgame.player_mins[i], clgame.player_maxs[i] ))
 			MsgDev( D_NOTE, "CL: hull%i, player_mins: %g %g %g, player_maxs: %g %g %g\n", i,

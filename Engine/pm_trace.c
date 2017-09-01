@@ -219,19 +219,19 @@ qboolean PM_RecursiveHullCheck( hull_t *hull, int num, float p1f, float p2f, vec
 		t2 = DotProduct( plane->normal, p2 ) - plane->dist;
 	}
 
-	if( t1 >= 0 && t2 >= 0 )
+	if( t1 >= 0.0f && t2 >= 0.0f )
 		return PM_RecursiveHullCheck( hull, node->children[0], p1f, p2f, p1, p2, trace );
-	if( t1 < 0 && t2 < 0 )
+	if( t1 < 0.0f && t2 < 0.0f )
 		return PM_RecursiveHullCheck( hull, node->children[1], p1f, p2f, p1, p2, trace );
 
 	// put the crosspoint DIST_EPSILON pixels on the near side
-	side = (t1 < 0);
+	side = (t1 < 0.0f);
 
 	if( side ) frac = ( t1 + DIST_EPSILON ) / ( t1 - t2 );
 	else frac = ( t1 - DIST_EPSILON ) / ( t1 - t2 );
 
-	if( frac < 0 ) frac = 0;
-	if( frac > 1 ) frac = 1;
+	if( frac < 0.0f ) frac = 0.0f;
+	if( frac > 1.0f ) frac = 1.0f;
 		
 	midf = p1f + ( p2f - p1f ) * frac;
 	VectorLerp( p1, frac, p2, mid );
@@ -268,7 +268,7 @@ qboolean PM_RecursiveHullCheck( hull_t *hull, int num, float p1f, float p2f, vec
 		// shouldn't really happen, but does occasionally
 		frac -= 0.1f;
 
-		if( frac < 0 )
+		if( frac < 0.0f )
 		{
 			trace->fraction = midf;
 			VectorCopy( mid, trace->endpos );

@@ -50,7 +50,7 @@ extern int SV_UPDATE_BACKUP;
 #define EDICT_NUM( num )	SV_EDICT_NUM( num, __FILE__, __LINE__ )
 #define STRING( offset )	SV_GetString( offset )
 #define ALLOC_STRING(str)	SV_AllocString( str )
-#define MAKE_STRING(str)	(int)(str - svgame.globals->pStringBase)
+#define MAKE_STRING(str)	SV_MakeString( str )
 
 #define MAX_PUSHED_ENTS	256
 #define MAX_CAMERAS		32
@@ -110,6 +110,7 @@ typedef struct server_s
 
 	qboolean		background;	// this is background map
 	qboolean		loadgame;		// client begins should reuse existing entity
+	qboolean		changelevel;	// set if changelevel in-action (smooth or classic)
 	int		viewentity;	// applied on client restore. this is temporare place
 					// until client connected
 
@@ -175,7 +176,7 @@ typedef struct
 
 	clientdata_t	clientdata;
 	weapon_data_t	weapondata[MAX_WEAPONS];
-	weapon_data_t	oldweapondata[MAX_WEAPONS];	// g-cont. The fucking Cry Of Fear a corrupt memory after the weapondata!!!
+	weapon_data_t	oldweapondata[MAX_WEAPONS];	// g-cont. The fucking Cry Of Fear a does corrupting memory after the weapondata!!!
 
 	int  		num_entities;
 	int  		first_entity;		// into the circular sv_packet_entities[]
@@ -184,6 +185,7 @@ typedef struct
 typedef struct sv_client_s
 {
 	cl_state_t	state;
+	char		name[32];			// extracted from userinfo, color string allowed
 
 	char		userinfo[MAX_INFO_STRING];	// name, etc (received from client)
 	char		physinfo[MAX_INFO_STRING];	// set on server (transmit to client)
@@ -228,7 +230,6 @@ typedef struct sv_client_s
 
 	edict_t		*edict;			// EDICT_NUM(clientnum+1)
 	edict_t		*pViewEntity;		// svc_setview member
-	char		name[32];			// extracted from userinfo, color string allowed
 	int		messagelevel;		// for filtering printed messages
 
 	edict_t		*cameras[MAX_CAMERAS];	// list of portal cameras in player PVS
@@ -314,13 +315,12 @@ typedef struct
 	int		msg_realsize;		// left in bytes
 	int		msg_index;		// for debug messages
 	int		msg_dest;			// msg destination ( MSG_ONE, MSG_ALL etc )
-	qboolean		msg_started;		// to avoid include messages
-	qboolean		msg_system;		// this is message with engine index
+	qboolean		msg_started;		// to avoid recursive included messages
 	edict_t		*msg_ent;			// user message member entity
 	vec3_t		msg_org;			// user message member origin
 
 	// catched user messages (nasty hack)
-	int		gmsgHudText;		// -1 if not catched
+	int		gmsgHudText;		// -1 if not catched (e.g. mod not registered this message)
 
 	void		*hInstance;		// pointer to game.dll
 
@@ -338,15 +338,15 @@ typedef struct
 
 	sv_pushed_t	pushed[MAX_PUSHED_ENTS];	// no reason to keep array for all edicts
 						// 256 it should be enough for any game situation
-	vec3_t		player_mins[4];		// 4 hulls allowed
-	vec3_t		player_maxs[4];		// 4 hulls allowed
+	vec3_t		player_mins[MAX_MAP_HULLS];	// 4 hulls allowed
+	vec3_t		player_maxs[MAX_MAP_HULLS];	// 4 hulls allowed
 
 	globalvars_t	*globals;			// server globals
 	DLL_FUNCTIONS	dllFuncs;			// dll exported funcs
-	NEW_DLL_FUNCTIONS	dllFuncs2;		// new dll exported funcs (can be NULL)
+	NEW_DLL_FUNCTIONS	dllFuncs2;		// new dll exported funcs (may be NULL)
 	physics_interface_t	physFuncs;		// physics interface functions (Xash3D extension)
 	byte		*mempool;			// server premamnent pool: edicts etc
-	byte		*stringspool;		// for shared strings
+	byte		*stringspool;		// for engine strings
 
 	SAVERESTOREDATA	SaveData;			// shared struct, used for save data
 } svgame_static_t;
@@ -364,7 +364,7 @@ typedef struct
 						// used to check late spawns
 	sv_client_t	*clients;			// [sv_maxclients->integer]
 	sv_client_t	*currentPlayer;		// current client who network message sending on
-	int		currentPlayerNum;		// for esay acess to some global arrays
+	int		currentPlayerNum;		// for easy acess to some global arrays
 	int		num_client_entities;	// sv_maxclients->integer*UPDATE_BACKUP*MAX_PACKET_ENTITIES
 	int		next_client_entities;	// next client_entity to use
 	entity_state_t	*packet_entities;		// [num_client_entities]
@@ -379,6 +379,7 @@ typedef struct
 extern	server_static_t	svs;			// persistant server info
 extern	server_t		sv;			// local server
 extern	svgame_static_t	svgame;			// persistant game info
+extern	areanode_t	sv_areanodes[];		// AABB dynamic tree
 
 extern	convar_t		*sv_pausable;		// allows pause in multiplayer
 extern	convar_t		*sv_newunit;
@@ -422,6 +423,10 @@ extern	convar_t		*sv_validate_changelevel;
 extern	convar_t		*mp_consistency;
 extern	convar_t		*public_server;
 extern	convar_t		*physinfo;
+extern	convar_t		*deathmatch;
+extern	convar_t		*teamplay;
+extern	convar_t		*skill;
+extern	convar_t		*coop;
 
 //===========================================================
 //
@@ -561,8 +566,9 @@ float SV_AngleMod( float ideal, float current, float speed );
 void SV_SpawnEntities( const char *mapname, char *entities );
 edict_t* SV_AllocPrivateData( edict_t *ent, string_t className );
 string_t SV_AllocString( const char *szValue );
-sv_client_t *SV_ClientFromEdict( const edict_t *pEdict, qboolean spawned_only );
+string_t SV_MakeString( const char *szValue );
 const char *SV_GetString( string_t iString );
+sv_client_t *SV_ClientFromEdict( const edict_t *pEdict, qboolean spawned_only );
 void SV_SetClientMaxspeed( sv_client_t *cl, float fNewMaxspeed );
 int SV_MapIsValid( const char *filename, const char *spawn_entity, const char *landmark_name );
 void SV_StartSound( edict_t *ent, int chan, const char *sample, float vol, float attn, int flags, int pitch );
@@ -591,9 +597,9 @@ void SV_ClearSaveDir( void );
 void SV_SaveGame( const char *pName );
 qboolean SV_LoadGame( const char *pName );
 void SV_ChangeLevel( qboolean loadfromsavedgame, const char *mapname, const char *start );
-const char *SV_GetLatestSave( void );
 int SV_LoadGameState( char const *level, qboolean createPlayers );
 void SV_LoadAdjacentEnts( const char *pOldLevel, const char *pLandmarkName );
+const char *SV_GetLatestSave( void );
 void SV_InitSaveRestore( void );
 
 //
@@ -605,9 +611,6 @@ void SV_GetTrueMinMax( sv_client_t *cl, int edictnum, vec3_t mins, vec3_t maxs )
 //
 // sv_world.c
 //
-
-extern areanode_t	sv_areanodes[];
-
 void SV_ClearWorld( void );
 void SV_UnlinkEdict( edict_t *ent );
 qboolean SV_HeadnodeVisible( mnode_t *node, byte *visbits, int *lastleaf );

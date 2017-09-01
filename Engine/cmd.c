@@ -165,6 +165,7 @@ void Cbuf_Execute( void )
 		text = (char *)cmd_text.data;
 
 		quotes = 0;
+
 		for( i = 0; i < cmd_text.cursize; i++ )
 		{
 			if( text[i] == '"' ) quotes++;
@@ -174,7 +175,7 @@ void Cbuf_Execute( void )
 				break;
 		}
 
-		if( i >= MAX_CMD_LINE - 1 )
+		if( i >= ( MAX_CMD_LINE - 1 ))
 			Sys_Error( "Cbuf_Execute: command string owerflow\n" );
 
 		Q_memcpy( line, text, i );
@@ -183,7 +184,6 @@ void Cbuf_Execute( void )
 		// delete the text from the command buffer and move remaining commands down
 		// this is necessary because commands (exec) can insert data at the
 		// beginning of the text buffer
-
 		if( i == cmd_text.cursize )
 		{
 			cmd_text.cursize = 0;
@@ -207,6 +207,7 @@ void Cbuf_Execute( void )
 		}
 	}
 }
+
 /*
 ==============================================================================
 
@@ -393,7 +394,7 @@ static int		cmd_argc;
 static char		*cmd_args = NULL;
 static char		*cmd_argv[MAX_CMD_TOKENS];
 static char		cmd_tokenized[MAX_CMD_BUFFER];	// will have 0 bytes inserted
-static cmd_t	*cmd_functions;			// possible commands to execute
+static cmd_t		*cmd_functions;			// possible commands to execute
 cmd_source_t		cmd_source;
 
 /*
@@ -460,8 +461,8 @@ will point into this temporary buffer.
 */
 void Cmd_TokenizeString( char *text )
 {
-	int	i;
 	char	cmd_token[MAX_CMD_BUFFER];
+	int	i;
 
 	// clear the args from the last string
 	for( i = 0; i < cmd_argc; i++ )
@@ -786,8 +787,8 @@ Cmd_List_f
 void Cmd_List_f( void )
 {
 	cmd_t	*cmd;
-	int		i = 0;
-	char		*match;
+	int	i = 0;
+	char	*match;
 
 	if( Cmd_Argc() > 1 ) match = Cmd_Argv( 1 );
 	else match = NULL;
@@ -813,7 +814,7 @@ void Cmd_Unlink( int group )
 {
 	cmd_t	*cmd;
 	cmd_t	**prev;
-	int		count = 0;
+	int	count = 0;
 
 	if( Cvar_VariableInteger( "host_gameloaded" ) && ( group & CMD_EXTDLL ))
 	{

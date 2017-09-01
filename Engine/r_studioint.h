@@ -146,8 +146,8 @@ typedef struct sv_blending_interface_s
 					const vec3_t origin,
 					const byte *pcontroller,
 					const byte *pblending,
-					int iBone,
-					const edict_t *pEdict );
+					const edict_t *pEdict,
+					int iBone ); // g-cont. right ordering here
 } sv_blending_interface_t;
 
 #endif//R_STUDIOINT_H

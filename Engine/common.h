@@ -27,6 +27,11 @@ extern "C" {
 #pragma warning(disable : 4115)	// named type definition in parentheses
 #pragma warning(disable : 4100)	// unreferenced formal parameter
 #pragma warning(disable : 4127)	// conditional expression is constant
+#pragma warning(disable : 4057)	// differs in indirection to slightly different base types
+#pragma warning(disable : 4201)	// nonstandard extension used
+#pragma warning(disable : 4706)	// assignment within conditional expression
+#pragma warning(disable : 4054)	// type cast' : from function pointer
+#pragma warning(disable : 4310)	// cast truncates constant value
 
 #define MAX_STRING		256	// generic string
 #define MAX_INFO_STRING	256	// infostrings are transmitted across network
@@ -57,8 +62,8 @@ typedef unsigned int	uint;
 typedef char		string[MAX_STRING];
 typedef long		fs_offset_t;
 typedef struct file_s	file_t;		// normal file
-typedef struct wfile_s	wfile_t;	// wad file
-typedef struct stream_s	stream_t;	// sound stream for background music playing
+typedef struct wfile_s	wfile_t;		// wad file
+typedef struct stream_s	stream_t;		// sound stream for background music playing
 
 typedef struct
 {
@@ -80,7 +85,6 @@ typedef enum
 {	
 	HOST_NORMAL,	// listen server, singleplayer
 	HOST_DEDICATED,
-	HOST_CREDITS	// easter egg
 } instance_t;
 
 #include "system.h"
@@ -186,14 +190,15 @@ typedef struct gameinfo_s
 
 	int		gamemode;
 	qboolean		secure;		// prevent to console acess
+	qboolean		nomodels;		// don't let player to choose model (use player.mdl always)
 
 	char		sp_entity[32];	// e.g. info_player_start
 	char		mp_entity[32];	// e.g. info_player_deathmatch
 
-	float		client_mins[4][3];	// 4 hulls allowed
-	float		client_maxs[4][3];	// 4 hulls allowed
+	float		client_mins[MAX_MAP_HULLS][3];	// 4 hulls allowed
+	float		client_maxs[MAX_MAP_HULLS][3];	// 4 hulls allowed
 
-	char		ambientsound[NUM_AMBIENTS][64];// quake ambient sounds
+	char		ambientsound[NUM_AMBIENTS][64];	// quake ambient sounds
 
 	int		max_edicts;	// min edicts is 600, max edicts is 4096
 	int		max_tents;	// min temp ents is 300, max is 2048
@@ -472,7 +477,6 @@ typedef enum
 	IMAGE_HAS_LUMA	= BIT(4),		// image has luma pixels (q1-style maps)
 	IMAGE_SKYBOX	= BIT(5),		// only used by FS_SaveImage - for write right suffixes
 	IMAGE_QUAKESKY	= BIT(6),		// it's a quake sky double layered clouds (so keep it as 8 bit)
-	IMAGE_STATIC	= BIT(7),		// never trying to free this image (static memory)
 
 	// Image_Process manipulation flags
 	IMAGE_FLIP_X	= BIT(16),	// flip the image by width
@@ -758,7 +762,9 @@ void COM_AddAppDirectoryToSearchPath( const char *pszBaseDir, const char *appNam
 int COM_ExpandFilename( const char *fileName, char *nameOutBuffer, int nameOutBufferSize );
 struct pmtrace_s *PM_TraceLine( float *start, float *end, int flags, int usehull, int ignore_pe );
 void SV_StartSound( edict_t *ent, int chan, const char *sample, float vol, float attn, int flags, int pitch );
+void SV_StartMusic( const char *curtrack, const char *looptrack, fs_offset_t position );
 int R_CreateDecalList( struct decallist_s *pList, qboolean changelevel );
+qboolean S_StreamGetCurrentState( char *currentTrack, char *loopTrack, int *position );
 struct cl_entity_s *CL_GetEntityByIndex( int index );
 struct cl_entity_s *CL_GetLocalPlayer( void );
 struct player_info_s *CL_GetPlayerInfo( int playerIndex );
@@ -788,8 +794,8 @@ void SCR_Init( void );
 void SCR_UpdateScreen( void );
 void SCR_BeginLoadingPlaque( qboolean is_background );
 void SCR_CheckStartupVids( void );
-long SCR_GetAudioChunk( char *rawdata, long length );/*
-wavdata_t *SCR_GetMovieInfo( void );*/ //MARTY FIXME WIP - Intro video playback function
+long SCR_GetAudioChunk( char *rawdata, long length );
+//wavdata_t *SCR_GetMovieInfo( void ); //MARTY FIXME WIP - Intro video playback function
 void SCR_Shutdown( void );
 void Con_Print( const char *txt );
 void Con_NPrintf( int idx, char *fmt, ... );

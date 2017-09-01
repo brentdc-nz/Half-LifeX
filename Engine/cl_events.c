@@ -349,6 +349,7 @@ void CL_ParseEvent( sizebuf_t *msg )
 	for( i = 0 ; i < num_events; i++ )
 	{
 		event_index = BF_ReadUBitLong( msg, MAX_EVENT_BITS );
+		Q_memset( &args, 0, sizeof( args ));
 		has_update = false;
 
 		if( BF_ReadOneBit( msg ))
@@ -372,8 +373,19 @@ void CL_ParseEvent( sizebuf_t *msg )
 		{
 			if(( args.entindex - 1 ) == cl.playernum )
 			{
-				// get the predicted angles
-				VectorCopy( cl.refdef.cl_viewangles, args.angles );
+				if( state && !CL_IsPredicted( ))
+				{
+					// restore viewangles from angles
+					args.angles[PITCH] = -state->angles[PITCH] * 3;
+					args.angles[YAW] = state->angles[YAW];
+					args.angles[ROLL] = 0; // no roll
+				}
+				else
+				{
+					// get the predicted angles
+					VectorCopy( cl.refdef.cl_viewangles, args.angles );
+				}
+
 				VectorCopy( cl.frame.local.client.origin, args.origin );
 				VectorCopy( cl.frame.local.client.velocity, args.velocity );
 			}

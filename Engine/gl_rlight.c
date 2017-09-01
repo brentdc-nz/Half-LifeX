@@ -280,16 +280,16 @@ static qboolean R_RecursiveLightPoint( model_t *model, mnode_t *node, const vec3
 		if(( s < 0 || s > surf->extents[0] ) || ( t < 0 || t > surf->extents[1] ))
 			continue;
 
-		s >>= 4;
-		t >>= 4;
+		s /= LM_SAMPLE_SIZE;
+		t /= LM_SAMPLE_SIZE;
 
 		if( !surf->samples )
 			return true;
 
 		VectorClear( r_pointColor );
 
-		lm = surf->samples + (t * ((surf->extents[0] >> 4) + 1) + s);
-		size = ((surf->extents[0] >> 4) + 1) * ((surf->extents[1] >> 4) + 1);
+		lm = surf->samples + (t * ((surf->extents[0]  / LM_SAMPLE_SIZE) + 1) + s);
+		size = ((surf->extents[0]  / LM_SAMPLE_SIZE) + 1) * ((surf->extents[1]  / LM_SAMPLE_SIZE) + 1);
 
 		for( map = 0; map < MAXLIGHTMAPS && surf->styles[map] != 255; map++ )
 		{
@@ -332,7 +332,7 @@ void R_LightForPoint( const vec3_t point, color24 *ambientLight, qboolean invLig
 	model_t		*pmodel;
 	mnode_t		*pnodes;
 
-	if( !RI.refdef.movevars )
+	if( !cl.refdef.movevars )
 	{
 		ambientLight->r = 255;
 		ambientLight->g = 255;
@@ -343,9 +343,9 @@ void R_LightForPoint( const vec3_t point, color24 *ambientLight, qboolean invLig
 	// set to full bright if no light data
 	if( !cl.worldmodel || !cl.worldmodel->lightdata )
 	{
-		ambientLight->r = TextureToTexGamma( RI.refdef.movevars->skycolor_r );
-		ambientLight->g = TextureToTexGamma( RI.refdef.movevars->skycolor_g );
-		ambientLight->b = TextureToTexGamma( RI.refdef.movevars->skycolor_b );
+		ambientLight->r = TextureToTexGamma( cl.refdef.movevars->skycolor_r );
+		ambientLight->g = TextureToTexGamma( cl.refdef.movevars->skycolor_g );
+		ambientLight->b = TextureToTexGamma( cl.refdef.movevars->skycolor_b );
 		return;
 	}
 
@@ -355,13 +355,13 @@ get_light:
 	VectorCopy( point, end );
 	if( invLight )
 	{
-		start[2] = point[2] - 64;
-		end[2] = point[2] + 8192;
+		start[2] = point[2] - 64.0f;
+		end[2] = point[2] + world.size[2];
 	}
 	else
 	{
-		start[2] = point[2] + 64;
-		end[2] = point[2] - 8192;
+		start[2] = point[2] + 64.0f;
+		end[2] = point[2] - world.size[2];
 	}
 
 	// always have valid model

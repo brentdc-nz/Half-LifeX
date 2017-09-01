@@ -442,7 +442,7 @@ static void CL_DrawDisk( int modelIndex, float frame, int rendermode, const vec3
 		/*p*/glTexCoord2f( 1.0f, vLast );
 		/*p*/glVertex3fv( point );
 
-		SinCos( fraction * 2.0f * M_PI, &s, &c );
+		SinCos( fraction * M_PI2, &s, &c );
 		point[0] = s * w + source[0];
 		point[1] = c * w + source[1];
 		point[2] = source[2];
@@ -502,7 +502,7 @@ static void CL_DrawCylinder( int modelIndex, float frame, int rendermode, const 
 		float	s, c;
 
 		fraction = i * div;
-		SinCos( fraction * 2.0f * M_PI, &s, &c );
+		SinCos( fraction * M_PI2, &s, &c );
 
 		point[0] = s * freq * delta[2] + source[0];
 		point[1] = c * freq * delta[2] + source[1];
@@ -613,7 +613,7 @@ void CL_DrawRing( int modelIndex, float frame, int rendermode, const vec3_t sour
 	for( i = 0; i < segments + 1; i++ )
 	{
 		fraction = i * div;
-		SinCos( fraction * 2.0f * M_PI, &x, &y );
+		SinCos( fraction * M_PI2, &x, &y );
 
 		VectorMAMAM( x, xaxis, y, yaxis, 1.0f, center, point ); 
 
@@ -1123,7 +1123,7 @@ qboolean CL_CullBeam( const vec3_t start, const vec3_t end, qboolean pvsOnly )
 		
 		// don't let it be zero sized
 		if( mins[i] == maxs[i] )
-			maxs[i] += 1;
+			maxs[i] += 1.0f;
 	}
 
 	// check bbox

@@ -1952,14 +1952,19 @@ void CL_ParseTempEntity( sizebuf_t *msg )
 		pos[1] = BF_ReadCoord( &buf );
 		pos[2] = BF_ReadCoord( &buf );
 		modelIndex = BF_ReadShort( &buf );
+		life = (float)(BF_ReadByte( &buf ) * 0.1f);
 		scale = (float)(BF_ReadByte( &buf ) * 0.1f);
+		brightness = (float)BF_ReadByte( &buf );
 
 		if(( pTemp = CL_DefaultSprite( pos, modelIndex, 0 )) != NULL )
 		{
 			pTemp->entity.curstate.scale = scale;
 			pTemp->entity.curstate.rendermode = kRenderGlow;
-			pTemp->entity.baseline.renderamt = 255;
-			pTemp->entity.curstate.renderamt = 255;
+			pTemp->entity.curstate.renderfx = kRenderFxNoDissipation;
+			pTemp->entity.baseline.renderamt = brightness;
+			pTemp->entity.curstate.renderamt = brightness;
+			pTemp->flags = FTENT_FADEOUT;
+			pTemp->die = cl.time + life;
 		}
 		break;
 	case TE_STREAK_SPLASH:

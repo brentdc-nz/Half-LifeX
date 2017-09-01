@@ -17,6 +17,7 @@ GNU General Public License for more details.
 #include "client.h"
 #include "net_encode.h"
 
+#define dem_unknown		0	// unknown command
 #define dem_norewind	1	// startup message
 #define dem_read		2	// it's a normal network packet
 #define dem_jumptime	3	// move the demostart time value forward by this amount
@@ -369,9 +370,6 @@ void CL_WriteDemoHeader( const char *name )
 
 	Cbuf_InsertText( "fullupdate\n" );
 	Cbuf_Execute();
-
-	// resend the ambient sounds
-	Host_RestartAmbientSounds();
 }
 
 /*
@@ -555,6 +553,9 @@ CL_DemoCompleted
 */
 void CL_DemoCompleted( void )
 {
+	if( cls.demonum != -1 )
+		cls.changedemo = true;
+
 	CL_StopPlayback();
 
 	if( !CL_NextDemo() && host.developer <= 2 )
@@ -651,7 +652,6 @@ qboolean CL_DemoReadMessage( byte *buffer, size_t *length )
 	long	curpos = 0;
 	float	fElapsedTime = 0.0f;
 	qboolean	swallowmessages = true;
-	qboolean	forceskip = false;
 	byte	*userbuf = NULL;
 	size_t	size;
 	byte	cmd;
@@ -662,6 +662,10 @@ qboolean CL_DemoReadMessage( byte *buffer, size_t *length )
 		CL_DemoCompleted();
 		return false;
 	}
+
+	// HACKHACK: changedemo issues
+	if( !cls.netchan.remote_address.type )
+		cls.netchan.remote_address.type = NA_LOOPBACK;
 
 	if( cl.refdef.paused || cls.key_dest != key_game )
 	{
@@ -686,10 +690,7 @@ qboolean CL_DemoReadMessage( byte *buffer, size_t *length )
 
 		// HACKHACK: changelevel issues
 		if( demo.framecount <= 10 && ( fElapsedTime - f ) > host.frametime )
-		{
-//			Msg( "cmd %s, f %g, fElapsedTime %f, starttime %f\n", demo_cmd[cmd], f, fElapsedTime, demo.starttime );
 			demo.starttime = CL_GetDemoPlaybackClock();
-		}
 
 		// not ready for a message yet, put it back on the file.
 		if( cmd != dem_norewind && cmd != dem_stop && bSkipMessage )
@@ -790,10 +791,18 @@ void CL_StopPlayback( void )
 	demo.directory.entries = NULL;
 	demo.entry = NULL;
 
-	// let game known about movie state	
-	cls.state = ca_disconnected;
 	cls.demoname[0] = '\0';	// clear demoname too
 	menu.globals->demoname[0] = '\0';
+
+	S_StopAllSounds();
+	S_StopBackgroundTrack();
+
+	if( !cls.changedemo )
+	{
+		// let game known about movie state	
+		cls.state = ca_disconnected;
+		cls.demonum = -1;
+	}
 }
 
 /* 
@@ -975,7 +984,7 @@ void CL_Record_f( void )
 		for( n = 0; n < 100; n++ )
 		{
 			CL_DemoGetName( n, demoname );
-			if( !FS_FileExists( va( "demos\\%s.dem", demoname ), false )) //MARTY - Fixed slashes
+			if( !FS_FileExists( va( "demos\\%s.dem", demoname ), true )) //MARTY - Fixed slashes
 				break;
 		}
 
@@ -1019,6 +1028,17 @@ void CL_PlayDemo_f( void )
 	if( Cmd_Argc() != 2 )
 	{
 		Msg( "Usage: playdemo <demoname>\n" );
+		return;
+	}
+
+	if( cls.demoplayback )
+	{
+		CL_StopPlayback();
+	}
+
+	if( cls.demorecording )
+	{
+		Msg( "Can't playback during demo record.\n");
 		return;
 	}
 
@@ -1075,15 +1095,27 @@ void CL_PlayDemo_f( void )
 		FS_Close( cls.demofile );
 		cls.demofile = NULL;
 		cls.demonum = -1; // stop demo loop
+		cls.changedemo = false;
 		return;
 	}
 
-	// NOTE: at this point demo is still valid
-	CL_Disconnect();
-	Host_ShutdownServer();
+	if( cls.changedemo )
+	{
+		S_StopAllSounds();
+		SCR_BeginLoadingPlaque( cl.background );
 
-	Con_Close();
-	UI_SetActiveMenu( false );
+		CL_ClearState ();
+		CL_InitEdicts (); // re-arrange edicts
+	}
+	else
+	{
+		// NOTE: at this point demo is still valid
+		CL_Disconnect();
+		Host_ShutdownServer();
+
+		Con_Close();
+		UI_SetActiveMenu( false );
+	}
 
 	// allocate demo entries
 	demo.directory.entries = Mem_Alloc( cls.mempool, sizeof( demoentry_t ) * demo.directory.numentries );
@@ -1154,7 +1186,7 @@ Return to looping demos
 void CL_Demos_f( void )
 {
 	if( cls.demonum == -1 )
-		cls.demonum = 1;
+		cls.demonum = 0;
 
 	CL_Disconnect ();
 	CL_NextDemo ();
@@ -1174,5 +1206,10 @@ void CL_Stop_f( void )
 	CL_StopRecord();
 	CL_StopPlayback();
 	SCR_StopCinematic();
-	S_StopBackgroundTrack();
+
+	// stop background track that was runned from the console
+	if( !SV_Active( ))
+	{
+		S_StopBackgroundTrack();
+	}
 }

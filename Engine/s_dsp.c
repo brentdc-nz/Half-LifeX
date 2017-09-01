@@ -123,8 +123,6 @@ _inline int avg_filter( int  M, int *a, int L, int *b, int *w, int x )
 	case 1:  return y >> 1;
 	case 0:  return y;
 	}
-
-	return y;		// current output sample
 }
 
 // IIR filter, cannonical form
@@ -595,7 +593,7 @@ void FLT_Design_3db_IIR( float cutoff, float ftype, int *pM, int *pL, int *a, in
 {
 	// ftype: FLT_LP, FLT_HP, FLT_BP
 	
-	double	Wc = 2.0 * M_PI * cutoff / SOUND_DMA_SPEED;		// radians per sample
+	double	Wc = M_PI2 * cutoff / SOUND_DMA_SPEED;		// radians per sample
 	double	Oc;
 	double	fa;
 	double	fb; 
@@ -2030,7 +2028,7 @@ void LFOWAV_Fill( int *w, int count, int type )
 	case LFO_SIN:	// sine wav, all values 0 <= x <= LFOAMP, initial value = 0
 		for( i = 0; i < count; i++ )
 		{
-			x = ( int )(( float)(LFOAMP) * sin( (2.0 * M_PI_F * (float)i / (float)count ) + ( M_PI_F * 1.5 )));
+			x = ( int )(( float)(LFOAMP) * sin( (M_PI2 * (float)i / (float)count ) + ( M_PI_F * 1.5 )));
 			w[i] = (x + LFOAMP)/2;
 		}
 		break;

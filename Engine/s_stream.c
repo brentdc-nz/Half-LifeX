@@ -21,6 +21,16 @@ portable_samplepair_t	s_rawsamples[MAX_RAW_SAMPLES];
 static bg_track_t		s_bgTrack;
 int			s_rawend;
 
+void S_PrintBackgroundTrackState( void )
+{
+	if( s_bgTrack.current[0] && s_bgTrack.loopName[0] )
+		Msg( "BackgroundTrack: intro %s, loop %s\n", s_bgTrack.current, s_bgTrack.loopName );
+	else if( s_bgTrack.current[0] )
+		Msg( "BackgroundTrack: %s\n", s_bgTrack.current );
+	else if( s_bgTrack.loopName[0] )
+		Msg( "BackgroundTrack: %s [loop]\n", s_bgTrack.loopName );
+}
+
 void S_CheckLerpingState( void )
 {
 	wavdata_t	*info;

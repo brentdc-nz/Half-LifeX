@@ -36,6 +36,7 @@ convar_t	*gl_ignorehwgamma;
 convar_t	*gl_texture_anisotropy;
 convar_t	*gl_compress_textures;
 convar_t	*gl_luminance_textures;
+convar_t	*gl_keeptjunctions;
 convar_t	*gl_texture_lodbias;
 convar_t	*gl_showtextures;
 convar_t	*gl_swapInterval;
@@ -50,6 +51,7 @@ convar_t	*gl_max_size;
 convar_t	*gl_picmip;
 convar_t	*gl_skymip;
 convar_t	*gl_finish;
+convar_t	*gl_nosort;
 convar_t	*gl_clear;
 convar_t	*gl_test;
 
@@ -134,6 +136,7 @@ vidmode_t vidmode[] =
 { "Mode 22: 16x9",	2560,	1600,	true	},
 { NULL,		0,	0,	0	},
 };
+
 /*
 static dllfunc_t opengl_110funcs[] =
 {
@@ -272,7 +275,8 @@ static dllfunc_t drawrangeelementsextfuncs[] =
 {
 { "glDrawRangeElementsEXT" , (void **)&pglDrawRangeElementsEXT },
 { NULL, NULL }
-};*/
+};
+*/
 
 static dllfunc_t sgis_multitexturefuncs[] =
 {
@@ -456,9 +460,12 @@ static dllfunc_t wglswapintervalfuncs[] =
 { "wglSwapIntervalEXT" , (void **)&pwglSwapIntervalEXT },
 { NULL, NULL }
 };
-
-dll_info_t opengl_dll = { "opengl32.dll", wgl_funcs, true };
 */
+
+#ifndef _XBOX //MARTY
+dll_info_t opengl_dll = { "opengl32.dll", wgl_funcs, true };
+#endif
+
 /*
 =================
 GL_SetExtension
@@ -495,7 +502,9 @@ void *GL_GetProcAddress( const char *name )
 
 	if( /*p*/wglGetProcAddress != NULL )
 		p = (void *)/*p*/wglGetProcAddress( name );
-	//if( !p ) p = (void *)Sys_GetProcAddress( &opengl_dll, name ); //MARTY
+#ifndef _XBOX //MARTY	
+	if( !p ) p = (void *)Sys_GetProcAddress( &opengl_dll, name );
+#endif
 
 	return p;
 }
@@ -585,7 +594,7 @@ void GL_UpdateGammaRamp( void )
 
 	GL_BuildGammaTable();
 
-//	SetDeviceGammaRamp( glw_state.hDC, glState.gammaRamp ); //MARTY
+//	SetDeviceGammaRamp( glw_state.hDC, glState.gammaRamp ); //MARTY FIXME WIP
 }
 
 /*
@@ -612,7 +621,7 @@ GL_SetDefaultTexState
 */
 static void GL_SetDefaultTexState( void )
 {
-	int i;
+	int	i;
 
 	Q_memset( glState.currentTextures, -1, MAX_TEXTURE_UNITS * sizeof( *glState.currentTextures ));
 	Q_memset( glState.genSTEnabled, 0, MAX_TEXTURE_UNITS * sizeof( *glState.genSTEnabled ));
@@ -671,7 +680,7 @@ GL_DeleteContext
 */
 qboolean GL_DeleteContext( void )
 {
-	//if( /*p*/wglMakeCurrent )
+	//if( pwglMakeCurrent )
 		/*p*/wglMakeCurrent( NULL, NULL );
 
 /*	if( glw_state.hGLRC )
@@ -788,16 +797,16 @@ void VID_StartupGamma( void )
 		GL_BuildGammaTable();
 
 		// validate base gamma
-		if( !memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
+		if( !Q_memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
 		{
 			// all ok, previous gamma is valid
 			MsgDev( D_NOTE, "VID_StartupGamma: validate screen gamma - ok\n" );
 		}
-		else if( !memcmp( glState.gammaRamp, glState.stateRamp, sizeof( glState.stateRamp )))
+		else if( !Q_memcmp( glState.gammaRamp, glState.stateRamp, sizeof( glState.stateRamp )))
 		{
 			// screen gamma is equal to render gamma (probably previous instance crashed)
 			// run additional check to make sure for it
-			if( memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
+			if( Q_memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
 			{
 				// yes, current gamma it's totally wrong, restore it from gamma.dat
 				MsgDev( D_NOTE, "VID_StartupGamma: restore original gamma after crash\n" );
@@ -810,11 +819,11 @@ void VID_StartupGamma( void )
 				MsgDev( D_NOTE, "VID_StartupGamma: validate screen gamma - disabled\n" ); 
 			}
 		}
-		else if( !memcmp( glState.gammaRamp, savedGamma, sizeof( glState.stateRamp )))
+		else if( !Q_memcmp( glState.gammaRamp, savedGamma, sizeof( glState.stateRamp )))
 		{
 			// saved gamma is equal render gamma, probably gamma.dat wroted after crash
 			// run additional check to make sure it
-			if( memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
+			if( Q_memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
 			{
 				// yes, saved gamma it's totally wrong, get origianl gamma from screen
 				MsgDev( D_NOTE, "VID_StartupGamma: merge gamma.dat after crash\n" );
@@ -833,8 +842,10 @@ void VID_StartupGamma( void )
 			MsgDev( D_NOTE, "VID_StartupGamma: restore original gamma after crash\n" );
 			Q_memcpy( glState.stateRamp, savedGamma, sizeof( glState.gammaRamp ));			
 		}
+
 		Mem_Free( savedGamma );
 	}
+
 	vid_gamma->modified = true;
 }
 
@@ -904,11 +915,13 @@ qboolean GL_SetPixelformat( void )
 	}
 	else
 	{*/
+#ifdef _USEFAKEGL09 //MARTY
 		if( !SetPixelFormat( glw_state.hDC, pixelFormat, /*&PFD*/NULL )) //MARTY
 		{
 			MsgDev( D_ERROR, "GL_SetPixelformat: failed\n" );
 			return false;
 		}
+#endif
 /*
 		DescribePixelFormat( glw_state.hDC, pixelFormat, sizeof( PIXELFORMATDESCRIPTOR ), &PFD );
 	}*/
@@ -917,7 +930,7 @@ qboolean GL_SetPixelformat( void )
 	{
 		if( PFD.dwFlags & PFD_GENERIC_ACCELERATED )
 		{
-			MsgDev( D_NOTE, "VID_ChoosePFD: usign Generic MCD acceleration\n" );
+			MsgDev( D_NOTE, "VID_ChoosePFD: using Generic MCD acceleration\n" );
 			glw_state.software = false;
 		}
 		else if( gl_allow_software->integer )
@@ -937,13 +950,13 @@ qboolean GL_SetPixelformat( void )
 		glw_state.software = false;
 /*	}
 */
-	//MARTY FIXME - HARDCODED For now
+	//MARTY FIXME - Hardcoded for now
 	glConfig.color_bits = 32;//PFD.cColorBits;
 	glConfig.alpha_bits = 8;//PFD.cAlphaBits;
 	glConfig.depth_bits = 24;//PFD.cDepthBits;
 	glConfig.stencil_bits = 8;//PFD.cStencilBits;
 
-	//MARTY FIXME - HARDCODED For now
+	//MARTY FIXME - Hardcoded for now
 //	if( PFD.cStencilBits != 0 )
 		glState.stencilEnabled = true;
 //	else glState.stencilEnabled = false;
@@ -982,6 +995,7 @@ qboolean R_DescribeVIDMode( int width, int height )
 			return true;
 		}
 	}
+
 	return false;
 }
 */
@@ -1080,13 +1094,15 @@ qboolean VID_CreateWindow( int width, int height, qboolean fullscreen )
 	// init all the gl stuff for the window
 	if( !GL_SetPixelformat( ))
 	{
-		/* //MARTY FIXME WIP
+#ifndef _XBOX //MARTY
 		ShowWindow( host.hWnd, SW_HIDE );
 		DestroyWindow( host.hWnd );
 		host.hWnd = NULL;
 
 		UnregisterClass( WINDOW_NAME, host.hInst );
-		MsgDev( D_ERROR, "OpenGL driver not installed\n" );*/
+#endif
+		MsgDev( D_ERROR, "OpenGL driver not installed\n" );
+
 		return false;
 	}
 
@@ -1099,22 +1115,25 @@ qboolean VID_CreateWindow( int width, int height, qboolean fullscreen )
 	}
 	else
 	{
-		if( !GL_UpdateContext( )) //MARTY FIXME
+		if( !GL_UpdateContext( ))
 			return false;		
 	}
-/*
+
+#ifndef _XBOX //MARTY
 	SetForegroundWindow( host.hWnd );
 	SetFocus( host.hWnd );
-*/
+#endif
+
 	return true;
 }
 
 
 void VID_DestroyWindow( void ) //MARTY FIXME WIP
 {
-//	if( /*p*/wglMakeCurrent )//MARTY
+//	if( pwglMakeCurrent )//MARTY
 		/*p*/wglMakeCurrent( NULL, NULL );
-/*
+
+#ifndef _XBOX //MARTY
 	if( glw_state.hDC )
 	{
 		ReleaseDC( host.hWnd, glw_state.hDC );
@@ -1133,13 +1152,16 @@ void VID_DestroyWindow( void ) //MARTY FIXME WIP
 	{
 		ChangeDisplaySettings( 0, 0 );
 		glState.fullScreen = false;
-	}*/
+	}
+#endif
 }
 
 rserr_t R_ChangeDisplaySettings( int vid_mode, qboolean fullscreen )
 {
 	int	width, height;
-//	HDC	hDC; //MARTY
+#ifndef _XBOX //MARTY
+	HDC	hDC
+#endif
 	
 	R_SaveVideoMode( vid_mode );
 
@@ -1177,14 +1199,20 @@ rserr_t R_ChangeDisplaySettings( int vid_mode, qboolean fullscreen )
 		}
 */		
 //		if( ChangeDisplaySettings( &dm, CDS_FULLSCREEN ) == DISP_CHANGE_SUCCESSFUL ) //MARTY
+#ifdef _USEFAKEGL09 //MARTY
 		if( ChangeDisplaySettings_FakeGL(/* &dm*/ NULL, /*CDS_FULLSCREEN*/0 ) == /*DISP_CHANGE_SUCCESSFUL*/0 ) //MARTY FIXME
 		{
+#endif
 			glState.fullScreen = true;
-
+#ifdef _USEFAKEGL01 //MARTY
+			d3dSetMode(glw_state.desktopWidth, glw_state.desktopHeight, 16, 16 , true);
+#endif
 			if( !VID_CreateWindow( width, height, true ))
 				return rserr_invalid_mode;
 			return rserr_ok;
+#ifdef _USEFAKEGL09 //MARTY
 		}
+#endif
 /*		else
 		{
 			dm.dmPelsWidth = width * 2;
@@ -1276,7 +1304,7 @@ void VID_CheckChanges( void )
 	if( cl_allow_levelshots->modified )
     {
 		GL_FreeTexture( cls.loadingBar );
-		SCR_RegisterShaders(); // reload 'lambda' image
+		SCR_RegisterTextures(); // reload 'lambda' image
 		cl_allow_levelshots->modified = false;
     }
  
@@ -1353,7 +1381,7 @@ static void GL_SetDefaults( void )
 	/*p*/glDepthFunc( GL_LEQUAL );
 	/*p*/glDepthMask( GL_FALSE );
 
-	/*p*/glColor4f( 1, 1, 1, 1 );
+	/*p*/glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
 
 	if( glState.stencilEnabled )
 	{
@@ -1364,7 +1392,7 @@ static void GL_SetDefaults( void )
 	}
 
 	/*p*/glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-	/*p*/glPolygonOffset( -1, -2 );
+	/*p*/glPolygonOffset( -1.0f, -2.0f );
 
 	// properly disable multitexturing at startup
 	for( i = glConfig.max_texture_units - 1; i > 0; i-- )
@@ -1480,14 +1508,16 @@ void GL_InitCommands( void )
 	gl_check_errors = Cvar_Get( "gl_check_errors", "1", CVAR_ARCHIVE, "ignore video engine errors" );
 	gl_swapInterval = Cvar_Get( "gl_swapInterval", "0", CVAR_ARCHIVE,  "time beetween frames (in msec)" );
 	gl_extensions = Cvar_Get( "gl_extensions", "1", CVAR_GLCONFIG, "allow gl_extensions" );
-	gl_texture_anisotropy = Cvar_Get( "r_anisotropy", "2.0", CVAR_ARCHIVE, "textures anisotropic filter" );
+	gl_texture_anisotropy = Cvar_Get( "gl_anisotropy", "2.0", CVAR_ARCHIVE, "textures anisotropic filter" );
 	gl_texture_lodbias =  Cvar_Get( "gl_texture_lodbias", "0.0", CVAR_ARCHIVE, "LOD bias for mipmapped textures" );
 	gl_compress_textures = Cvar_Get( "gl_compress_textures", "0", CVAR_GLCONFIG, "compress textures to safe video memory" ); 
 	gl_luminance_textures = Cvar_Get( "gl_luminance_textures", "0", CVAR_GLCONFIG, "force all textures to luminance" ); 
+	gl_keeptjunctions = Cvar_Get( "gl_keeptjunctions", "1", CVAR_ARCHIVE, "disable to reduce vertexes count but removing tjuncs causes blinking pixels" ); 
 	gl_allow_static = Cvar_Get( "gl_allow_static", "0", CVAR_ARCHIVE, "force to drawing non-moveable brushes as part of world (save FPS)" );
 	gl_allow_mirrors = Cvar_Get( "gl_allow_mirrors", "1", CVAR_ARCHIVE, "allow to draw mirror surfaces" );
 	gl_showtextures = Cvar_Get( "r_showtextures", "0", CVAR_CHEAT, "show all uploaded textures (type values from 1 to 13)" );
 	gl_finish = Cvar_Get( "gl_finish", "0", CVAR_ARCHIVE, "use glFinish instead of glFlush" );
+	gl_nosort = Cvar_Get( "gl_nosort", "0", CVAR_ARCHIVE, "disable sorting of translucent surfaces" );
 	gl_clear = Cvar_Get( "gl_clear", "0", CVAR_ARCHIVE, "clearing screen after each frame" );
 	gl_test = Cvar_Get( "gl_test", "0", 0, "engine developer cvar for quick testing new features" );
 	gl_wireframe = Cvar_Get( "gl_wireframe", "0", 0, "show wireframe overlay" );
@@ -1518,7 +1548,7 @@ void GL_RemoveCommands( void )
 void GL_InitExtensions( void ) //MARTY FIXME WIP
 {
 	// initialize gl extensions
-	//GL_CheckExtension( "OpenGL 1.1.0", opengl_110funcs, NULL, GL_OPENGL_110 ); //MARTY - We call FakeGl directly
+	//GL_CheckExtension( "OpenGL 1.1.0", opengl_110funcs, NULL, GL_OPENGL_110 ); //MARTY - We call FakeGL directly
 
 	// get our various GL strings
 	glConfig.vendor_string = /*p*/glGetString( GL_VENDOR );
@@ -1530,6 +1560,7 @@ void GL_InitExtensions( void ) //MARTY FIXME WIP
 /*	//MARTY FIXME WIP
 	GL_CheckExtension( "WGL_3DFX_gamma_control", wgl3DFXgammacontrolfuncs, NULL, GL_WGL_3DFX_GAMMA_CONTROL );
 	GL_CheckExtension( "WGL_EXT_swap_control", wglswapintervalfuncs, NULL, GL_WGL_SWAPCONTROL );
+
 	GL_CheckExtension( "glDrawRangeElements", drawrangeelementsfuncs, "gl_drawrangeelments", GL_DRAW_RANGEELEMENTS_EXT );
 
 	if( !GL_Support( GL_DRAW_RANGEELEMENTS_EXT ))
@@ -1665,7 +1696,7 @@ void GL_InitExtensions( void ) //MARTY FIXME WIP
 	Cvar_Set( "gl_anisotropy", va( "%f", bound( 0, gl_texture_anisotropy->value, glConfig.max_texture_anisotropy )));
 
 	// software mipmap generator does wrong result with NPOT textures ...
-	if( !GL_Support( /*GL_SGIS_MIPMAPS_EXT*/FGL_GL_SGIS_MIPMAPS_EXT )) //MARTY FIXME WIP - Hard coded due to FakeGL limitations!
+	if( !GL_Support( /*GL_SGIS_MIPMAPS_EXT*/FGL_GL_SGIS_MIPMAPS_EXT )) //MARTY - Hard coded due to FakeGL limitations!
 		GL_SetExtension( GL_ARB_TEXTURE_NPOT_EXT, false );
 
 	glw_state.initialized = true;
@@ -1683,7 +1714,7 @@ qboolean R_Init( void )
 	if( glw_state.initialized )
 		return true;
 
-	// give initial openGL configuration
+	// give initial OpenGL configuration
 	Cbuf_AddText( "exec opengl.cfg\n" );
 
 	GL_InitCommands();
@@ -1751,15 +1782,15 @@ void R_Shutdown( void )
 GL_CheckForErrors
 =================
 */
-void GL_CheckForErrors_( const char *filename, const int fileline ) //MARTY FIXME WIP
+void GL_CheckForErrors_( const char *filename, const int fileline )
 {
-/*	int	err;
+	int	err;
 	char	*str;
 
 	if( !gl_check_errors->integer )
 		return;
 
-	if(( err = pglGetError( )) == GL_NO_ERROR )
+	if(( err = /*p*/glGetError( )) == GL_NO_ERROR )
 		return;
 
 	switch( err )
@@ -1787,5 +1818,5 @@ void GL_CheckForErrors_( const char *filename, const int fileline ) //MARTY FIXM
 		break;
 	}
 
-	Host_Error( "GL_CheckForErrors: %s (called at %s:%i)\n", str, filename, fileline );*/
+	Host_Error( "GL_CheckForErrors: %s (called at %s:%i)\n", str, filename, fileline );
 }

@@ -64,38 +64,35 @@ typedef struct imglib_s
 	const savepixformat_t	*saveformats;
 
 	// current 2d image state
-	word		width;
-	word		height;
-	word		depth;
-	uint		type;		// main type switcher
-	uint		flags;		// additional image flags
-	size_t		size;		// image rgba size (for bounds checking)
-	uint		ptr;		// safe image pointer
-	byte		*rgba;		// image pointer (see image_type for details)
+	word			width;
+	word			height;
+	word			depth;
+	uint			type;		// main type switcher
+	uint			flags;		// additional image flags
+	size_t			size;		// image rgba size (for bounds checking)
+	uint			ptr;		// safe image pointer
+	int			bpp;		// PFDesc[type].bpp
+	byte			*rgba;		// image pointer (see image_type for details)
 
 	// current cubemap state
-	int		source_width;	// locked cubemap dims (all wrong sides will be automatically resampled)
-	int		source_height;
-	uint		source_type;	// shared image type for all mipmaps or cubemap sides
-	int		num_sides;	// how much sides is loaded 
-	byte		*cubemap;		// cubemap pack
+	int			source_width;	// locked cubemap dims (all wrong sides will be automatically resampled)
+	int			source_height;
+	uint			source_type;	// shared image type for all mipmaps or cubemap sides
+	int			num_sides;	// how much sides is loaded 
+	byte			*cubemap;		// cubemap pack
 
 	// indexed images state
-	uint		*d_currentpal;	// installed version of internal palette
-	int		d_rendermode;	// palette rendermode
-	byte		*palette;		// palette pointer
+	uint			*d_currentpal;	// installed version of internal palette
+	int			d_rendermode;	// palette rendermode
+	byte			*palette;		// palette pointer
 
 	// global parms
-	int		bpp;		// PFDesc[type].bpp
-	int		SizeOfFile;	// total size
-	qboolean		(*decompress)( uint, int, uint, uint, uint, const void* );
+	rgba_t			fogParams;	// some water textures has info about underwater fog
 
-	rgba_t		fogParams;	// some water textures has info about underwater fog
-
-	image_hint_t	hint;		// hint for some loaders
-	byte		*tempbuffer;	// for convert operations
-	int		cmd_flags;
-	int		force_flags;	// user-specified force flags
+	image_hint_t		hint;		// hint for some loaders
+	byte			*tempbuffer;	// for convert operations
+	int			cmd_flags;	// global imglib flags
+	int			force_flags;	// override cmd_flags
 } imglib_t;
 
 /*
@@ -151,63 +148,6 @@ typedef struct tga_s
 } tga_t;
 #pragma pack( )
 
-/*
-========================================================================
-
-.JPG image format
-
-========================================================================
-*/
-typedef struct huffman_table_s
-{
-	// Huffman coding tables
-	byte	bits[16];
-	byte	hval[256];
-	byte	size[256];
-	word	code[256];
-} huffman_table_t;
-
-typedef struct jpg_s
-{
-	// not a real header
-	file_t	*file;		// file
-	byte	*buffer;		// jpg buffer
-	
-	int	width;		// width image
-	int	height;		// height image
-	byte	*data;		// image
-	int	data_precision;	// bit per component
-	int	num_components;	// number component
-	int	restart_interval;	// restart interval
-	qboolean	progressive_mode;	// progressive format
-
-	struct
-	{
-		int     id;	// identifier
-		int     h;	// horizontal sampling factor
-		int     v;	// vertical sampling factor
-		int     t;	// quantization table selector
-		int     td;	// DC table selector
-		int     ta;	// AC table selector
-	} component_info[3];	// RGB (alpha not supported)
-    
-	huffman_table_t hac[4];	// AC table
-	huffman_table_t hdc[4];	// DC table
-
-	int	qtable[4][64];	// quantization table
-
-	struct
-	{
-		int     ss,se;	// progressive jpeg spectral selection
-		int     ah,al;	// progressive jpeg successive approx
-	} scan;
-
-	int	dc[3];
-	int	curbit;
-	byte	curbyte;
-
-} jpg_t;
-
 // imagelib definitions
 #define IMAGE_MAXWIDTH	4096
 #define IMAGE_MAXHEIGHT	4096
@@ -237,16 +177,16 @@ void Image_RoundDimensions( int *scaled_width, int *scaled_height );
 byte *Image_ResampleInternal( const void *indata, int in_w, int in_h, int out_w, int out_h, int intype, qboolean *done );
 byte *Image_FlipInternal( const byte *in, word *srcwidth, word *srcheight, int type, int flags );
 void Image_PaletteHueReplace( byte *palSrc, int newHue, int start, int end );
-void Image_FreeImage( rgbdata_t *pack );
-void Image_Save( const char *filename, rgbdata_t *pix );
 rgbdata_t *Image_Load(const char *filename, const byte *buffer, size_t buffsize );
 qboolean Image_Copy8bitRGBA( const byte *in, byte *out, int pixels );
 qboolean Image_AddIndexedImageToPack( const byte *in, int width, int height );
 qboolean Image_AddRGBAImageToPack( uint imageSize, const void* data );
+void Image_Save( const char *filename, rgbdata_t *pix );
 void Image_ConvertPalTo24bit( rgbdata_t *pic );
 void Image_GetPaletteLMP( const byte *pal, int rendermode );
 void Image_GetPaletteBMP( const byte *pal );
 int Image_ComparePalette( const byte *pal );
+void Image_FreeImage( rgbdata_t *pack );
 void Image_CopyPalette24bit( void );
 void Image_CopyPalette32bit( void );
 void Image_SetPixelFormat( void );

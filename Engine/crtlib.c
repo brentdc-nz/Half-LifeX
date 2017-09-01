@@ -255,6 +255,7 @@ float Q_atof( const char *str )
 	// assume decimal
 	decimal = -1;
 	total = 0;
+
 	while( 1 )
 	{
 		c = *str++;
@@ -338,11 +339,14 @@ int Q_strnicmp( const char *s1, const char *s2, int n )
 
 	if( s1 == NULL )
 	{
-		if( s2 == NULL ) return 0;
+		if( s2 == NULL )
+			return 0;
 		else return -1;
 	}
 	else if( s2 == NULL )
+	{
 		return 1;
+          }
 
 	do {
 		c1 = *s1++;
@@ -364,16 +368,19 @@ int Q_strnicmp( const char *s1, const char *s2, int n )
 
 int Q_strncmp( const char *s1, const char *s2, int n )
 {
-	int		c1, c2;
+	int	c1, c2;
 
 	if( s1 == NULL )
 	{
-		if( s2 == NULL ) return 0;
+		if( s2 == NULL )
+			return 0;
 		else return -1;
 	}
 	else if( s2 == NULL )
+	{
 		return 1;
-	
+	}	
+
 	do {
 		c1 = *s1++;
 		c2 = *s2++;
@@ -475,6 +482,7 @@ const char* Q_timestamp( int format )
 	}
 
 	Q_strncpy( timestamp, timestring, sizeof( timestamp ));
+
 	return timestamp;
 }
 
@@ -678,6 +686,13 @@ int _Q_memcmp( const void *src0, const void *src1, size_t count, const char *fil
 	if( src0 == NULL ) Sys_Error( "memcmp: src1 == NULL (called at %s:%i)\n", filename, fileline );
 	if( src1 == NULL ) Sys_Error( "memcmp: src2 == NULL (called at %s:%i)\n", filename, fileline );
 	return memcmp( src0, src1, count );
+}
+
+void _Q_memmove( void *dest, const void *src, size_t count, const char *filename, int fileline )
+{
+	if( src == NULL || count <= 0 ) return; // nothing to move
+	if( dest == NULL ) Sys_Error( "memmove: dest == NULL (called at %s:%i)\n", filename, fileline );
+	memmove( dest, src, count );
 }
 
 void CRT_Init( void )

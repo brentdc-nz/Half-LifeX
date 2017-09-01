@@ -90,13 +90,13 @@ void World_MoveBounds( const vec3_t start, vec3_t mins, vec3_t maxs, const vec3_
 	{
 		if( end[i] > start[i] )
 		{
-			boxmins[i] = start[i] + mins[i] - 1;
-			boxmaxs[i] = end[i] + maxs[i] + 1;
+			boxmins[i] = start[i] + mins[i] - 1.0f;
+			boxmaxs[i] = end[i] + maxs[i] + 1.0f;
 		}
 		else
 		{
-			boxmins[i] = end[i] + mins[i] - 1;
-			boxmaxs[i] = start[i] + maxs[i] + 1;
+			boxmins[i] = end[i] + mins[i] - 1.0f;
+			boxmaxs[i] = start[i] + maxs[i] + 1.0f;
 		}
 	}
 }

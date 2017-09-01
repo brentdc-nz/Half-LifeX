@@ -30,6 +30,8 @@ GNU General Public License for more details.
 #include "vgui_draw.h"
 #include "sound.h"		// SND_STOP_LOOPING
 
+#define MAX_TEXTCHANNELS	8		// must be power of two (GoldSrc uses 4 channels)
+
 #ifdef _HARDLINKED //MARTY
 
 void /*DLLEXPORT*/ StaticIN_ClearStates (void);
@@ -61,6 +63,7 @@ void /*DLLEXPORT*/ StaticHUD_Shutdown( void );
 void /*DLLEXPORT*/ StaticHUD_DrawTransparentTriangles( void );
 void /*DLLEXPORT*/ StaticHUD_DrawNormalTriangles( void );
 int /*DLLEXPORT*/ StaticCL_IsThirdPerson( void );
+void /*DLLEXPORT*/ StaticCL_CameraOffset( float *ofs );
 void /*DLLEXPORT*/ StaticDemo_ReadBuffer( int size, unsigned char *buffer );
 void /*DLLEXPORT*/ StaticHUD_PlayerMoveInit( struct playermove_s *ppmove );
 void /*DLLEXPORT*/ StaticHUD_PlayerMove( struct playermove_s *ppmove, int server );
@@ -81,7 +84,6 @@ int /*DLLEXPORT*/ StaticIN_XBoxGamepadButtons( XBGamepadButtons_t *pGamepadButto
 
 #endif //_HARDLINKED
 
-#define MAX_TEXTCHANNELS	8		// must be power of two (GoldSrc uses 4 channel)
 #define TEXT_MSGNAME	"TextMessage%i"
 
 char			cl_textbuffer[MAX_TEXTCHANNELS][512];
@@ -117,6 +119,7 @@ static dllfunc_t cdll_exports[] =
 { "Demo_ReadBuffer", (void **)&clgame.dllFuncs.pfnDemo_ReadBuffer },
 { "CAM_Think", (void **)&clgame.dllFuncs.CAM_Think },
 { "CL_IsThirdPerson", (void **)&clgame.dllFuncs.CL_IsThirdPerson },
+{ "CL_CameraOffset", (void **)&clgame.dllFuncs.CL_CameraOffset },
 { "CL_CreateMove", (void **)&clgame.dllFuncs.CL_CreateMove },
 { "IN_ActivateMouse", (void **)&clgame.dllFuncs.IN_ActivateMouse },
 { "IN_DeactivateMouse", (void **)&clgame.dllFuncs.IN_DeactivateMouse },
@@ -136,9 +139,9 @@ static dllfunc_t cdll_new_exports[] = 	// allowed only in SDK 2.3 and higher
 { "HUD_VoiceStatus", (void **)&clgame.dllFuncs.pfnVoiceStatus },
 //MARTY - Extensions
 { "HUD_ChatInputPosition", (void **)&clgame.dllFuncs.pfnChatInputPosition },
-{ "HUD_GetRenderInterface", (void **)&clgame.dllFuncs.pfnGetRenderInterface },
+{ "HUD_GetRenderInterface", (void **)&clgame.dllFuncs.pfnGetRenderInterface },	// Xash3D ext
 { "HUD_GetPlayerTeam", (void **)&clgame.dllFuncs.pfnGetPlayerTeam },
-{ "HUD_ClipMoveToEntity", (void **)&clgame.dllFuncs.pfnClipMoveToEntity },
+{ "HUD_ClipMoveToEntity", (void **)&clgame.dllFuncs.pfnClipMoveToEntity },	// Xash3D ext
 { NULL, NULL }
 };
 
@@ -340,7 +343,7 @@ adjust text by x pos
 */
 static int CL_AdjustXPos( float x, int width, int totalWidth )
 {
-	int xPos;
+	int	xPos;
 
 	if( x == -1 )
 	{
@@ -349,7 +352,7 @@ static int CL_AdjustXPos( float x, int width, int totalWidth )
 	else
 	{
 		if ( x < 0 )
-			xPos = (1.0 + x) * clgame.scrInfo.iWidth - totalWidth;	// Alight right
+			xPos = (1.0f + x) * clgame.scrInfo.iWidth - totalWidth;	// Alight right
 		else // align left
 			xPos = x * clgame.scrInfo.iWidth;
 	}
@@ -371,7 +374,7 @@ adjust text by y pos
 */
 static int CL_AdjustYPos( float y, int height )
 {
-	int yPos;
+	int	yPos;
 
 	if( y == -1 ) // centered?
 	{
@@ -381,7 +384,7 @@ static int CL_AdjustYPos( float y, int height )
 	{
 		// Alight bottom?
 		if( y < 0 )
-			yPos = (1.0 + y) * clgame.scrInfo.iHeight - height; // Alight bottom
+			yPos = (1.0f + y) * clgame.scrInfo.iHeight - height; // Alight bottom
 		else // align top
 			yPos = y * clgame.scrInfo.iHeight;
 	}
@@ -548,6 +551,7 @@ static qboolean SPR_Scissor( float *x, float *y, float *width, float *height, fl
 		*v1 -= (*y + *height - (clgame.ds.scissor_y + clgame.ds.scissor_height)) * dvdy;
 		*height = clgame.ds.scissor_y + clgame.ds.scissor_height - *y;
 	}
+
 	return true;
 }
 
@@ -618,7 +622,7 @@ CL_DrawCenterPrint
 called each frame
 =============
 */
-static void CL_DrawCenterPrint( void )
+void CL_DrawCenterPrint( void )
 {
 	char	*pText;
 	int	i, j, x, y;
@@ -681,7 +685,7 @@ can be modulated
 void CL_DrawScreenFade( void )
 {
 	screenfade_t	*sf = &clgame.fade;
-	int		iFadeAlpha;
+	int		iFadeAlpha, testFlags;
 
 	// keep pushing reset time out indefinitely
 	if( sf->fadeFlags & FFADE_STAYOUT )
@@ -697,8 +701,10 @@ void CL_DrawScreenFade( void )
 		return;
 	}
 
+	testFlags = (sf->fadeFlags & ~FFADE_MODULATE);
+
 	// fading...
-	if( sf->fadeFlags == FFADE_STAYOUT )
+	if( testFlags == FFADE_STAYOUT )
 	{
 		iFadeAlpha = sf->fadealpha;
 	}
@@ -711,7 +717,9 @@ void CL_DrawScreenFade( void )
 
 	/*p*/glColor4ub( sf->fader, sf->fadeg, sf->fadeb, iFadeAlpha );
 
-	GL_SetRenderMode( kRenderTransTexture );
+	if( sf->fadeFlags & FFADE_MODULATE )
+		GL_SetRenderMode( kRenderTransAdd );
+	else GL_SetRenderMode( kRenderTransTexture );
 	R_DrawStretchPic( 0, 0, scr_width->integer, scr_height->integer, 0, 0, 1, 1, cls.fillImage );
 	/*p*/glColor4ub( 255, 255, 255, 255 );
 }
@@ -802,19 +810,6 @@ void CL_ParseTextMessage( sizebuf_t *msg )
 	// NOTE: a "HudText" message contain only 'string' with message name, so we
 	// don't needs to use MSG_ routines here, just directly write msgname into netbuffer
 	CL_DispatchUserMessage( "HudText", Q_strlen( text->pName ) + 1, (void *)text->pName );
-}
-
-/*
-====================
-CL_BadMessage
-
-Default method to invoke host error
-====================
-*/
-int CL_BadMessage( const char *pszName, int iSize, void *pbuf )
-{
-	Host_Error( "svc_bad\n" );
-	return 0;
 }
 
 /*
@@ -1061,7 +1056,7 @@ void CL_LinkUserMessage( char *pszName, const int svc_num, int iSize )
 		Host_Error( "CL_LinkUserMessage: bad message name\n" );
 
 	if( svc_num < svc_lastmsg )
-		Host_Error( "CL_LinkUserMessage: tired to hook a system message \"%s\"\n", svc_strings[svc_num] );	
+		Host_Error( "CL_LinkUserMessage: tried to hook a system message \"%s\"\n", svc_strings[svc_num] );	
 
 	// see if already hooked
 	for( i = 0; i < MAX_USER_MESSAGES && clgame.msg[i].name[0]; i++ )
@@ -1451,9 +1446,7 @@ static void pfnFillRGBA( int x, int y, int width, int height, int r, int g, int 
 	g = bound( 0, g, 255 );
 	b = bound( 0, b, 255 );
 	a = bound( 0, a, 255 );
-//	/*p*/glColor4ub( r, g, b, a );
-
-	/*p*/glColor4ub( 255, 160, 0, 100 ); //MARTY TEST
+	/*p*/glColor4ub( r, g, b, a );
 
 	SPR_AdjustSize( (float *)&x, (float *)&y, (float *)&width, (float *)&height );
 
@@ -1755,6 +1748,13 @@ void pfnDrawSetTextColor( float r, float g, float b )
 	clgame.ds.textColor[3] = (byte)0xFF;
 }
 
+/*
+=============
+pfnDrawConsoleStringLen
+
+compute string length in screen pixels
+=============
+*/
 void pfnDrawConsoleStringLen( const char *pText, int *length, int *height )
 {
 	Con_SetFont( con_fontsize->integer );
@@ -1974,7 +1974,7 @@ void pfnCalcShake( void )
 		// compute random shake extents (the shake will settle down from this)
 		for( i = 0; i < 3; i++ )
 			clgame.shake.offset[i] = Com_RandomFloat( -clgame.shake.amplitude, clgame.shake.amplitude );
-		clgame.shake.angle = Com_RandomFloat( -clgame.shake.amplitude * 0.25, clgame.shake.amplitude * 0.25 );
+		clgame.shake.angle = Com_RandomFloat( -clgame.shake.amplitude * 0.25f, clgame.shake.amplitude * 0.25f );
 	}
 
 	// ramp down amplitude over duration (fraction goes from 1 to 0 linearly with slope 1/duration)
@@ -2937,17 +2937,12 @@ void TriRenderMode( int mode )
 	switch( mode )
 	{
 	case kRenderNormal:
-	default:
+	default:	
 		/*p*/glDisable( GL_BLEND );
 		/*p*/glDisable( GL_ALPHA_TEST );
 		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 		break;
 	case kRenderTransColor:
-		/*p*/glEnable( GL_BLEND );
-		/*p*/glDisable( GL_ALPHA_TEST );
-		/*p*/glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-		break;
 	case kRenderTransAlpha:
 	case kRenderTransTexture:
 		// NOTE: TriAPI doesn't have 'solid' mode
@@ -2957,11 +2952,6 @@ void TriRenderMode( int mode )
 		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 		break;
 	case kRenderGlow:
-		/*p*/glEnable( GL_BLEND );
-		/*p*/glDisable( GL_ALPHA_TEST );
-		/*p*/glBlendFunc( GL_SRC_ALPHA, GL_ONE );
-		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-		break;
 	case kRenderTransAdd:
 		/*p*/glEnable( GL_BLEND );
 		/*p*/glDisable( GL_ALPHA_TEST );
@@ -3314,7 +3304,7 @@ NetAPI_SendRequest
 */
 void NetAPI_SendRequest( int context, int request, int flags, double timeout, netadr_t *remote_address, net_api_response_func_t response )
 {
-	net_request_t	*nr;
+	net_request_t	*nr = NULL;
 	string		req;
 	int		i;
 
@@ -3388,7 +3378,7 @@ void NetAPI_CancelRequest( int context )
 	{
 		if( clgame.net_requests[i].resp.context == context )
 		{
-			Msg( "Request with context %i cancelled\n", context );
+			MsgDev( D_NOTE, "Request with context %i cancelled\n", context );
 			Q_memset( &clgame.net_requests[i], 0, sizeof( net_request_t ));
 			break;
 		}
@@ -3871,7 +3861,6 @@ qboolean CL_LoadProgs( const char *name )
 #ifdef _VGUI //MARTY FIXME WIP
 	VGui_Startup ();
 #endif
-
 	clgame.hInstance = Com_LoadLibrary( name, false );
 	if( !clgame.hInstance ) return false;
 
@@ -3920,6 +3909,7 @@ qboolean CL_LoadProgs( const char *name )
 	clgame.dllFuncs.pfnDemo_ReadBuffer = &StaticDemo_ReadBuffer;
 	clgame.dllFuncs.CAM_Think = &StaticCAM_Think;
 	clgame.dllFuncs.CL_IsThirdPerson = &StaticCL_IsThirdPerson;
+	clgame.dllFuncs.CL_CameraOffset = &StaticCL_CameraOffset;
 	clgame.dllFuncs.CL_CreateMove = &StaticCL_CreateMove;
 	clgame.dllFuncs.IN_ActivateMouse = &StaticIN_ActivateMouse;
 	clgame.dllFuncs.IN_DeactivateMouse = &StaticIN_DeactivateMouse;

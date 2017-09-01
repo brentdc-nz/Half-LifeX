@@ -435,12 +435,12 @@ static void R_DecalVertsLight( float *v, msurface_t *surf, int vertCount )
 		s = DotProduct( v, tex->vecs[0] ) + tex->vecs[0][3] - surf->texturemins[0];
 		s += surf->light_s * LM_SAMPLE_SIZE;
 		s += LM_SAMPLE_SIZE >> 1;
-		s /= BLOCK_WIDTH * LM_SAMPLE_SIZE; //fa->texinfo->texture->width;
+		s /= BLOCK_SIZE * LM_SAMPLE_SIZE; //fa->texinfo->texture->width;
 
 		t = DotProduct( v, tex->vecs[1] ) + tex->vecs[1][3] - surf->texturemins[1];
 		t += surf->light_t * LM_SAMPLE_SIZE;
 		t += LM_SAMPLE_SIZE >> 1;
-		t /= BLOCK_HEIGHT * LM_SAMPLE_SIZE; //fa->texinfo->texture->height;
+		t /= BLOCK_SIZE * LM_SAMPLE_SIZE; //fa->texinfo->texture->height;
 
 		v[5] = s;
 		v[6] = t;
@@ -627,7 +627,7 @@ void R_DecalSurface( msurface_t *surf, decalinfo_t *decalinfo )
 	// we in restore mode
 	if( cls.state == ca_connected )
 	{
-		// NOTE: we may has the decal on this surface that come from another level.
+		// NOTE: we may have the decal on this surface that come from another level.
 		// check duplicate with same position and texture
 		while( decal != NULL )
 		{

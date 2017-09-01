@@ -132,7 +132,7 @@ static void UI_SaveGame_GetGameList( void )
 	char	**filenames;
 	int	i = 0, j, numFiles;
 
-	filenames = FS_SEARCH( "save/*.sav", &numFiles, TRUE );
+	filenames = FS_SEARCH( "save\\*.sav", &numFiles, TRUE ); //MARTY - Fixed Slashes
 
 	if ( CL_IsActive() && !gpGlobals->demoplayback )
 	{
@@ -293,7 +293,7 @@ static void UI_SaveGame_Ownerdraw( void *self )
 		{
 			char	saveshot[128];
 
-			sprintf( saveshot, "save/%s.bmp", uiSaveGame.saveName[uiSaveGame.savesList.curItem] );
+			sprintf( saveshot, "save\\%s.bmp", uiSaveGame.saveName[uiSaveGame.savesList.curItem] ); //MARTY - Fixed slashes
 
 			if( !FILE_EXISTS( saveshot ))
 				UI_DrawPicAdditive( x, y, w, h, uiColorWhite, "{GRAF001" );

@@ -505,6 +505,7 @@ mspriteframe_t *R_GetSpriteFrame( const model_t *pModel, int frame, float yaw )
 		pspritegroup = (mspritegroup_t *)psprite->frames[frame].frameptr;
 		pspriteframe = pspritegroup->frames[angleframe];
 	}
+
 	return pspriteframe;
 }
 
@@ -673,6 +674,7 @@ float R_GetSpriteFrameInterpolant( cl_entity_t *ent, mspriteframe_t **oldframe, 
 		pspritegroup = (mspritegroup_t *)psprite->frames[frame].frameptr;
 		if( curframe ) *curframe = pspritegroup->frames[angleframe];
 	}
+
 	return lerpFrac;
 }
 
@@ -752,7 +754,7 @@ static float R_GlowSightDistance( vec3_t glowOrigin )
 	{
 		tr = CL_TraceLine( RI.vieworg, glowOrigin, PM_GLASS_IGNORE|PM_STUDIO_IGNORE );
 
-		if(( 1.0f - tr.fraction ) * dist > 8 )
+		if(( 1.0f - tr.fraction ) * dist > 8.0f )
 			return -1;
 	}
 	return dist;
@@ -770,7 +772,7 @@ static float R_SpriteGlowBlend( vec3_t origin, int rendermode, int renderfx, int
 	float	dist = R_GlowSightDistance( origin );
 	float	brightness;
 
-	if( dist <= 0 ) return 0.0f; // occluded
+	if( dist <= 0.0f ) return 0.0f; // occluded
 
 	if( renderfx == kRenderFxNoDissipation )
 		return (float)alpha * (1.0f / 255.0f);
@@ -937,7 +939,6 @@ void R_DrawSpriteModel( cl_entity_t *e )
 
 	if( R_SpriteOccluded( e, origin, &alpha, &scale ))
 		return; // sprite culled
-
 	r_stats.c_sprite_models_drawn++;
 
 	if( psprite->texFormat == SPR_ALPHTEST && e->curstate.rendermode != kRenderTransAdd )
@@ -1032,7 +1033,7 @@ void R_DrawSpriteModel( cl_entity_t *e )
 		VectorNormalize( v_right );
 		break;
 	case SPR_FWD_PARALLEL_ORIENTED:
-		angle = e->angles[ROLL] * (M_PI * 2.0f / 360.0f);
+		angle = e->angles[ROLL] * (M_PI2 / 360.0f);
 		SinCos( angle, &sr, &cr );
 		for( i = 0; i < 3; i++ )
 		{
@@ -1065,14 +1066,14 @@ void R_DrawSpriteModel( cl_entity_t *e )
 		lerp = bound( 0.0f, lerp, 1.0f );
 		ilerp = 1.0f - lerp;
 
-		if( ilerp != 0 )
+		if( ilerp != 0.0f )
 		{
 			/*p*/glColor4f( color[0], color[1], color[2], flAlpha * ilerp );
 			GL_Bind( GL_TEXTURE0, oldframe->gl_texturenum );
 			R_DrawSpriteQuad( oldframe, origin, v_right, v_up, scale );
 		}
 
-		if( lerp != 0 )
+		if( lerp != 0.0f )
 		{
 			/*p*/glColor4f( color[0], color[1], color[2], flAlpha * lerp );
 			GL_Bind( GL_TEXTURE0, frame->gl_texturenum );

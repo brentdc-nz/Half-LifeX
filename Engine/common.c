@@ -21,28 +21,6 @@ GNU General Public License for more details.
 #include "library.h"
 
 /*
-=============
-COM_LoadFile
-
-=============
-*/
-byte *COM_LoadFile( const char *filename, int usehunk, int *pLength )
-{
-	string	name;
-
-	if( !filename || !*filename )
-	{
-		if( pLength ) *pLength = 0;
-		return NULL;
-	}
-
-	Q_strncpy( name, filename, sizeof( name ));
-	COM_FixSlashes( name );
-
-	return FS_LoadFile( name, pLength, false );
-}
-
-/*
 ==============
 COM_ParseFile
 
@@ -61,7 +39,6 @@ char *COM_ParseFile( char *data, char *token )
 	
 	if( !data )
 		return NULL;
-		
 // skip whitespace
 skipwhite:
 	while(( c = ((byte)*data)) <= ' ' )
@@ -253,6 +230,7 @@ char *COM_MemFgets( byte *pMemFile, int fileSize, int *filePos, char *pBuffer, i
 		*filePos = i;
 		return pBuffer;
 	}
+
 	return NULL;
 }
 
@@ -283,7 +261,8 @@ COM_LoadFileForMe
 byte* COM_LoadFileForMe( const char *filename, int *pLength )
 {
 	string	name;
-	int	i;
+	byte	*file, *pfile;
+	int	iLength;
 
 	if( !filename || !*filename )
 	{
@@ -291,15 +270,71 @@ byte* COM_LoadFileForMe( const char *filename, int *pLength )
 		return NULL;
 	}
 
-	// replace all backward slashes
-	for( i = 0; i < Q_strlen( filename ); i++ )
-	{
-		if( filename[i] == '\\' ) name[i] = '/';
-		else name[i] = Q_tolower( filename[i] );
-	}
-	name[i] = '\0';
+	Q_strncpy( name, filename, sizeof( name ));
+	COM_FixSlashes( name );
 
-	return FS_LoadFile( name, pLength, false );
+	pfile = FS_LoadFile( name, &iLength, false );
+	if( pLength ) *pLength = iLength;
+
+	if( pfile )
+	{
+		file = malloc( iLength + 1 );
+		Q_memcpy( file, pfile, iLength );
+		file[iLength] = '\0';
+		Mem_Free( pfile );
+		pfile = file;
+	}
+
+	return pfile;
+}
+
+/*
+=============
+COM_LoadFile
+
+=============
+*/
+byte *COM_LoadFile( const char *filename, int usehunk, int *pLength )
+{
+	string	name;
+	byte	*file, *pfile;
+	int	iLength;
+
+	ASSERT( usehunk == 5 );
+
+	if( !filename || !*filename )
+	{
+		if( pLength ) *pLength = 0;
+		return NULL;
+	}
+
+	Q_strncpy( name, filename, sizeof( name ));
+	COM_FixSlashes( name );
+
+	pfile = FS_LoadFile( name, &iLength, false );
+	if( pLength ) *pLength = iLength;
+
+	if( pfile )
+	{
+		file = malloc( iLength + 1 );
+		Q_memcpy( file, pfile, iLength );
+		file[iLength] = '\0';
+		Mem_Free( pfile );
+		pfile = file;
+	}
+
+	return pfile;
+}
+
+/*
+=============
+COM_FreeFile
+
+=============
+*/
+void COM_FreeFile( void *buffer )
+{
+	free( buffer ); 
 }
 
 /*
@@ -343,7 +378,7 @@ pfnCvar_RegisterVariable
 */
 cvar_t *pfnCvar_RegisterVariable( const char *szName, const char *szValue, int flags )
 {
-	return (cvar_t *)Cvar_Get( szName, szValue, flags|CVAR_CLIENTDLL, "" );
+	return (cvar_t *)Cvar_Get( szName, szValue, flags|CVAR_CLIENTDLL, "client cvar" );
 }
 
 /*

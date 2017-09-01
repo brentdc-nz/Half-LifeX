@@ -314,10 +314,10 @@ static void pfnParticle( float *origin, int color, float life, int zpos, int zve
 	}
 
 	BF_WriteByte( &sv.reliable_datagram, svc_particle );
-	BF_WriteBitVec3Coord( &sv.reliable_datagram, origin );
+	BF_WriteVec3Coord( &sv.reliable_datagram, origin );
 	BF_WriteChar( &sv.reliable_datagram, 0 ); // no x-vel
 	BF_WriteChar( &sv.reliable_datagram, 0 ); // no y-vel
-	v = bound( -128, (zpos * zvel) * 16, 127 );
+	v = bound( -128, (zpos * zvel) * 16.0f, 127 );
 	BF_WriteChar( &sv.reliable_datagram, v ); // write z-vel
 	BF_WriteByte( &sv.reliable_datagram, 1 );
 	BF_WriteByte( &sv.reliable_datagram, color );
@@ -336,10 +336,9 @@ static void pfnStuckTouch( int hitent, pmtrace_t *tr )
 	for( i = 0; i < svgame.pmove->numtouch; i++ )
 	{
 		if( svgame.pmove->touchindex[i].ent == hitent )
-			break;
+			return;
 	}
 
-	if( i != svgame.pmove->numtouch ) return;
 	if( svgame.pmove->numtouch >= MAX_PHYSENTS )
 	{
 		MsgDev( D_ERROR, "PM_StuckTouch: MAX_TOUCHENTS limit exceeded\n" );
@@ -544,7 +543,7 @@ void SV_InitClientMove( void )
 	Mod_SetupHulls( svgame.player_mins, svgame.player_maxs );
 	
 	// enumerate client hulls
-	for( i = 0; i < 4; i++ )
+	for( i = 0; i < MAX_MAP_HULLS; i++ )
 	{
 		if( svgame.dllFuncs.pfnGetHullBounds( i, svgame.player_mins[i], svgame.player_maxs[i] ))
 			MsgDev( D_NOTE, "SV: hull%i, player_mins: %g %g %g, player_maxs: %g %g %g\n", i,
@@ -601,12 +600,13 @@ static void PM_CheckMovingGround( edict_t *ent, float frametime )
 		SV_UpdateBaseVelocity( ent );
 	}
 
-	if(!( ent->v.flags & FL_BASEVELOCITY ))
+	if( !( ent->v.flags & FL_BASEVELOCITY ))
 	{
 		// apply momentum (add in half of the previous frame of velocity first)
 		VectorMA( ent->v.velocity, 1.0f + (frametime * 0.5f), ent->v.basevelocity, ent->v.velocity );
 		VectorClear( ent->v.basevelocity );
 	}
+
 	ent->v.flags &= ~FL_BASEVELOCITY;
 }
 
@@ -627,7 +627,7 @@ static void SV_SetupPMove( playermove_t *pmove, sv_client_t *cl, usercmd_t *ucmd
 	VectorCopy( clent->v.velocity, pmove->velocity );
 	VectorCopy( clent->v.basevelocity, pmove->basevelocity );
 	VectorCopy( clent->v.view_ofs, pmove->view_ofs );
-	VectorClear( pmove->movedir );
+	VectorCopy( clent->v.movedir, pmove->movedir );
 	pmove->flDuckTime = clent->v.flDuckTime;
 	pmove->bInDuck = clent->v.bInDuck;
 	pmove->usehull = (clent->v.flags & FL_DUCKING) ? 1 : 0; // reset hull
@@ -677,8 +677,8 @@ static void SV_SetupPMove( playermove_t *pmove, sv_client_t *cl, usercmd_t *ucmd
 
 	for( i = 0; i < 3; i++ )
 	{
-		absmin[i] = clent->v.origin[i] - 256;
-		absmax[i] = clent->v.origin[i] + 256;
+		absmin[i] = clent->v.origin[i] - 256.0f;
+		absmax[i] = clent->v.origin[i] + 256.0f;
 	}
 
 	SV_CopyEdictToPhysEnt( &svgame.pmove->physents[0], &svgame.edicts[0] );
@@ -700,18 +700,21 @@ static void SV_FinishPMove( playermove_t *pmove, sv_client_t *cl )
 	VectorCopy( pmove->velocity, clent->v.velocity );
 	VectorCopy( pmove->basevelocity, clent->v.basevelocity );
 	VectorCopy( pmove->punchangle, clent->v.punchangle );
+	VectorCopy( pmove->movedir, clent->v.movedir );
+	clent->v.flTimeStepSound = pmove->flTimeStepSound;
 	clent->v.flFallVelocity = pmove->flFallVelocity;
 	clent->v.oldbuttons = pmove->oldbuttons;
 	clent->v.waterlevel = pmove->waterlevel;
 	clent->v.watertype = pmove->watertype;
-	clent->v.flTimeStepSound = pmove->flTimeStepSound;
+	clent->v.maxspeed = pmove->clientmaxspeed;
 	clent->v.flDuckTime = pmove->flDuckTime;
 	clent->v.flSwimTime = pmove->flSwimTime;
 	clent->v.iStepLeft = pmove->iStepLeft;
 	clent->v.movetype = pmove->movetype;
 	clent->v.friction = pmove->friction;
+	clent->v.deadflag = pmove->deadflag;
+	clent->v.effects = pmove->effects;
 	clent->v.bInDuck = pmove->bInDuck;
-	clent->v.gravity = pmove->gravity;
 	clent->v.flags = pmove->flags;
 
 	// copy back user variables
@@ -775,7 +778,7 @@ qboolean SV_UnlagCheckTeleport( vec3_t old_pos, vec3_t new_pos )
 
 	for( i = 0; i < 3; i++ )
 	{
-		if( fabs( old_pos[i] - new_pos[i] ) > 50 )
+		if( fabs( old_pos[i] - new_pos[i] ) > 64.0f )
 			return true;
 	}
 	return false;
@@ -855,12 +858,8 @@ void SV_SetupMoveInterpolant( sv_client_t *cl )
 			if( state->number <= 0 || state->number >= sv_maxclients->integer )
 				continue;
 
-			// you know, jge doesn't sound right given how the indexing normally works.
-
 			lerp = &svgame.interp[state->number-1];
-
-			if( lerp->nointerp )
-				continue;
+			if( lerp->nointerp ) continue;
 
 			if( state->health <= 0 || ( state->effects & EF_NOINTERP ))
 				lerp->nointerp = true;
@@ -876,7 +875,6 @@ void SV_SetupMoveInterpolant( sv_client_t *cl )
 		if( finalpush > frame->senttime )
 			break;
 	}
-
 
 	if( i == SV_UPDATE_BACKUP || finalpush - frame->senttime > 1.0 )
 	{

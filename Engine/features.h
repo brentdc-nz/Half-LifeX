@@ -21,5 +21,7 @@ GNU General Public License for more details.
 #define ENGINE_BUILD_SURFMESHES	(1<<1)	// bulid surface meshes that goes into mextrasurf->mesh. For mod makers and custom renderers
 #define ENGINE_BUILD_STVECTORS	(1<<2)	// build ST-vectors for surfmeshes. ENGINE_BUILD_SURFMESHES must be set!
 #define ENGINE_TRANSFORM_TRACE_AABB	(1<<3)	// transform trace bbox into local space of rotating bmodels
+#define ENGINE_LARGE_LIGHTMAPS	(1<<4)	// change lightmap sizes from 128x128 to 256x256
+#define ENGINE_COMPENSATE_QUAKE_BUG	(1<<5)	// compensate stupid quake bug (inverse pitch) for mods where this bug is fixed
 
 #endif//FEATURES_H

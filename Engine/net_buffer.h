@@ -76,11 +76,7 @@ void BF_WriteSBitLong( sizebuf_t *bf, int data, int numbits );
 void BF_WriteBitLong( sizebuf_t *bf, uint data, int numbits, qboolean bSigned );
 qboolean BF_WriteBits( sizebuf_t *bf, const void *pData, int nBits );
 void BF_WriteBitAngle( sizebuf_t *bf, float fAngle, int numbits );
-void BF_WriteBitCoord( sizebuf_t *bf, const float f );
 void BF_WriteBitFloat( sizebuf_t *bf, float val );
-void BF_WriteBitVec3Coord( sizebuf_t *bf, const float *fa );
-void BF_WriteBitNormal( sizebuf_t *bf, float f );
-void BF_WriteBitVec3Normal( sizebuf_t *bf, const float *fa );
 
 // Byte-write functions
 void BF_WriteChar( sizebuf_t *bf, int val );
@@ -90,11 +86,9 @@ void BF_WriteWord( sizebuf_t *bf, int val );
 void BF_WriteLong( sizebuf_t *bf, long val );
 void BF_WriteCoord( sizebuf_t *bf, float val );
 void BF_WriteFloat( sizebuf_t *bf, float val );
+void BF_WriteVec3Coord( sizebuf_t *bf, const float *fa );
 qboolean BF_WriteBytes( sizebuf_t *bf, const void *pBuf, int nBytes );	// same as MSG_WriteData
 qboolean BF_WriteString( sizebuf_t *bf, const char *pStr );		// returns false if it overflows the buffer.
-
-// delta-write functions
-qboolean BF_WriteDeltaMovevars( sizebuf_t *sb, struct movevars_s *from, struct movevars_s *to );
 
 // helper functions
 _inline int BF_GetNumBytesWritten( sizebuf_t *bf ) { return BitByte( bf->iCurBit ); }
@@ -114,10 +108,6 @@ float BF_ReadBitAngle( sizebuf_t *bf, int numbits );
 int BF_ReadSBitLong( sizebuf_t *bf, int numbits );
 uint BF_ReadUBitLong( sizebuf_t *bf, int numbits );
 uint BF_ReadBitLong( sizebuf_t *bf, int numbits, qboolean bSigned );
-float BF_ReadBitCoord( sizebuf_t *bf );
-void BF_ReadBitVec3Coord( sizebuf_t *bf, vec3_t fa );
-float BF_ReadBitNormal( sizebuf_t *bf );
-void BF_ReadBitVec3Normal( sizebuf_t *bf, vec3_t fa );
 
 // Byte-read functions
 int BF_ReadChar( sizebuf_t *bf );
@@ -127,10 +117,8 @@ int BF_ReadWord( sizebuf_t *bf );
 long BF_ReadLong( sizebuf_t *bf );
 float BF_ReadCoord( sizebuf_t *bf );
 float BF_ReadFloat( sizebuf_t *bf );
+void BF_ReadVec3Coord( sizebuf_t *bf, vec3_t fa );
 qboolean BF_ReadBytes( sizebuf_t *bf, void *pOut, int nBytes );
 char *BF_ReadStringExt( sizebuf_t *bf, qboolean bLine );
-
-// delta-read functions
-void BF_ReadDeltaMovevars( sizebuf_t *sb, struct movevars_s *from, struct movevars_s *to );
 					
 #endif//NET_BUFFER_H

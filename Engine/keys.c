@@ -381,6 +381,7 @@ void Key_Bind_f( void )
 	}
 
 	b = Key_StringToKeynum( Cmd_Argv( 1 ));
+
 	if( b == -1 )
 	{
 		Msg( "\"%s\" isn't a valid key\n", Cmd_Argv( 1 ));
@@ -397,11 +398,13 @@ void Key_Bind_f( void )
 	
 	// copy the rest of the command line
 	cmd[0] = 0; // start out with a null string
+
 	for( i = 2; i < c; i++ )
 	{
 		Q_strcat( cmd, Cmd_Argv( i ));
 		if( i != ( c - 1 )) Q_strcat( cmd, " " );
 	}
+
 	Key_SetBinding( b, cmd );
 }
 
@@ -425,7 +428,6 @@ void Key_WriteBindings( file_t *f )
 			FS_Printf( f, "bind %s \"%s\"\n", Key_KeynumToString(i), keys[i].binding );
 	}
 }
-
 
 /*
 ============
@@ -468,7 +470,7 @@ void Key_Init( void )
 	Cmd_AddCommand( "bindlist", Key_Bindlist_f, "display current key bindings" );
 	Cmd_AddCommand( "makehelp", Key_EnumCmds_f, "write help.txt that contains all console cvars and cmds" ); 
 
-	// setup hardcode binding. "unbindall" from config.cfg will be reset it
+	// setup default binding. "unbindall" from config.cfg will be reset it
 	for( kn = keynames; kn->name; kn++ ) Key_SetBinding( kn->keynum, kn->binding ); 
 }
 
@@ -532,42 +534,6 @@ void Key_Event( int key, qboolean down )
 	const char	*kb;
 	char		cmd[1024];
 
-//MARTY TEST START
-	static qboolean bPressed = 1;
-	
-	if( key == K_XBOX_BACK && down && bPressed)
-	{
-		//Cbuf_AddText( "impulse 101\n" ); //Give Everything!
-		Cbuf_AddText( "give item_suit\n" );
-
-//		Cbuf_AddText( "god\n" );
-
-		Cbuf_AddText( "give weapon_crowbar\n" );
-		Cbuf_AddText( "give weapon_9mmhandgun\n" );
-//		Cbuf_AddText( "give weapon_shotgun\n" );
-//		Cbuf_AddText( "give weapon_357\n" );
-//		Cbuf_AddText( "give weapon_crossbow\n" );
-//		Cbuf_AddText( "give weapon_rpg\n" );
-//		Cbuf_AddText( "give weapon_rpg\n" );
-//		Cbuf_AddText( "give weapon_gauss\n" );
-//		Cbuf_AddText( "give weapon_egon\n" );
-//		Cbuf_AddText( "give weapon_snark\n" );
-
-		Cbuf_AddText( "give ammo_9mmclip\n" ); //Lots of clips!
-		Cbuf_AddText( "give ammo_9mmclip\n" );
-		Cbuf_AddText( "give ammo_9mmclip\n" );
-		Cbuf_AddText( "give ammo_9mmclip\n" );
-
-		Cbuf_AddText( "give ammo_buckshot\n" );
-		Cbuf_AddText( "give ammo_357\n" );
-		Cbuf_AddText( "give ammo_crossbow\n" );
-		Cbuf_AddText( "give ammo_gaussclip\n" );
-		Cbuf_AddText( "give ammo_rpgclip\n" );
-
-		bPressed = 0;
-	}
-//MARTY TEST END
-
 	// update auto-repeat status and BUTTON_ANY status
 	keys[key].down = down;
 
@@ -592,6 +558,15 @@ void Key_Event( int key, qboolean down )
 	// console key is hardcoded, so the user can never unbind it
 	if( key == '`' || key == '~' )
 	{
+#ifndef _XBOX //MARTY
+		// we are in typing mode. So don't switch to console
+		if( (word)GetKeyboardLayout( 0 ) == (word)0x419 )
+		{
+			if( cls.key_dest != key_game )
+				return;
+                    }
+#endif
+
 		if( !down ) return;
     		Con_ToggleConsole_f();
 		return;
@@ -606,6 +581,9 @@ void Key_Event( int key, qboolean down )
 			if( host.mouse_visible && cls.state != ca_cinematic )
 				return; // handled in client.dll
 			break;
+		case key_message:
+			Key_Message( key );
+			return;
 		case key_console:
 			if( cls.state == ca_active && !cl.background )
 				Key_SetKeyDest( key_game );
@@ -701,6 +679,10 @@ void Key_Event( int key, qboolean down )
 	{
 		Key_Console( key );
 	}
+	else if( cls.key_dest == key_message )
+	{
+		Key_Message( key );
+	}
 }
 
 /*
@@ -722,6 +704,9 @@ void Key_SetKeyDest( int key_dest )
 		break;
 	case key_console:
 		cls.key_dest = key_console;
+		break;
+	case key_message:
+		cls.key_dest = key_message;
 		break;
 	default:
 		Host_Error( "Key_SetKeyDest: wrong destination (%i)\n", key_dest );
@@ -765,8 +750,14 @@ void CL_CharEvent( int key )
 	// the console key should never be used as a char
 	if( key == '`' || key == '~' ) return;
 
+	if( cls.key_dest == key_console && !Con_Visible( ))
+	{
+		if((char)key == '¸' || (char)key == '¨' )
+			return; // don't pass '¸' when we open the console 
+	}
+
 	// distribute the key down event to the apropriate handler
-	if( cls.key_dest == key_console )
+	if( cls.key_dest == key_console || cls.key_dest == key_message )
 	{
 		Con_CharEvent( key );
 	}

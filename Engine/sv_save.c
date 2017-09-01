@@ -33,7 +33,7 @@ half-life implementation of saverestore system
 #define CLIENT_SAVEGAME_VERSION	0x0067				// Version 0.67
 
 #define SAVE_AGED_COUNT		1
-#define SAVENAME_LENGTH		128	// matches with MAX_OSPATH
+#define SAVENAME_LENGTH		128				// matches with MAX_OSPATH
 
 #define LUMP_DECALS_OFFSET		0
 #define LUMP_STATIC_OFFSET		1
@@ -53,15 +53,15 @@ typedef struct
 
 typedef struct
 {
-	int	offsets[NUM_CLIENT_OFFSETS];
-} ClientSections_t;
-
-typedef struct
-{
 	char	*pSymbols;
 	char	*pDataHeaders;
 	char	*pData;
 } SaveFileSections_t;
+
+typedef struct
+{
+	int	offsets[NUM_CLIENT_OFFSETS];
+} ClientSections_t;
 
 typedef struct
 {
@@ -88,7 +88,7 @@ typedef struct
 	int	viewentity;	// Xash3D added
 	int	serverflags;	// converted to float and back
 	float	wateralpha;
-	float	skyDir_x;
+	float	skyDir_x;		// rotating sky support
 	float	skyDir_y;
 	float	skyDir_z;
 	float	skyAngle;
@@ -183,8 +183,8 @@ void SV_InitSaveRestore( void )
 void SaveRestore_Init( SAVERESTOREDATA *pSaveData, void *pNewBase, int nBytes )
 {
 	pSaveData->pCurrentData = pSaveData->pBaseData = (char *)pNewBase;
-	pSaveData->size = 0;
 	pSaveData->bufferSize = nBytes;
+	pSaveData->size = 0;
 }
 
 void SaveRestore_MoveCurPos( SAVERESTOREDATA *pSaveData, int nBytes )
@@ -337,7 +337,7 @@ const char *SaveRestore_StringFromSymbol( SAVERESTOREDATA *pSaveData, int token 
 {
 	if( token >= 0 && token < pSaveData->tokenCount )
 		return pSaveData->pTokens[token];
-	return "<<illegal>>";
+	return "<<bad string>>";
 }
 
 void SV_BuildSaveComment( char *text, int maxlength )
@@ -355,7 +355,7 @@ void SV_BuildSaveComment( char *text, int maxlength )
 
 		if( pWorld && pWorld->v.message )
 		{
-			// trying to extract message from world
+			// trying to extract message from the world
 			pName = STRING( pWorld->v.message );
 		}
 		else
@@ -393,6 +393,7 @@ int EntryInTable( SAVERESTOREDATA *pSaveData, const char *pMapName, int index )
 		if ( !Q_strcmp( pSaveData->levelList[i].mapName, pMapName ))
 			return i;
 	}
+
 	return -1;
 }
 
@@ -408,6 +409,7 @@ void LandmarkOrigin( SAVERESTOREDATA *pSaveData, vec3_t output, const char *pLan
 			return;
 		}
 	}
+
 	VectorClear( output );
 }
 
@@ -559,7 +561,7 @@ void RestoreSound( soundlist_t *entry )
 	if( flags & SND_PITCH ) BF_WriteByte( &sv.signon, entry->pitch );
 
 	BF_WriteWord( &sv.signon, entry->entnum );
-	BF_WriteBitVec3Coord( &sv.signon, entry->origin );
+	BF_WriteVec3Coord( &sv.signon, entry->origin );
 	BF_WriteByte( &sv.signon, entry->wordIndex );
 
 	// send two doubles as raw-data
@@ -634,7 +636,7 @@ int SV_IsValidSave( void )
 			return 0;
 		}
 			
-		if( pl->v.deadflag != false )
+		if( pl->v.deadflag != false || pl->v.health <= 0.0f )
 		{
 			Msg( "Can't savegame with a dead player\n" );
 			return 0;
@@ -645,6 +647,7 @@ int SV_IsValidSave( void )
 	}
 
 	Msg( "Can't savegame without a client!\n" );
+
 	return 0;
 }
 
@@ -691,11 +694,10 @@ void SV_AgeSaveList( const char *pName, int count )
 
 void SV_DirectoryCopy( const char *pPath, file_t *pFile )
 {
-	search_t		*t;
-	int		i;
-	int		fileSize;
-	file_t		*pCopy;
-	char		szName[SAVENAME_LENGTH];
+	search_t	*t;
+	file_t	*pCopy;
+	int	i, fileSize;
+	char	szName[SAVENAME_LENGTH];
 
 	t = FS_Search( pPath, true, true );
 	if( !t ) return;
@@ -712,13 +714,14 @@ void SV_DirectoryCopy( const char *pPath, file_t *pFile )
 		FS_FileCopy( pFile, pCopy, fileSize );
 		FS_Close( pCopy );
 	}
+
 	Mem_Free( t );
 }
 
 void SV_DirectoryExtract( file_t *pFile, int fileCount )
 {
-	int	i, fileSize;
 	char	szName[SAVENAME_LENGTH], fileName[SAVENAME_LENGTH];
+	int	i, fileSize;
 	file_t	*pCopy;
 
 	for( i = 0; i < fileCount; i++ )
@@ -756,7 +759,7 @@ SAVERESTOREDATA *SV_SaveInit( int size )
 	const int		nTokens = 0xfff;	// Assume a maximum of 4K-1 symbol table entries(each of some length)
 	int		numents;
 
-	if( size <= 0 ) size = 0x80000;	// Reserve 512K for now
+	if( size <= 0 ) size = 0x200000;	// Reserve 2Mb for now
 	numents = svgame.numEntities;
 
 	pSaveData = Mem_Alloc( host.mempool, sizeof(SAVERESTOREDATA) + ( sizeof(ENTITYTABLE) * numents ) + size );
@@ -825,7 +828,7 @@ void SV_SaveGameStateGlobals( SAVERESTOREDATA *pSaveData )
 	header.serverflags = (int)svgame.globals->serverflags;
 	header.wateralpha = Cvar_VariableValue( "sv_wateralpha" );
 
-	pSaveData->time = 0; // prohibits rebase of header.time (why not just save time as a field_float and ditch this hack?)
+	pSaveData->time = 0.0f; // prohibits rebase of header.time (why not just save time as a field_float and ditch this hack?)
 	svgame.dllFuncs.pfnSaveWriteFields( pSaveData, "Save Header", &header, gSaveHeader, ARRAYSIZE( gSaveHeader ));
 	pSaveData->time = header.time;
 
@@ -835,9 +838,7 @@ void SV_SaveGameStateGlobals( SAVERESTOREDATA *pSaveData )
 
 	// write adjacency list
 	for( i = 0; i < pSaveData->connectionCount; i++ )
-	{
 		svgame.dllFuncs.pfnSaveWriteFields( pSaveData, "ADJACENCY", pSaveData->levelList + i, gAdjacency, ARRAYSIZE( gAdjacency ));
-	}
 
 	// write the lightstyles
 	for( i = 0; i < MAX_LIGHTSTYLES; i++ )
@@ -904,7 +905,9 @@ SAVERESTOREDATA *SV_LoadSaveData( const char *level )
 			{
 				ASSERT( SaveRestore_DefineSymbol( pSaveData, pszTokenList, i ));
 			}
-			while( *pszTokenList++ ); // find next token (after next null)
+
+			// find next token (after next null)
+			while( *pszTokenList++ );
 		}
 	}
 	else
@@ -943,10 +946,10 @@ void SV_ReadEntityTable( SAVERESTOREDATA *pSaveData )
 		svgame.dllFuncs.pfnSaveReadFields( pSaveData, "ETABLE", pSaveData->pTable + i, gEntityTable, ARRAYSIZE( gEntityTable ));
 }
 
-void SV_ParseSaveTables( SAVERESTOREDATA *pSaveData, SAVE_HEADER *pHeader, int updateGlobals )
+void SV_ParseSaveTables( SAVERESTOREDATA *pSaveData, SAVE_HEADER *pHeader, int setupLightstyles )
 {
-	int		i;
 	SAVE_LIGHTSTYLE	light;
+	int		i;
 
 	// process SAVE_HEADER
 	svgame.dllFuncs.pfnSaveReadFields( pSaveData, "Save Header", pHeader, gSaveHeader, ARRAYSIZE( gSaveHeader ));
@@ -966,15 +969,13 @@ void SV_ParseSaveTables( SAVERESTOREDATA *pSaveData, SAVE_HEADER *pHeader, int u
 		svgame.dllFuncs.pfnSaveReadFields( pSaveData, "ADJACENCY", pList, gAdjacency, ARRAYSIZE( gAdjacency ));
 	}
 
-	if( updateGlobals )	// g-cont. maybe this rename to 'clearLightstyles' ?
-	{
+	if( setupLightstyles )
 		Q_memset( sv.lightstyles, 0, sizeof( sv.lightstyles ));
-	}
 
 	for( i = 0; i < pHeader->lightStyleCount; i++ )
 	{
 		svgame.dllFuncs.pfnSaveReadFields( pSaveData, "LIGHTSTYLE", &light, gLightStyle, ARRAYSIZE( gLightStyle ));
-		if( updateGlobals ) SV_SetLightStyle( light.index, light.style );
+		if( setupLightstyles ) SV_SetLightStyle( light.index, light.style );
 	}
 }
 
@@ -1439,6 +1440,7 @@ SAVERESTOREDATA *SV_SaveGameState( void )
 	for( i = 0; i < svgame.numEntities; i++ )
 	{
 		edict_t	*pent = EDICT_NUM( i );
+
 		pTable = &pSaveData->pTable[pSaveData->currentIndex];
 
 		svgame.dllFuncs.pfnSave( pent, pSaveData );
@@ -1466,6 +1468,7 @@ SAVERESTOREDATA *SV_SaveGameState( void )
 	for( i = 0; i < pSaveData->tokenCount; i++ )
 	{
 		const char *pszToken = (SaveRestore_StringFromSymbol( pSaveData, i ));
+
 		if( !pszToken ) pszToken = "";
 
 		if( !SaveRestore_Write( pSaveData, pszToken, Q_strlen( pszToken ) + 1 ))
@@ -1479,7 +1482,7 @@ SAVERESTOREDATA *SV_SaveGameState( void )
 	version = SAVEGAME_VERSION;
 
 	// output to disk
-	pFile = FS_Open( va( "save\\%s.HL1", sv.name ), "wb", false ); //MARTY -  Fixed Slashes
+	pFile = FS_Open( va( "save\\%s.HL1", sv.name ), "wb", true ); //MARTY -  Fixed Slashes
 	if( !pFile ) return NULL;
 
 	// write the header
@@ -1512,14 +1515,13 @@ int SV_LoadGameState( char const *level, qboolean createPlayers )
 	pSaveData = SV_LoadSaveData( level );
 	if( !pSaveData ) return 0; // couldn't load the file
 
-	SV_ParseSaveTables( pSaveData, &header, 1 );
+	SV_ParseSaveTables( pSaveData, &header, true );
 
 	SV_EntityPatchRead( pSaveData, level );
 
 	Cvar_SetFloat( "skill", header.skillLevel );
 	Q_strncpy( sv.name, header.mapName, sizeof( sv.name ));
 	svgame.globals->mapname = MAKE_STRING( sv.name );
-
 	Cvar_Set( "sv_skyname", header.skyName );
 
 	// restore sky parms
@@ -1545,50 +1547,58 @@ int SV_LoadGameState( char const *level, qboolean createPlayers )
 	SaveRestore_Rebase( pSaveData );
 
 	// create entity list
-	for( i = 0; i < pSaveData->tableCount; i++ )
+	if( svgame.physFuncs.pfnCreateEntitiesInRestoreList != NULL )
 	{
-		pEntInfo = &pSaveData->pTable[i];
-
-		if( pEntInfo->classname != 0 && pEntInfo->size && !( pEntInfo->flags & FENTTABLE_REMOVED ))
+		svgame.physFuncs.pfnCreateEntitiesInRestoreList( pSaveData, createPlayers );
+	}
+	else
+	{
+		for( i = 0; i < pSaveData->tableCount; i++ )
 		{
-			if( pEntInfo->id == 0 ) // worldspawn
+			pEntInfo = &pSaveData->pTable[i];
+
+			if( pEntInfo->classname != 0 && pEntInfo->size && !( pEntInfo->flags & FENTTABLE_REMOVED ))
 			{
-				ASSERT( i == 0 );
-
-				pent = EDICT_NUM( 0 );
-
-				SV_InitEdict( pent );
-				pent = SV_AllocPrivateData( pent, pEntInfo->classname );
-			}
-			else if(( pEntInfo->id > 0 ) && ( pEntInfo->id < svgame.globals->maxClients + 1 ))
-			{
-				edict_t	*ed;
-
-				if(!( pEntInfo->flags & FENTTABLE_PLAYER ))
+				if( pEntInfo->id == 0 ) // worldspawn
 				{
-					MsgDev( D_WARN, "ENTITY IS NOT A PLAYER: %d\n", i );
-					ASSERT( 0 );
+					ASSERT( i == 0 );
+
+					pent = EDICT_NUM( 0 );
+
+					SV_InitEdict( pent );
+					pent = SV_AllocPrivateData( pent, pEntInfo->classname );
+				}
+				else if(( pEntInfo->id > 0 ) && ( pEntInfo->id < svgame.globals->maxClients + 1 ))
+				{
+					edict_t	*ed;
+
+					if(!( pEntInfo->flags & FENTTABLE_PLAYER ))
+					{
+						MsgDev( D_WARN, "ENTITY IS NOT A PLAYER: %d\n", i );
+						ASSERT( 0 );
+					}
+
+					ed = EDICT_NUM( pEntInfo->id );
+
+					if( ed && createPlayers )
+					{
+						ASSERT( ed->free == false );
+						// create the player
+						pent = SV_AllocPrivateData( ed, pEntInfo->classname );
+					}
+					else pent = NULL;
+				}
+				else
+				{
+					pent = SV_AllocPrivateData( NULL, pEntInfo->classname );
 				}
 
-				ed = EDICT_NUM( pEntInfo->id );
-
-				if( ed && createPlayers )
-				{
-					ASSERT( ed->free == false );
-					// create the player
-					pent = SV_AllocPrivateData( ed, pEntInfo->classname );
-				}
-				else pent = NULL;
+				pEntInfo->pent = pent;
 			}
 			else
 			{
-				pent = SV_AllocPrivateData( NULL, pEntInfo->classname );
+				pEntInfo->pent = NULL; // invalid
 			}
-			pEntInfo->pent = pent;
-		}
-		else
-		{
-			pEntInfo->pent = NULL; // invalid
 		}
 	}
 
@@ -1613,7 +1623,8 @@ int SV_LoadGameState( char const *level, qboolean createPlayers )
 	// restore camera view here
 	pent = pSaveData->pTable[bound( 0, (word)header.viewentity, pSaveData->tableCount )].pent;
 
-	if( SV_IsValidEdict( pent ))
+	// don't go camera across the levels
+	if( SV_IsValidEdict( pent ) && !svgame.globals->changelevel )
 		sv.viewentity = NUM_FOR_EDICT( pent );
 	else sv.viewentity = 0;
 
@@ -1657,44 +1668,53 @@ int SV_CreateEntityTransitionList( SAVERESTOREDATA *pSaveData, int levelMask )
 	movedCount = 0;
 
 	// create entity list
-	for( i = 0; i < pSaveData->tableCount; i++ )
+	if( svgame.physFuncs.pfnCreateEntitiesInTransitionList != NULL )
 	{
-		pEntInfo = &pSaveData->pTable[i];
-		pent = NULL;
-
-		if( pEntInfo->size && pEntInfo->id != 0 )
+		svgame.physFuncs.pfnCreateEntitiesInTransitionList( pSaveData, levelMask );
+	}
+	else
+	{
+		for( i = 0; i < pSaveData->tableCount; i++ )
 		{
-			if( pEntInfo->classname != 0 )
+			pEntInfo = &pSaveData->pTable[i];
+			pent = NULL;
+
+			if( pEntInfo->size && pEntInfo->id != 0 )
 			{
-				active = (pEntInfo->flags & levelMask) ? 1 : 0;
-
-				// spawn players
-				if(( pEntInfo->id > 0) && ( pEntInfo->id < svgame.globals->maxClients + 1 ))	
+				if( pEntInfo->classname != 0 )
 				{
-					edict_t	*ed = EDICT_NUM( pEntInfo->id );
+					active = (pEntInfo->flags & levelMask) ? 1 : 0;
 
-					if( active && ed && !ed->free )
+					// spawn players
+					if(( pEntInfo->id > 0) && ( pEntInfo->id < svgame.globals->maxClients + 1 ))	
 					{
-						if(!( pEntInfo->flags & FENTTABLE_PLAYER ))
+						edict_t	*ed = EDICT_NUM( pEntInfo->id );
+
+						if( active && ed && !ed->free )
 						{
-							MsgDev( D_WARN, "ENTITY IS NOT A PLAYER: %d\n", i );
-							ASSERT( 0 );
+							if(!( pEntInfo->flags & FENTTABLE_PLAYER ))
+							{
+								MsgDev( D_WARN, "ENTITY IS NOT A PLAYER: %d\n", i );
+								ASSERT( 0 );
+							}
+
+							pent = SV_AllocPrivateData( ed, pEntInfo->classname );
 						}
-						pent = SV_AllocPrivateData( ed, pEntInfo->classname );
+					}
+					else if( active )
+					{
+						// create named entity
+						pent = SV_AllocPrivateData( NULL, pEntInfo->classname );
 					}
 				}
-				else if( active )
+				else
 				{
-					// create named entity
-					pent = SV_AllocPrivateData( NULL, pEntInfo->classname );
+					MsgDev( D_WARN, "Entity with data saved, but with no classname\n" );
 				}
 			}
-			else
-			{
-				MsgDev( D_WARN, "Entity with data saved, but with no classname\n" );
-			}
+
+			pEntInfo->pent = pent;
 		}
-		pEntInfo->pent = pent;
 	}
 
 	// re-base the savedata since we re-ordered the entity/table / restore fields
@@ -1752,7 +1772,7 @@ int SV_CreateEntityTransitionList( SAVERESTOREDATA *pSaveData, int levelMask )
 				}
 				else
 				{
-					if(!( pEntInfo->flags & FENTTABLE_PLAYER ) && EntityInSolid( pent ))
+					if( !( pEntInfo->flags & FENTTABLE_PLAYER ) && EntityInSolid( pent ))
 					{
 						// this can happen during normal processing - PVS is just a guess,
 						// some map areas won't exist in the new map
@@ -1761,8 +1781,8 @@ int SV_CreateEntityTransitionList( SAVERESTOREDATA *pSaveData, int levelMask )
 					}
 					else
 					{
-						movedCount++;
 						pEntInfo->flags = FENTTABLE_REMOVED;
+						movedCount++;
 					}
 				}
 			}
@@ -1772,6 +1792,7 @@ int SV_CreateEntityTransitionList( SAVERESTOREDATA *pSaveData, int levelMask )
 			SV_FreeOldEntities ();
 		}
 	}
+
 	return movedCount;
 }
 
@@ -1780,8 +1801,8 @@ void SV_LoadAdjacentEnts( const char *pOldLevel, const char *pLandmarkName )
 	SAVE_HEADER	header;
 	SAVERESTOREDATA	currentLevelData, *pSaveData;
 	int		i, test, flags, index, movedCount = 0;
-	vec3_t		landmarkOrigin;
 	qboolean		foundprevious = false;
+	vec3_t		landmarkOrigin;
 	
 	Q_memset( &currentLevelData, 0, sizeof( SAVERESTOREDATA ));
 	svgame.globals->pSaveData = &currentLevelData;
@@ -1813,8 +1834,7 @@ void SV_LoadAdjacentEnts( const char *pOldLevel, const char *pLandmarkName )
 
 		if( pSaveData )
 		{
-			SV_ParseSaveTables( pSaveData, &header, 0 );
-
+			SV_ParseSaveTables( pSaveData, &header, false );
 			SV_EntityPatchRead( pSaveData, currentLevelData.levelList[i].mapName );
 
 			pSaveData->time = sv.time; // - header.time;
@@ -1826,16 +1846,16 @@ void SV_LoadAdjacentEnts( const char *pOldLevel, const char *pLandmarkName )
 			VectorSubtract( landmarkOrigin, pSaveData->vecLandmarkOffset, pSaveData->vecLandmarkOffset );
 
 			flags = 0;
-                              
+			index = -1;
+
 			if( !Q_strcmp( currentLevelData.levelList[i].mapName, pOldLevel ))
 				flags |= FENTTABLE_PLAYER;
-			index = -1;
 
 			while( 1 )
 			{
 				index = EntryInTable( pSaveData, sv.name, index );
 				if( index < 0 ) break;
-				flags |= 1<<index;
+				flags |= (1<<index);
 			}
 
 			if( flags ) movedCount = SV_CreateEntityTransitionList( pSaveData, flags );
@@ -1890,6 +1910,8 @@ void SV_ChangeLevel( qboolean loadfromsavedgame, const char *mapname, const char
 	Q_strncpy( level, mapname, MAX_STRING );
 	Q_strncpy( oldlevel, sv.name, MAX_STRING );
 	sv.background = false;
+	sv.changelevel = true;	// NOTE: this is used to indicate changelevel for classic Quake changelevel
+				// because demos wan't properly update clock on a new level while recording
 
 	if( loadfromsavedgame )
 	{
@@ -2041,6 +2063,7 @@ int SV_SaveReadHeader( file_t *pFile, GAME_HEADER *pHeader, int readGlobalState 
 			{
 				ASSERT( SaveRestore_DefineSymbol( pSaveData, pszTokenList, i ));
 			}
+
 			while( *pszTokenList++ ); // find next token (after next null)
 		}
 	}
@@ -2171,9 +2194,11 @@ void SV_SaveGame( const char *pName )
 		for( n = 0; n < 999; n++ )
 		{
 			SV_SaveGetName( n, savename );
-			if( !FS_FileExists( va( "save\\%s.sav", savename ), false )) //MARTY - Fixed Slashes
+
+			if( !FS_FileExists( va( "save\\%s.sav", savename ), true )) //MARTY - Fixed Slashes
 				break;
 		}
+
 		if( n == 1000 )
 		{
 			Msg( "^3ERROR: no free slots for savegame\n" );
@@ -2237,6 +2262,7 @@ const char *SV_GetLatestSave( void )
 			}
 		}
 	}
+
 	Mem_Free( f ); // release search
 
 	if( found )

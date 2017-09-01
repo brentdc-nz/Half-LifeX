@@ -376,7 +376,6 @@ void S_Mix16Stereo( portable_samplepair_t *pbuf, int *volume, short *pData, int 
 	{
 		pbuf[i].left += (volume[0] * (int)( pData[sampleIndex+0] ))>>8;
 		pbuf[i].right += (volume[1] * (int)( pData[sampleIndex+1] ))>>8;
-
 		sampleFrac += rateScale;
 		sampleIndex += FIX_INTPART(sampleFrac)<<1;
 		sampleFrac = FIX_FRACPART(sampleFrac);
@@ -489,6 +488,7 @@ int S_MixDataToDevice( channel_t *pChannel, int sampleCount, int outputRate, int
 					);
 			}
 		}
+
 		MIX_SetCurrentPaintbuffer( j );
 
 		pChannel->pMixer.sample += outputSampleCount * rate;
@@ -641,7 +641,7 @@ _inline portable_samplepair_t *S_GetNextpFilter( int i, portable_samplepair_t *p
 
 	// return from paintbuffer, where samples are doubled.  
 	// even samples are to be replaced with interpolated value.
-	return (&(pbuffer[(i-2)*2 + 1]));
+	return (&(pbuffer[(i-2) * 2 + 1]));
 }
 
 // pass forward over passed in buffer and cubic interpolate all odd samples
@@ -829,8 +829,8 @@ void MIX_ClearAllPaintBuffers( int SampleCount, qboolean clearFilters )
 // NOTE: pbuf3 may equal pbuf1 or pbuf2!
 void MIX_MixPaintbuffers( int ibuf1, int ibuf2, int ibuf3, int count, float fgain )
 {
-	portable_samplepair_t *pbuf1, *pbuf2, *pbuf3;
-	int i, gain;
+	portable_samplepair_t	*pbuf1, *pbuf2, *pbuf3;
+	int			i, gain;
 
 	gain = 256 * fgain;
 	
@@ -862,9 +862,9 @@ void MIX_MixPaintbuffers( int ibuf1, int ibuf2, int ibuf3, int count, float fgai
 
 void MIX_CompressPaintbuffer( int ipaint, int count )
 {
-	portable_samplepair_t *pbuf;
-	paintbuffer_t *ppaint;
-	int i;
+	portable_samplepair_t	*pbuf;
+	paintbuffer_t		*ppaint;
+	int			i;
 
 	ppaint = MIX_GetPPaintFromIPaint( ipaint );
 	pbuf = ppaint->pbuf;
@@ -897,7 +897,6 @@ void S_MixUpsample( int sampleCount, int filtertype )
 // and that will not be mixed until the next mix pass! otherwise, MIX_MixChannelsToPaintbuffer
 // will advance any internal pointers on mixed channels; subsequent calls will be at 
 // incorrect offset.
-
 void MIX_MixUpsampleBuffer( int ipaintbuffer, int end, int count )
 {
 	int	ipaintcur = MIX_GetCurrentPaintbufferIndex(); // save current paintbuffer
@@ -963,7 +962,6 @@ void MIX_MixStreamBuffer( int end )
 // IROOMBUFFER, IFACINGBUFFER, IFACINGAWAY, IDRYBUFFER
 // dsp fx are then applied to these buffers by the caller.
 // caller also remixes all into final IPAINTBUFFER output.
-
 void MIX_UpsampleAllPaintbuffers( int end, int count )
 {
 	// process stream buffer

@@ -33,8 +33,10 @@ void SeedRandomNumberGenerator( long lSeed )
 	if( lSeed ) idum = lSeed;
 	else idum = -time( NULL );
 
-	if( 1000 < idum ) idum = -idum;
-	else if( -1000 < idum ) idum -= 22261048;
+	if( 1000 < idum )
+		idum = -idum;
+	else if( -1000 < idum )
+		idum -= 22261048;
 }
 
 long lran1( void )
@@ -59,6 +61,7 @@ long lran1( void )
 		}
 		iy = iv[0];
 	}
+
 	k = (idum)/IQ;
 	idum = IA * (idum - k * IQ) - IR * k;
 	if( idum < 0 ) idum += IM;
@@ -73,8 +76,9 @@ long lran1( void )
 float fran1( void )
 {
 	float temp = (float)AM * lran1();
-	if( temp > RNMX ) return (float)RNMX;
-	else return temp;
+	if( temp > RNMX )
+		return (float)RNMX;
+	return temp;
 }
 
 float Com_RandomFloat( float flLow, float flHigh )

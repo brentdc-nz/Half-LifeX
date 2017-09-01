@@ -90,7 +90,7 @@ typedef struct ui_enginefuncs_s
 	void	(*pfnDrawLogo)( const char *filename, float x, float y, float width, float height );
 	int	(*pfnGetLogoWidth)( void );
 	int	(*pfnGetLogoHeight)( void );
-	float	(*pfnGetLogoLength)( void );
+	float	(*pfnGetLogoLength)( void );	// cinematic duration in seconds
 
 	// text message system
 	void	(*pfnDrawCharacter)( int x, int y, int width, int height, int ch, int ulRGBA, HIMAGE hFont );
@@ -142,7 +142,7 @@ typedef struct ui_enginefuncs_s
 	char 	**(*pfnGetFilesList)( const char *pattern, int *numFiles, int gamedironly );	// find in files
 	int 	(*pfnGetSaveComment)( const char *savename, char *comment );
 	int	(*pfnGetDemoComment)( const char *demoname, char *comment );
-	int	(*pfnCheckGameDll)( void );				// returns false if hl.dll is missed
+	int	(*pfnCheckGameDll)( void );				// returns false if hl.dll is missed or invalid
 	char	*(*pfnGetClipboardData)( void );
 
 	// engine launcher

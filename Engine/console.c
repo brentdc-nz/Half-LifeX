@@ -221,6 +221,7 @@ int Con_StringLength( const char *string )
 
 	len = 0;
 	p = string;
+
 	while( *p )
 	{
 		if( IsColorString( p ))
@@ -228,9 +229,10 @@ int Con_StringLength( const char *string )
 			p += 2;
 			continue;
 		}
-		p++;
 		len++;
+		p++;
 	}
+
 	return len;
 }
 
@@ -243,7 +245,7 @@ void Con_MessageMode_f( void )
 {
 	if( Cmd_Argc() == 2 )
 		Q_strncpy( con.chat_cmd, Cmd_Argv( 1 ), sizeof( con.chat_cmd ));
-	else  Q_strncpy( con.chat_cmd, "say", sizeof( con.chat_cmd ));
+	else Q_strncpy( con.chat_cmd, "say", sizeof( con.chat_cmd ));
 
 	Key_SetKeyDest( key_message );
 }
@@ -1057,9 +1059,16 @@ void Con_CompleteCommand( field_t *field )
 		{         
 			Q_sprintf( con.completionField->buffer, "%s %s", Cmd_Argv( 0 ), filename ); 
 			con.completionField->cursor = Q_strlen( con.completionField->buffer );
-			return;
 		}
+
+		// don't adjusting cursor pos if we nothing found
+		return;
 	}  
+	else if( Cmd_Argc() >= 3 )
+	{
+		// disable autocomplete for all next args
+		return;
+	}
 
 	if( con.matchCount == 1 )
 	{
@@ -1149,7 +1158,7 @@ void Field_KeyDownEvent( field_t *edit, int key )
 	if( key == K_DEL )
 	{
 		if( edit->cursor < len )
-			memmove( edit->buffer + edit->cursor, edit->buffer + edit->cursor + 1, len - edit->cursor );
+			Q_memmove( edit->buffer + edit->cursor, edit->buffer + edit->cursor + 1, len - edit->cursor );
 		return;
 	}
 
@@ -1157,7 +1166,7 @@ void Field_KeyDownEvent( field_t *edit, int key )
 	{
 		if( edit->cursor > 0 )
 		{
-			memmove( edit->buffer + edit->cursor - 1, edit->buffer + edit->cursor, len - edit->cursor + 1 );
+			Q_memmove( edit->buffer + edit->cursor - 1, edit->buffer + edit->cursor, len - edit->cursor + 1 );
 			edit->cursor--;
 			if( edit->scroll ) edit->scroll--;
 		}
@@ -1252,13 +1261,13 @@ void Field_CharEvent( field_t *edit, int ch )
 	{
 		// insert mode
 		if ( len == MAX_STRING - 1 ) return; // all full
-		memmove( edit->buffer + edit->cursor + 1, edit->buffer + edit->cursor, len + 1 - edit->cursor );
+		Q_memmove( edit->buffer + edit->cursor + 1, edit->buffer + edit->cursor, len + 1 - edit->cursor );
 		edit->buffer[edit->cursor] = ch;
 		edit->cursor++;
 	}
 
 	if( edit->cursor >= edit->widthInChars ) edit->scroll++;
-	if( edit->cursor == len + 1) edit->buffer[edit->cursor] = 0;
+	if( edit->cursor == len + 1 ) edit->buffer[edit->cursor] = 0;
 }
 
 /*
@@ -1338,7 +1347,6 @@ CONSOLE LINE EDITING
 
 ==============================================================================
 */
-
 /*
 ====================
 Key_Console
@@ -1571,6 +1579,7 @@ int Con_DrawDebugLines( void )
 			Con_DrawString( x, y, con.notify[i].szNotify, con.notify[i].color );
 		}
 	}
+
 	return count;
 }
 
@@ -1766,8 +1775,8 @@ Con_DrawConsole
 */
 void Con_DrawConsole( void )
 {
-	// never draw console whel changelevel in-progress
-	if( cls.changelevel ) return;
+	// never draw console when changelevel in-progress
+	if( cls.changelevel || cls.changedemo ) return;
 
 	// check for console width changes from a vid mode change
 	Con_CheckResize ();
@@ -1898,13 +1907,13 @@ void Con_RunConsole( void )
 
 	if( con.finalFrac < con.displayFrac )
 	{
-		con.displayFrac -= fabs( scr_conspeed->value ) * 0.002 * host.realframetime;
+		con.displayFrac -= fabs( scr_conspeed->value ) * 0.002f * host.realframetime;
 		if( con.finalFrac > con.displayFrac )
 			con.displayFrac = con.finalFrac;
 	}
 	else if( con.finalFrac > con.displayFrac )
 	{
-		con.displayFrac += fabs( scr_conspeed->value ) * 0.002 * host.realframetime;
+		con.displayFrac += fabs( scr_conspeed->value ) * 0.002f * host.realframetime;
 		if( con.finalFrac < con.displayFrac )
 			con.displayFrac = con.finalFrac;
 	}
@@ -1980,6 +1989,12 @@ void Con_VidInit( void )
 	Con_LoadConchars();
 }
 
+void Con_InvalidateFonts( void )
+{
+	Q_memset( con.chars, 0, sizeof( con.chars ));
+	con.curFont = con.lastUsedFont = NULL;
+}
+
 /*
 =========
 Cmd_AutoComplete
@@ -2010,8 +2025,8 @@ void Con_Close( void )
 {
 	Con_ClearField( &con.input );
 	Con_ClearNotify();
-	con.finalFrac = 0; // none visible
-	con.displayFrac = 0;
+	con.finalFrac = 0.0f; // none visible
+	con.displayFrac = 0.0f;
 }
 
 /*

@@ -81,7 +81,6 @@ static qboolean	huffInit = false;
 
 =======================================================================================
 */
-
 /*
 ============
 Huff_PrepareTree
@@ -103,8 +102,6 @@ static _inline void Huff_PrepareTree( tree_t tree )
 	tree[4] = node;
 	tree[261] = node;
 }
-
-
 
 /*
 ============
@@ -396,7 +393,6 @@ static void Huff_AddReference( void **tree, int ch )
 
 =======================================================================================
 */
-
 /*
 ============
 Huff_EmitBit

@@ -48,9 +48,9 @@ msurface_t *PM_RecursiveSurfCheck( model_t *model, mnode_t *node, vec3_t p1, vec
 		t2 = DotProduct( plane->normal, p2 ) - plane->dist;
 	}
 
-	if( t1 >= 0 && t2 >= 0 )
+	if( t1 >= 0.0f && t2 >= 0.0f )
 		return PM_RecursiveSurfCheck( model, node->children[0], p1, p2 );
-	if( t1 < 0 && t2 < 0 )
+	if( t1 < 0.0f && t2 < 0.0f )
 		return PM_RecursiveSurfCheck( model, node->children[1], p1, p2 );
 
 	frac = t1 / ( t1 - t2 );
@@ -60,12 +60,12 @@ msurface_t *PM_RecursiveSurfCheck( model_t *model, mnode_t *node, vec3_t p1, vec
 
 	VectorLerp( p1, frac, p2, mid );
 
-	side = (t1 < 0);
+	side = (t1 < 0.0f);
 
 	// now this is weird.
 	surf = PM_RecursiveSurfCheck( model, node->children[side], p1, mid );
 
-	if( surf != NULL || ( t1 >= 0 && t2 >= 0 ) || ( t1 < 0 && t2 < 0 ))
+	if( surf != NULL || ( t1 >= 0.0f && t2 >= 0.0f ) || ( t1 < 0.0f && t2 < 0.0f ))
 	{
 		return surf;
 	}
@@ -108,6 +108,7 @@ const char *PM_TraceTexture( physent_t *pe, vec3_t start, vec3_t end )
 	vec3_t		offset;
 
 	bmodel = pe->model;
+
 	if( !bmodel || bmodel->type != mod_brush )
 		return NULL;
 

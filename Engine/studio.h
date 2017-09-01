@@ -34,7 +34,7 @@ Studio models are position independent, so the cache manager can move them.
 #define MAXSTUDIOTRIANGLES		32768	// max triangles per model
 #define MAXSTUDIOVERTS		4096	// max vertices per submodel
 #define MAXSTUDIOSEQUENCES		256	// total animation sequences
-#define MAXSTUDIOSKINS		128	// total textures
+#define MAXSTUDIOSKINS		256	// total textures
 #define MAXSTUDIOSRCBONES		512	// bones allowed at source movement
 #define MAXSTUDIOBONES		128	// total bones actually used
 #define MAXSTUDIOMODELS		32	// sub-models per model
@@ -65,14 +65,12 @@ Studio models are position independent, so the cache manager can move them.
 #define STUDIO_NF_CHROME		0x0002
 #define STUDIO_NF_FULLBRIGHT		0x0004
 #define STUDIO_NF_COLORMAP		0x0008	// can changed by colormap command
-#define STUDIO_NF_BLENDED		0x0010	// rendering as semiblended
+#define STUDIO_NF_BLENDED		0x0010	// rendering as semitransparent
 #define STUDIO_NF_ADDITIVE		0x0020	// rendering with additive mode
 #define STUDIO_NF_TRANSPARENT		0x0040	// use texture with alpha channel
-#define STUDIO_NF_NORMALMAP		0x0080	// indexed normalmap
-#define STUDIO_NF_HEIGHTMAP		0x0100	// heightmap that can be used for parallax or normalmap
-#define STUDIO_NF_GLOSSMAP		0x0200	// glossmap
-#define STUDIO_NF_DECALMAP		0x0400	// decalmap (currently unused)
-#define STUDIO_NF_GLOWMAP		0x0800	// optional luma_texture
+#define STUDIO_NF_BUMPMAP		0x0080	// heightmap that can be transformed into normalmap and heightmap
+#define STUDIO_NF_GLOSSMAP		0x0100	// glossmap
+#define STUDIO_NF_LUMATEXTURE		0x0200	// optional luma_texture
 #define STUDIO_NF_QUAKESKIN		0x8000	// special hack for determine alias skins
 
 // motion flags
@@ -95,7 +93,7 @@ Studio models are position independent, so the cache manager can move them.
 #define STUDIO_RLOOP		0x8000	// controller that wraps shortest distance
 
 // bonecontroller types
-#define STUDIO_MOUTH		4
+#define STUDIO_MOUTH		4	// hardcoded
 
 // sequence flags
 #define STUDIO_LOOPING		0x0001
@@ -345,7 +343,7 @@ typedef struct
 	int		groupindex;
 } mstudiomodel_t;
 
-// vec3_t	boundingbox[model][bone][2];	// complex intersection info
+// vec3_t	boundingbox[model][bone][2];		// complex intersection info
 
 // meshes
 typedef struct 

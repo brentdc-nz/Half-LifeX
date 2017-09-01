@@ -259,7 +259,7 @@ long FS_GetStreamPos( stream_t *stream )
 ================
 FS_SetStreamPos
 
-get stream position (in bytes)
+set stream position (in bytes)
 ================
 */
 long FS_SetStreamPos( stream_t *stream, long newpos )

@@ -165,9 +165,9 @@ static const char *Mem_CheckFilename( const char *filename )
 	int		i;
 
 	if( !out ) return dummy;
-	for( i = 0; i < 32; i++, out++ )
+	for( i = 0; i < 128; i++, out++ )
 		if( out == '\0' ) break; // valid name
-	if( i == 32 ) return dummy;
+	if( i == 128 ) return dummy;
 	return filename;
 }
 
@@ -182,6 +182,7 @@ static void Mem_FreeBlock( memheader_t *mem, const char *filename, int fileline 
 		mem->filename = Mem_CheckFilename( mem->filename ); // make sure what we don't crash var_args
 		Sys_Error( "Mem_Free: trashed header sentinel 1 (alloc at %s:%i, free at %s:%i)\n", mem->filename, mem->fileline, filename, fileline );
 	}
+
 	if( *((byte *)mem + sizeof( memheader_t ) + mem->size ) != MEMHEADER_SENTINEL2 )
 	{	
 		mem->filename = Mem_CheckFilename( mem->filename ); // make sure what we don't crash var_args
@@ -347,7 +348,7 @@ qboolean Mem_CheckAlloc( mempool_t *pool, void *data )
 	if( pool )
 	{
 		// search only one pool
-		target = (memheader_t *)((byte *)data - sizeof(memheader_t));
+		target = (memheader_t *)((byte *)data - sizeof( memheader_t ));
 		for( header = pool->chain; header; header = header->next )
 			if( header == target ) return true;
 	}
@@ -378,17 +379,17 @@ void Mem_CheckHeaderSentinels( void *data, const char *filename, int fileline )
 {
 	memheader_t *mem;
 
-	if (data == NULL) Sys_Error( "Mem_CheckSentinels: data == NULL (sentinel check at %s:%i)\n", filename, fileline);
+	if (data == NULL) Sys_Error( "Mem_CheckSentinels: data == NULL (sentinel check at %s:%i)\n", filename, fileline );
 	mem = (memheader_t *)((byte *) data - sizeof(memheader_t));
 	if( mem->sentinel1 != MEMHEADER_SENTINEL1 )
 	{
 		mem->filename = Mem_CheckFilename( mem->filename ); // make sure what we don't crash var_args
-		Sys_Error( "Mem_CheckSentinels: trashed header sentinel 1 (block allocated at %s:%i, sentinel check at %s:%i)\n", mem->filename, mem->fileline, filename, fileline);
+		Sys_Error( "Mem_CheckSentinels: trashed header sentinel 1 (block allocated at %s:%i, sentinel check at %s:%i)\n", mem->filename, mem->fileline, filename, fileline );
 	}
 	if( *((byte *) mem + sizeof(memheader_t) + mem->size) != MEMHEADER_SENTINEL2 )
 	{	
 		mem->filename = Mem_CheckFilename( mem->filename ); // make sure what we don't crash var_args
-		Sys_Error( "Mem_CheckSentinels: trashed header sentinel 2 (block allocated at %s:%i, sentinel check at %s:%i)\n", mem->filename, mem->fileline, filename, fileline);
+		Sys_Error( "Mem_CheckSentinels: trashed header sentinel 2 (block allocated at %s:%i, sentinel check at %s:%i)\n", mem->filename, mem->fileline, filename, fileline );
 	}
 }
 

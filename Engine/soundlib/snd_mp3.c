@@ -273,6 +273,7 @@ long Stream_ReadMPG( stream_t *stream, long needBytes, void *buffer )
 
 		stream->buffsize = 0; // no bytes remaining
 	}
+
 	return 0;
 }
 

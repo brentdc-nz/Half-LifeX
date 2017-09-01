@@ -81,6 +81,17 @@ const char *svc_strings[256] =
 	"svc_unused50",
 	"svc_director",
 	"svc_studiodecal",
+	"svc_unused53",
+	"svc_unused54",
+	"svc_unused55",
+	"svc_unused56",
+	"svc_querycvarvalue",
+	"svc_querycvarvalue2",
+	"svc_unused59",
+	"svc_unused60",
+	"svc_unused61",
+	"svc_unused62",
+	"svc_unused63",
 };
 
 typedef struct
@@ -263,7 +274,7 @@ void CL_ParseSoundPacket( sizebuf_t *msg, qboolean is_ambient )
 	entnum = BF_ReadWord( msg ); 
 
 	// positioned in space
-	BF_ReadBitVec3Coord( msg, pos );
+	BF_ReadVec3Coord( msg, pos );
 
 	if( flags & SND_SENTENCE )
 	{
@@ -331,9 +342,10 @@ void CL_ParseRestoreSoundPacket( sizebuf_t *msg )
 	entnum = BF_ReadWord( msg ); 
 
 	// positioned in space
-	BF_ReadBitVec3Coord( msg, pos );
+	BF_ReadVec3Coord( msg, pos );
 	wordIndex = BF_ReadByte( msg );
 
+	// 16 bytes here
 	BF_ReadBytes( msg, &samplePos, sizeof( samplePos ));
 	BF_ReadBytes( msg, &forcedEnd, sizeof( forcedEnd ));
 
@@ -373,7 +385,7 @@ void CL_ParseParticles( sizebuf_t *msg )
 	int		i, count, color;
 	float		life;
 	
-	BF_ReadBitVec3Coord( msg, org );	
+	BF_ReadVec3Coord( msg, org );	
 
 	for( i = 0; i < 3; i++ )
 		dir[i] = BF_ReadChar( msg ) * (1.0f / 16);
@@ -404,8 +416,7 @@ void CL_ParseParticles( sizebuf_t *msg )
 ==================
 CL_ParseStaticEntity
 
-UDNONE: we need a client implementation of save\restore for use it not in multiplayer only
-wait for XashXT when it should be done
+static client entity
 ==================
 */
 void CL_ParseStaticEntity( sizebuf_t *msg )
@@ -424,7 +435,7 @@ void CL_ParseStaticEntity( sizebuf_t *msg )
 
 	for( i = 0; i < 3; i++ )
 	{
-		state.origin[i] = BF_ReadBitCoord( msg );
+		state.origin[i] = BF_ReadCoord( msg );
 		state.angles[i] = BF_ReadBitAngle( msg, 16 );
 	}
 
@@ -482,7 +493,7 @@ void CL_ParseStaticDecal( sizebuf_t *msg )
 	int	decalIndex, entityIndex, modelIndex;
 	int	flags;
 
-	BF_ReadBitVec3Coord( msg, origin );
+	BF_ReadVec3Coord( msg, origin );
 	decalIndex = BF_ReadWord( msg );
 	entityIndex = BF_ReadShort( msg );
 
@@ -513,6 +524,12 @@ void CL_ParseSoundFade( sizebuf_t *msg )
 	S_FadeClientVolume( fadePercent, fadeOutSeconds, holdTime, fadeInSeconds );
 }
 
+/*
+==================
+CL_ParseCustomization
+
+==================
+*/
 void CL_ParseCustomization( sizebuf_t *msg )
 {
 	// TODO: ???
@@ -541,7 +558,7 @@ void CL_ParseServerData( sizebuf_t *msg )
 	clgame.load_sequence++;	// now all hud sprites are invalid
 
 	// wipe the client_t struct
-	if( !cls.changelevel )
+	if( !cls.changelevel && !cls.changedemo )
 		CL_ClearState ();
 	cls.state = ca_connected;
 
@@ -583,7 +600,8 @@ void CL_ParseServerData( sizebuf_t *msg )
 	menu.globals->maxClients = cl.maxclients;
 	Q_strncpy( menu.globals->maptitle, clgame.maptitle, sizeof( menu.globals->maptitle ));
 
-	if( !cls.changelevel ) CL_InitEdicts (); // re-arrange edicts
+	if( !cls.changelevel && !cls.changedemo )
+		CL_InitEdicts (); // re-arrange edicts
 
 	// get splash name
 	Cvar_Set( "cl_levelshot_name", va( "levelshots/%s", clgame.mapname ));
@@ -1081,12 +1099,8 @@ void CL_ParseStudioDecal( sizebuf_t *msg )
 	int		modelIndex = 0;
 	int		flags;
 
-	pos[0] = BF_ReadCoord( msg );
-	pos[1] = BF_ReadCoord( msg );
-	pos[2] = BF_ReadCoord( msg );
-	start[0] = BF_ReadCoord( msg );
-	start[1] = BF_ReadCoord( msg );
-	start[2] = BF_ReadCoord( msg );
+	BF_ReadVec3Coord( msg, pos );
+	BF_ReadVec3Coord( msg, start );
 	decalIndex = BF_ReadShort( msg );
 	entityIndex = BF_ReadShort( msg );
 	flags = BF_ReadByte( msg );
@@ -1108,7 +1122,7 @@ void CL_ParseStudioDecal( sizebuf_t *msg )
 		modelIndex = BF_ReadShort( msg );
 	}
 
-	if( clgame.drawFuncs.R_StudioDecalShoot )
+	if( clgame.drawFuncs.R_StudioDecalShoot != NULL )
 	{
 		int decalTexture = CL_DecalIndex( decalIndex );
 		cl_entity_t *ent = CL_GetEntityByIndex( entityIndex );

@@ -109,6 +109,12 @@ qboolean SV_SetPlayer( void )
 	sv_client_t	*cl;
 	int		i, idnum;
 
+	if( !svs.clients )
+	{
+		Msg( "^3no server running.\n" );
+		return false;
+          }
+
 	if( sv_maxclients->integer == 1 || Cmd_Argc() < 2 )
 	{
 		// special case for local client
@@ -120,7 +126,7 @@ qboolean SV_SetPlayer( void )
 	s = Cmd_Argv( 1 );
 
 	// numeric values are just slot numbers
-	if( s[0] >= '0' && s[0] <= '9' )
+	if( Q_isdigit( s ) || (s[0] == '-' && Q_isdigit( s + 1 )))
 	{
 		idnum = Q_atoi( s );
 		if( idnum < 0 || idnum >= sv_maxclients->integer )
@@ -207,8 +213,13 @@ void SV_Map_f( void )
 		return;
 	}
 
+	// changing singleplayer to multiplayer or back. refresh the player count
+	if(( sv_maxclients->modified ) || ( deathmatch->modified ) || ( coop->modified ) || ( teamplay->modified ))
+		Host_ShutdownServer();
+
 	SCR_BeginLoadingPlaque( false );
 
+	sv.changelevel = false;
 	sv.background = false;
 	sv.loadgame = false; // set right state
 	SV_ClearSaveDir ();	// delete all temporary *.hl files
@@ -261,6 +272,7 @@ void SV_MapBackground_f( void )
 	SV_Shutdown( true );
 	NET_Config ( false ); // close network sockets
 
+	sv.changelevel = false;
 	sv.background = true;
 	sv.loadgame = false; // set right state
 
@@ -379,8 +391,8 @@ void SV_DeleteSave_f( void )
 	}
 
 	// delete save and saveshot
-	FS_Delete( va( "save/%s.sav", Cmd_Argv( 1 )));
-	FS_Delete( va( "save/%s.bmp", Cmd_Argv( 1 )));
+	FS_Delete( va( "save\\%s.sav", Cmd_Argv( 1 ))); //MARTY
+	FS_Delete( va( "save\\%s.bmp", Cmd_Argv( 1 ))); //MARTY
 }
 
 /*
@@ -497,7 +509,8 @@ restarts current level
 */
 void SV_Restart_f( void )
 {
-	if( sv.state != ss_active ) return;
+	if( sv.state != ss_active )
+		return;
 
 	// just sending console command
 	if( sv.background )
@@ -510,6 +523,13 @@ void SV_Restart_f( void )
 	}
 }
 
+/*
+==================
+SV_Reload_f
+
+continue from latest savedgame
+==================
+*/
 void SV_Reload_f( void )
 {
 	const char	*save;
@@ -519,6 +539,7 @@ void SV_Reload_f( void )
 		return;
 
 	save = SV_GetLatestSave();
+
 	if( save )
 	{
 		FS_FileBase( save, loadname );
@@ -671,6 +692,12 @@ void SV_ConSay_f( void )
 
 	if( Cmd_Argc() < 2 ) return;
 
+	if( !svs.clients )
+	{
+		Msg( "^3no server running.\n" );
+		return;
+	}
+
 	Q_strncpy( text, "console: ", MAX_SYSPATH );
 	p = Cmd_Args();
 
@@ -679,11 +706,14 @@ void SV_ConSay_f( void )
 		p++;
 		p[Q_strlen(p) - 1] = 0;
 	}
+
 	Q_strncat( text, p, MAX_SYSPATH );
 
 	for( i = 0, client = svs.clients; i < sv_maxclients->integer; i++, client++ )
 	{
-		if( client->state != cs_spawned ) continue;
+		if( client->state != cs_spawned )
+			continue;
+
 		SV_ClientPrintf( client, PRINT_CHAT, "%s\n", text );
 	}
 }
@@ -765,6 +795,12 @@ void SV_PlayersOnly_f( void )
 	else SV_BroadcastPrintf( D_INFO, "Freeze server physic\n" );
 }
 
+/*
+===============
+SV_EdictsInfo_f
+
+===============
+*/
 void SV_EdictsInfo_f( void )
 {
 	int	active;
@@ -781,6 +817,12 @@ void SV_EdictsInfo_f( void )
 	Msg( "%5i total\n", svgame.globals->maxEntities );
 }
 
+/*
+===============
+SV_EntityInfo_f
+
+===============
+*/
 void SV_EntityInfo_f( void )
 {
 	edict_t	*ent;
@@ -861,6 +903,11 @@ void SV_InitOperatorCommands( void )
 	}
 }
 
+/*
+==================
+SV_KillOperatorCommands
+==================
+*/
 void SV_KillOperatorCommands( void )
 {
 	Cmd_RemoveCommand( "heartbeat" );
@@ -873,7 +920,7 @@ void SV_KillOperatorCommands( void )
 
 	Cmd_RemoveCommand( "map" );
 	Cmd_RemoveCommand( "newgame" );
-	Cmd_RemoveCommand( "endgame" );
+	Cmd_RemoveCommand( "killgame" );
 	Cmd_RemoveCommand( "hazardcourse" );
 	Cmd_RemoveCommand( "changelevel" );
 	Cmd_RemoveCommand( "restart" );
@@ -885,7 +932,6 @@ void SV_KillOperatorCommands( void )
 	if( host.type == HOST_DEDICATED )
 	{
 		Cmd_RemoveCommand( "say" );
-		Cmd_RemoveCommand( "setmaster" );
 		Cmd_RemoveCommand( "killserver" );
 	}
 	else
