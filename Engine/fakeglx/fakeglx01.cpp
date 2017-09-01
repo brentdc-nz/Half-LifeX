@@ -15,31 +15,31 @@ See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
 */
-// FakeGLx.cpp -- Uses Direct3D to implement a subset of OpenGL.
+
+// FakeGLx01.cpp -- Uses Direct3D to implement a subset of OpenGL.
 
 #ifdef _USEFAKEGL01
 
 #include "fakeglx01.h"
 #include "xgraphics.h"
-#include <vector> //MARTY
+#include <vector>
 
+// TODO Fix these warnings instead of disableing them
+#pragma warning( disable : 4273 )
 #pragma warning( disable : 4244 )
 #pragma warning( disable : 4820 )
 
-#define     D3D_OVERLOADS
-#define     RELEASENULL(object) if (object) {object->Release();}
+// Utilities
+#define BYTE_CLAMP(i) (int) ((((i) > 255) ? 255 : (((i) < 0) ? 0 : (i))))
+#define	RELEASENULL(object) if (object) {object->Release();}
 
-//#define PROFILE
-#ifdef PROFILE
-#pragma pack(push, 8)       // Make sure structure packing is set properly
+//#define _PROFILE
+#ifdef _PROFILE
+#pragma pack(push, 8)	// Make sure structure packing is set properly
 #include <d3d8perf.h>
 #pragma pack(pop)
 #endif
-
-// utility
-#define BYTE_CLAMP(i) (int) ((((i) > 255) ? 255 : (((i) < 0) ? 0 : (i))))
 
 // Some DX7 helper functions that we're still using with DX8
 #ifdef D3DRGBA
@@ -55,19 +55,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TEXTURE1_SGIS							0x835F
 #define D3D_TEXTURE_MAXANISOTROPY				0xf70001
 
-struct SubImage_s
+struct subImage_s
 {
 	int iTextureNum;
-	LPDIRECT3DSURFACE8 Texture;
+	LPDIRECT3DSURFACE8 pTexture;
 };
-
-typedef struct rgba_s
-{
-    char r;
-    char g;
-    char b;
-    char a;
-} rgba_t;
 
 void LocalDebugBreak()
 {
@@ -247,51 +239,50 @@ public:
 		}
 	}
 
-	SubImage_s* GetSubImageCache(IDirect3DDevice8* pDevice, int iNum)
+	subImage_s* GetSubImageCache(IDirect3DDevice8* pDevice, int iNum)
 	{
 		for(int i = 0; i < (int)m_SubImageCache.size(); i++)
 		{
-			SubImage_s* Current = m_SubImageCache[i];
+			subImage_s* pCurrentTex = m_SubImageCache[i];
 		
-			if(Current->iTextureNum == iNum)
-				return Current;
+			if(pCurrentTex->iTextureNum == iNum)
+				return pCurrentTex;
 		}
 
-		SubImage_s* NewSubImage = new SubImage_s;
+		subImage_s* pNewSubImage = new subImage_s;
 
-		NewSubImage->iTextureNum = iNum;
+		pNewSubImage->iTextureNum = iNum;
 
-		pDevice->CreateImageSurface(128, 128, D3DFMT_A8R8G8B8, &NewSubImage->Texture); //MARTY FIXME Don't hardcode these values (ok for now tho, as this is only used for lightmaps)
+		pDevice->CreateImageSurface(128, 128, D3DFMT_A8R8G8B8, &pNewSubImage->pTexture); //MARTY FIXME Don't hardcode these values (ok for now tho, as this is only used for lightmaps)
 
 #if 0 //Unnecessary??
 		//Clear the texture to black!
 		D3DLOCKED_RECT lockedRect;	
-		NewSubImage->Texture->LockRect( &lockedRect, NULL, 0);
+		pNewSubImage->Texture->LockRect( &lockedRect, NULL, 0);
 
 		memset(lockedRect.pBits, 0, 128*128*lockedRect.Pitch); //MARTY FIXME Don't hardcode these values
 
-		NewSubImage->Texture->UnlockRect();
+		pNewSubImage->Texture->UnlockRect();
 #endif
+		m_SubImageCache.push_back(pNewSubImage);
 
-		m_SubImageCache.push_back(NewSubImage);
-
-		return NewSubImage;
+		return pNewSubImage;
 	}
 
 	void DeleteSubImageCache(int iNum)
 	{
 		for(int i = 0; i < (int)m_SubImageCache.size(); i++)
 		{
-			SubImage_s* Current = m_SubImageCache[i];
+			subImage_s* pCurrentTex = m_SubImageCache[i];
 
-			if(Current->iTextureNum == iNum)
+			if(pCurrentTex->iTextureNum == iNum)
 			{
-				Current->iTextureNum = 0;
-				Current->Texture->Release();
+				pCurrentTex->iTextureNum = 0;
+				pCurrentTex->pTexture->Release();
 	
-				delete Current;
+				delete pCurrentTex;
 
-				Current = NULL;
+				pCurrentTex = NULL;
 
 				m_bSubImagesCached = true;
 
@@ -396,7 +387,7 @@ private:
 	TextureEntry* m_textures;
 	TextureEntry* m_currentTexture;
 
-	std::vector<SubImage_s*> m_SubImageCache;
+	std::vector<subImage_s*> m_SubImageCache;
 	bool m_bSubImagesCached;
 	bool m_bSubImage;
 };
@@ -996,7 +987,6 @@ public:
 #ifdef USE_PUSHBUFFER
 			m_pD3DDev->BeginPushBuffer(m_pushBuffer);
 #endif
-
 			m_pD3DDev->SetVertexShader(m_vertexTypeDesc);
      		m_pD3DDev->DrawPrimitiveUP(dptPrimitiveType, primCount, m_OGLPrimitiveVertexBuffer, m_vertexSize);
 
@@ -1132,6 +1122,9 @@ private:
 	bool m_PolyOffsetSwitched;
 	float m_PolyOffsetFactor;
 
+	bool m_bFogEnabled;
+	bool m_bFogSwitched;
+
 	bool m_glDepthStateDirty;
 	bool m_glDepthTest;
 	GLenum m_glDepthFunc;
@@ -1226,7 +1219,6 @@ private:
 		if( FAILED(hr) )
 			return hr;
 #endif
-
 		// Now check if player is a PAL 60 user
 		DWORD videoFlags = XGetVideoFlags();
 
@@ -1341,7 +1333,10 @@ public:
 		
 		m_PolyOffsetEnabled = false;
 		m_PolyOffsetSwitched = false;
-		m_PolyOffsetFactor = 0;//8; //HACK for Xash3D - MARTY
+		m_PolyOffsetFactor = 0;//8; //MARTY - HACK for Xash3D
+
+		m_bFogSwitched = false;
+		m_bFogEnabled = false;
 
 		m_glDepthStateDirty = true;
 		m_glDepthTest = false;
@@ -1363,8 +1358,8 @@ public:
 		m_glViewPortX = 0;
 		m_glViewPortY = 0;
 							
-		m_glViewPortWidth = gWidth;//640;//Marty FIXME
-		m_glViewPortHeight = gHeight;//480;
+		m_glViewPortWidth = gWidth;
+		m_glViewPortHeight = gHeight;
 
 		m_vendor = 0;
 		m_renderer = 0;
@@ -1588,8 +1583,8 @@ public:
 				}
 				else
 				{
-				m_pD3DDev->SetRenderState(D3DRS_FOGTABLEMODE, D3DFOG_NONE);
-//				m_pD3DDev->SetRenderState(D3DRS_FOGVERTEXMODE, D3DFOG_LINEAR);
+					m_pD3DDev->SetRenderState(D3DRS_FOGTABLEMODE, D3DFOG_NONE);
+//					m_pD3DDev->SetRenderState(D3DRS_FOGVERTEXMODE, D3DFOG_LINEAR);
 				}
 			}
 			else if (param == GL_EXP)
@@ -1733,8 +1728,9 @@ public:
 		// 0 is furthest; 16 is nearest; d3d default is 0 so our default is an intermediate value (8)
 		// so that we can do both push back and pull forward
 		// negative values come nearer; positive values go further, so invert the sense
-		m_PolyOffsetFactor = /*8*/4 /*-*/+ units; // HACK This is a nasty hack for Xash3D only 
-												  // Polygons look very glitchy if we dont do this! - MARTY
+
+		m_PolyOffsetFactor = /*8*/4 /*-*/+ units; // MARTY - HACK This is a nasty hack for Xash3D only 
+												  // Polygons look very glitchy if we dont do this!
 		// clamp to d3d scale
 		if (m_PolyOffsetFactor < 0) m_PolyOffsetFactor = 0;
 		if (m_PolyOffsetFactor > 16) m_PolyOffsetFactor = 16;
@@ -1771,6 +1767,11 @@ public:
 		}
 	}
 
+	void glEnable (GLenum cap)
+	{
+		glEnableDisableSet(cap, true); 
+	}
+
 	void glDisable (GLenum cap)
 	{
 		glEnableDisableSet(cap, false);
@@ -1779,11 +1780,6 @@ public:
 	void glDrawBuffer (GLenum /* mode */)
 	{
 		// Do nothing. (Can DirectX render to the front buffer at all?)
-	}
-
-	void glEnable (GLenum cap)
-	{
-		glEnableDisableSet(cap, true); 
 	}
 
 	void glGetIntegerv (GLenum pname, GLint *params)
@@ -1875,6 +1871,14 @@ public:
 				SetRenderStateDirty();
 				m_PolyOffsetEnabled = value;
 				m_PolyOffsetSwitched = false;
+			}
+			break;
+		case GL_FOG:
+			if ( m_bFogEnabled != value )
+			{	
+				SetRenderStateDirty();
+				m_bFogEnabled = value;
+				m_bFogSwitched = false;
 			}
 			break;
 		default:
@@ -2408,7 +2412,7 @@ public:
 	D3DLOCKED_RECT lockedRect;
 
 	D3DLOCKED_RECT lockedRectSubImg;
-	SubImage_s* CachedSubImage;
+	subImage_s* cachedSubImage;
 
 	D3DSURFACE_DESC desc;
 	pMipMap->GetLevelDesc(level, &desc); 
@@ -2445,9 +2449,9 @@ public:
 
 	if(subImage)
 	{
-		CachedSubImage = m_textures.GetSubImageCache(m_pD3DDev, m_textures.GetCurrentID());
+		cachedSubImage = m_textures.GetSubImageCache(m_pD3DDev, m_textures.GetCurrentID());
 
-		CachedSubImage->Texture->LockRect( &lockedRectSubImg, NULL, 0);
+		cachedSubImage->pTexture->LockRect( &lockedRectSubImg, NULL, 0);
 
 		int x, y;
 		byte *srcdata = (byte *)compatablePixels;
@@ -2458,17 +2462,15 @@ public:
 		{
 			for (x = xoffset; x < (xoffset + width); x++)
 			{
-				rgba_t pixel;
-				pixel.b = srcdata[2];
-				pixel.g = srcdata[1];
-				pixel.r = srcdata[0];
-				pixel.a = srcdata[3];
-				memcpy( &dstdata[lockedRectSubImg.Pitch * y + bytes * x], &pixel, bytes );
+				dstdata[lockedRectSubImg.Pitch * y + bytes * x ] = srcdata[0];
+				dstdata[lockedRectSubImg.Pitch * y + bytes * x + 1] = srcdata[1];
+				dstdata[lockedRectSubImg.Pitch * y + bytes * x + 2] = srcdata[2];
+				dstdata[lockedRectSubImg.Pitch * y + bytes * x + 3] = srcdata[3];
 
-				srcdata += 4;
+				srcdata += bytes;
 			}
 		}
-				CachedSubImage->Texture->UnlockRect();
+		cachedSubImage->pTexture->UnlockRect();
 	}
 	else // Normal texture
 	{
@@ -2600,7 +2602,7 @@ public:
 		m_pD3DDev->EndScene();
 		m_needBeginScene = true;
 
-#if 0 //PROFILE
+#ifdef _PROFILE
 #define MB	(1024*1024)
 #define AddStr(a,b) (pstrOut += wsprintf( pstrOut, a, b ))
 
@@ -2622,11 +2624,9 @@ public:
 
 		// Output the string.
 		OutputDebugString( strOut );
-#endif
 
-#ifdef PROFILE
 		D3DPERF_SetShowFrameRateInterval( 1000 );
-#endif
+#endif //_PROFILE
 
         m_pD3DDev->Present(NULL, NULL, NULL, NULL);
 	}
@@ -2664,7 +2664,7 @@ private:
 
 	void SetRenderStateDirty()
 	{
-		if ( ! m_glRenderStateDirty )
+		if ( !m_glRenderStateDirty )
 		{
 			internalEnd();
 			m_glRenderStateDirty = true;
@@ -2704,7 +2704,7 @@ private:
 			m_pD3DDev->SetRenderState( D3DRS_ALPHABLENDENABLE, m_glBlend ? TRUE : FALSE );
 		}
 	
-		// check polygon offset
+		// Check polygon offset
 		if (!m_PolyOffsetSwitched)
 		{
 			if (m_PolyOffsetEnabled)
@@ -2716,13 +2716,24 @@ private:
 			{
 				// no polygon offset - back to normal z bias
 				// (see comment in 
-				m_pD3DDev->SetRenderState(D3DRS_ZBIAS, /*8*/0); //HACK for Xash3D - Marty
+				m_pD3DDev->SetRenderState(D3DRS_ZBIAS, /*8*/0); //Marty - HACK for Xash3D
 			}
 
 			// we've switched polygon offset now
 			m_PolyOffsetSwitched = true;
 		}
 		
+		// Check fog
+		if (!m_bFogSwitched)
+		{
+			if (m_bFogEnabled)
+				m_pD3DDev->SetRenderState(D3DRS_FOGENABLE, true);
+			else
+				m_pD3DDev->SetRenderState(D3DRS_FOGENABLE, false);
+
+			m_bFogSwitched = true;
+		}
+
 		if ( m_glCullStateDirty ) 
 		{
 			m_glCullStateDirty = false;
@@ -3317,9 +3328,6 @@ private:
 #pragma warning( pop )
 };
 
-// TODO Fix this warning instead of disableing it
-#pragma warning(disable:4273)
-
 void /*APIENTRY*/ glAlphaFunc (GLenum func, GLclampf ref)
 {
 	gFakeGL->glAlphaFunc(func, ref);
@@ -3395,11 +3403,6 @@ void /*APIENTRY*/ glDepthRange (GLclampd zNear, GLclampd zFar)
 	gFakeGL->glDepthRange(zNear, zFar);
 }
 
-void /*APIENTRY*/ glDisable (GLenum cap)
-{
-	gFakeGL->glDisable(cap);
-}
-
 void /*APIENTRY*/ glDrawBuffer (GLenum mode)
 {
 	gFakeGL->glDrawBuffer(mode);
@@ -3408,6 +3411,11 @@ void /*APIENTRY*/ glDrawBuffer (GLenum mode)
 void /*APIENTRY*/ glEnable (GLenum cap)
 {
 	gFakeGL->glEnable(cap);
+}
+
+void /*APIENTRY*/ glDisable (GLenum cap)
+{
+	gFakeGL->glDisable(cap);
 }
 
 void /*APIENTRY*/ glEnd (void)
@@ -3441,7 +3449,7 @@ void /*APIENTRY*/ glHint (GLenum target, GLenum mode)
 	gFakeGL->glHint(target, mode);
 }
 
-GLboolean APIENTRY glIsEnabled(GLenum cap)
+GLboolean /*APIENTRY*/ glIsEnabled(GLenum cap)
 {
 	return gFakeGL->glIsEnabled(cap);
 }
@@ -3556,16 +3564,6 @@ void /*APIENTRY*/ glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
 	gFakeGL->glViewport(x, y, width, height);
 }
 
-/*
-HDC gHDC;
-HGLRC gHGLRC;
-
-extern "C" 
-{
-	extern HWND mainwindow;
-};
-*/
-
 HGLRCx /*APIENTRY*/ wglCreateContext(/*maindc*/)
 {
 	/*return (HGLRC)*/gFakeGL = new FakeGL(/*mainwindow*/);
@@ -3593,7 +3591,7 @@ BOOL /*WINAPI*/ wglDeleteContext(/*HGLRC hglrc*/)
 	return FALSE;
 }
 
-//MARTY FIXME
+//MARTY IMPLEMENT ME
 /*
 HGLRC WINAPI wglGetCurrentContext(VOID)
 {
@@ -3635,6 +3633,7 @@ PROC /*APIENTRY*/ wglGetProcAddress(LPCSTR s)
 	static LPCSTR kBindTextureEXT = "glBindTextureEXT";
 	static LPCSTR kMTexCoord2fSGIS = "glMTexCoord2fSGIS"; // Multitexture
 	static LPCSTR kSelectTextureSGIS = "glSelectTextureSGIS";
+
 	if ( strncmp(s, kBindTextureEXT, sizeof(kBindTextureEXT)-1) == 0)
 	{
 		return (PROC) BindTextureExt;
@@ -3723,7 +3722,7 @@ Made to do exactly the same things they do in FakeGL09, in some cases nothing.
 void /*APIENTRY*/ glColorMask (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
 	gFakeGL->glColorMask(red, green, blue, alpha);
-};
+}
 
 void /*APIENTRY*/ glScissor (GLint x, GLint y, GLsizei width, GLsizei height)
 {
@@ -3747,42 +3746,42 @@ void /*APIENTRY*/ glTexParameteri (GLenum target, GLenum pname, GLint param)
 void /*APIENTRY*/ glLineWidth (GLfloat width)
 {
 	//Not implemented - Same as FakeGL09
-};
+}
 
 void /*APIENTRY*/ glFogi (GLenum pname, GLint param)
 {
 	gFakeGL->glFogi(pname, param);
-};
+}
 
 void /*APIENTRY*/ glFogf (GLenum pname, GLfloat param)
 {
 	gFakeGL->glFogf(pname, param);
-};
+}
 
 void /*APIENTRY*/ glFogfv (GLenum pname, const GLfloat *params)
 {
 	gFakeGL->glFogfv(pname, params);
-};
+}
 
 void /*APIENTRY*/ glCopyTexImage2D (GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
 {
 	//Not implemented - Same as FakeGL09
-};
+}
 
 void /*APIENTRY*/ glFrontFace (GLenum mode)
 {
 	gFakeGL->glFrontFace(mode);
-};
+}
 
 void /*APIENTRY*/ glPolygonOffset (GLfloat factor, GLfloat units)
 {
 	gFakeGL->glPolygonOffset( factor, units);
-};
+}
 
 void /*APIENTRY*/ glDeleteTextures (GLsizei n, const GLuint *textures)
 {
 	gFakeGL->glDeleteTextures( n, textures);
-};
+}
 
 void /*APIENTRY*/ glStencilFunc (GLenum func, GLint ref, GLuint mask)
 {

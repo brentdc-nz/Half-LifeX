@@ -30,7 +30,7 @@ Sys_DoubleTime
 */
 double Sys_DoubleTime( void )
 {
-#if 1 //MARTY - Better for 1.4ghz XBox, no need to patch the .xbe
+#if 1 //MARTY - Better for a 1.4ghz modded XBox, no need to patch the .xbe
 	static int starttime = 0;
 
 	if ( !starttime )
@@ -472,9 +472,11 @@ before call this
 */
 void Sys_Error( const char *error, ... )
 {
+#ifndef _XBOX //MARTY
 	va_list	argptr;
 	char	text[MAX_SYSPATH];
-     
+#endif //_XBOX
+
 	if( host.state == HOST_ERR_FATAL )
 		return; // don't multiple executes
 
@@ -482,13 +484,14 @@ void Sys_Error( const char *error, ... )
 	if( host.change_game ) Sys_Sleep( 200 );
 
 	error_on_exit = true;
-	host.state = HOST_ERR_FATAL;	
+	host.state = HOST_ERR_FATAL;
+#ifndef _XBOX //MARTY - On a crash on XBox we don't have a debug console window!
 	va_start( argptr, error );
 	Q_vsprintf( text, error, argptr );
 	va_end( argptr );
 
 	SV_SysError( text );
-/*
+
 	if( host.type == HOST_NORMAL ) //MARTY FIXME WIP
 	{
 		if( host.hWnd ) ShowWindow( host.hWnd, SW_HIDE );
@@ -506,7 +509,8 @@ void Sys_Error( const char *error, ... )
 	{
 		Con_ShowConsole( false );
 		MSGBOX( text );
-	}*/
+	}
+#endif //_XBOX
 	Sys_Quit();
 }
 
@@ -517,21 +521,24 @@ Sys_Break
 same as Error
 ================
 */
-void Sys_Break( const char *error, ... ) //MARTY FIXME WIP
+void Sys_Break( const char *error, ... )
 {
+#ifndef _XBOX //MARTY
 	va_list		argptr;
 	char		text[MAX_SYSPATH];
+#endif //_XBOX
 
 	if( host.state == HOST_ERR_FATAL )
 		return; // don't multiple executes
 
 	error_on_exit = true;	
-	host.state = HOST_ERR_FATAL;         
+	host.state = HOST_ERR_FATAL;
+#ifndef _XBOX //MARTY - On a crash on XBox we don't have a debug console window!
 	va_start( argptr, error );
 	Q_vsprintf( text, error, argptr );
 	va_end( argptr );
 
-/*	if( host.type == HOST_NORMAL )
+	if( host.type == HOST_NORMAL )
 	{
 		if( host.hWnd ) ShowWindow( host.hWnd, SW_HIDE );
 		VID_RestoreGamma();
@@ -549,7 +556,8 @@ void Sys_Break( const char *error, ... ) //MARTY FIXME WIP
 		Con_ShowConsole( false );
 		MSGBOX( text );
 	}
-*/	Sys_Quit();
+#endif //_XBOX
+	Sys_Quit();
 }
 
 /*
@@ -577,18 +585,21 @@ Sys_Print
 print into window console
 ================
 */
-void Sys_Print( const char *pMsg ) //MARTY FIXME WIP - We don't send to the Windows console, just HL ingame console.
+void Sys_Print( const char *pMsg )
 {
-/*	const char	*msg;
+#ifndef _XBOX //MARTY - We don't send to the Windows console, just HL ingame console.
+	const char	*msg;
 	char		buffer[32768];
 	char		logbuf[32768];
 	char		*b = buffer;
 	char		*c = logbuf;	
 	int		i = 0;
-*/
+#endif //_XBOX
+
 	if( host.type == HOST_NORMAL )
 		Con_Print( pMsg );
-/*
+
+#ifndef _XBOX //MARTY
 	// if the message is REALLY long, use just the last portion of it
 	if( Q_strlen( pMsg ) > sizeof( buffer ) - 1 )
 		msg = pMsg + Q_strlen( pMsg ) - sizeof( buffer ) + 1;
@@ -635,7 +646,8 @@ void Sys_Print( const char *pMsg ) //MARTY FIXME WIP - We don't send to the Wind
 	*b = *c = 0; // cutoff garbage
 
 	Sys_PrintLog( logbuf );
-	Con_WinPrint( buffer );*/
+	Con_WinPrint( buffer );
+#endif //_XBOX
 }
 
 /*
@@ -677,7 +689,7 @@ void MsgDev( int level, const char *pMsg, ... )
 	Q_vsnprintf( text, sizeof( text ), pMsg, argptr );
 	va_end( argptr );
 
-#ifndef _DEBUG //MARTY FIXME WIP - We need all errors atm to help debug
+#ifdef _DEBUG //MARTY FIXME WIP - We need all errors atm to help debug
 	OutputDebugString( text );
 #endif
 
