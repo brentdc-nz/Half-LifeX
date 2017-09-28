@@ -205,7 +205,7 @@ public:
 		if (!m_currentTexture) LocalDebugBreak(); //glBindTexture: out of textures!!!
 	}
 
-	void ReleaseAllTextures()
+	void ReleaseAllTextures() //Release when quitting the game
 	{
 		for (TextureEntry* tex = m_textures; tex; tex = tex->next)
 		{
@@ -1201,14 +1201,13 @@ private:
 
 		// Set up the parameters
 		params.EnableAutoDepthStencil = TRUE;
-		params.AutoDepthStencilFormat = D3DFMT_D16;//D3DFMT_D24S8;
+		params.AutoDepthStencilFormat = D3DFMT_D16;
 		params.SwapEffect             = D3DSWAPEFFECT_DISCARD; 
 		params.BackBufferWidth        = gWidth;
 		params.BackBufferHeight       = gHeight;
-		params.BackBufferFormat       = D3DFMT_X8R8G8B8; //D3DFMT_X1R5G5B5 -> saves 2 MBytes;
-		//params.FullScreen_PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+		params.BackBufferFormat       = D3DFMT_X8R8G8B8;
 		params.FullScreen_RefreshRateInHz = 60;
-		params.MultiSampleType = D3DMULTISAMPLE_4_SAMPLES_MULTISAMPLE_LINEAR;//D3DMULTISAMPLE_NONE;
+		params.MultiSampleType = D3DMULTISAMPLE_4_SAMPLES_MULTISAMPLE_LINEAR;
 
 #define USE_PUSHBUFFER
 #ifdef USE_PUSHBUFFER
@@ -1800,14 +1799,12 @@ public:
 				break;
 
 			case GL_STENCIL_BITS:
-//MARTY FIXME
-/*				else if (d3d_PresentParams.AutoDepthStencilFormat == D3DFMT_D24S8)
+/*				if (params.AutoDepthStencilFormat == D3DFMT_D24S8)
 				params[0] = 8;
-				else if (d3d_PresentParams.AutoDepthStencilFormat == D3DFMT_D24X4S4)
+				else if (params.AutoDepthStencilFormat == D3DFMT_D24X4S4)
 				params[0] = 4;
 				else params[0] = 0;
-*/
-				break;
+*/				break;
 
 			default:
 				params[0] = 0;
@@ -3564,15 +3561,15 @@ void /*APIENTRY*/ glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
 	gFakeGL->glViewport(x, y, width, height);
 }
 
-HGLRCx /*APIENTRY*/ wglCreateContext(/*maindc*/)
+HGLRC /*APIENTRY*/ wglCreateContext(/*maindc*/)
 {
-	/*return (HGLRC)*/gFakeGL = new FakeGL(/*mainwindow*/);
+	gFakeGL = new FakeGL(/*mainwindow*/);
 
-	//We don't return a handle on Xbox
+	//We don't return a handle on XBox
 	if(!gFakeGL)
-		return 0; 
+		return (HGLRC)0; 
 
-	return 1;
+	return (HGLRC)1;
 }
 
 BOOL /*WINAPI*/ wglDeleteContext(/*HGLRC hglrc*/)
@@ -3591,7 +3588,7 @@ BOOL /*WINAPI*/ wglDeleteContext(/*HGLRC hglrc*/)
 	return FALSE;
 }
 
-//MARTY IMPLEMENT ME
+//MARTY
 /*
 HGLRC WINAPI wglGetCurrentContext(VOID)
 {

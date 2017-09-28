@@ -864,8 +864,8 @@ void pfnPIC_DrawAdditive( int x, int y, int width, int height, const wrect_t *pr
 void SCR_InitCinematic( void );
 void SCR_FreeCinematic( void );/*
 qboolean SCR_PlayCinematic( const char *name );
-qboolean SCR_DrawCinematic( void );
-void SCR_RunCinematic( void );*/
+qboolean SCR_DrawCinematic( void );*/
+void SCR_RunCinematic( void );
 void SCR_StopCinematic( void );
 void CL_PlayVideo_f( void );
 

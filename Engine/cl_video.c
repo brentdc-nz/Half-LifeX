@@ -139,10 +139,10 @@ void SCR_CheckStartupVids( void ) //MARTY FIXME WIP
 ==================
 SCR_RunCinematic
 ==================
-*//*
-void SCR_RunCinematic( void )    //MARTY FIXME WIP
+*/
+void SCR_RunCinematic( void ) //MARTY FIXME WIP
 {
-	if( cls.state != ca_cinematic )
+/*	if( cls.state != ca_cinematic )
 		return;
 
 	if( !AVI_IsActive( cin_state ))
@@ -171,8 +171,8 @@ void SCR_RunCinematic( void )    //MARTY FIXME WIP
 	}
 
 	// read the next frame
-	cin_frame = AVI_GetVideoFrameNumber( cin_state, cin_time );
-}*/
+	cin_frame = AVI_GetVideoFrameNumber( cin_state, cin_time );*/
+}
 
 /*
 ==================

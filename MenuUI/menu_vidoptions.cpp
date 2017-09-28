@@ -65,12 +65,21 @@ UI_VidOptions_GetConfig
 */
 static void UI_VidOptions_GetConfig( void )
 {
-	uiVidOptions.screenSize.curValue = (CVAR_GET_FLOAT( "viewsize" ) - 20.0f ) / 100.0f;
-	uiVidOptions.gammaIntensity.curValue = (CVAR_GET_FLOAT( "vid_gamma" ) - 0.5f) / 1.8f;
+	uiVidOptions.screenSize.curValue = RemapVal( CVAR_GET_FLOAT( "viewsize" ), 30.0f, 120.0f, 0.0f, 1.0f );
 	uiVidOptions.glareReduction.curValue = (CVAR_GET_FLOAT( "r_flaresize" ) - 100.0f ) / 200.0f;
+
+	if( CVAR_GET_FLOAT( "gl_ignorehwgamma" ))
+	{
+		uiVidOptions.gammaIntensity.curValue = RemapVal( CVAR_GET_FLOAT( "gamma" ), 1.8f, 3.0f, 0.0f, 1.0f );
+		PIC_SetGamma( uiVidOptions.hTestImage, CVAR_GET_FLOAT( "gamma" ));
+	}
+	else uiVidOptions.gammaIntensity.curValue = RemapVal( CVAR_GET_FLOAT( "gamma" ), 0.5f, 2.3f, 0.0f, 1.0f );
 
 	if( CVAR_GET_FLOAT( "r_fastsky" ))
 		uiVidOptions.fastSky.enabled = 1;
+
+	if( CVAR_GET_FLOAT( "host_allow_materials" ))
+		uiVidOptions.hiTextures.enabled = 1;
 
 	uiVidOptions.outlineWidth = 2;
 	UI_ScaleCoords( NULL, NULL, &uiVidOptions.outlineWidth, NULL );
@@ -83,10 +92,26 @@ UI_VidOptions_UpdateConfig
 */
 static void UI_VidOptions_UpdateConfig( void )
 {
-	CVAR_SET_FLOAT( "viewsize", (uiVidOptions.screenSize.curValue * 100.0f) + 20.0f );
-	CVAR_SET_FLOAT( "vid_gamma", (uiVidOptions.gammaIntensity.curValue * 1.8f) + 0.5f );
+	CVAR_SET_FLOAT( "viewsize", RemapVal( uiVidOptions.screenSize.curValue, 0.0f, 1.0f, 30.0f, 120.0f ));
 	CVAR_SET_FLOAT( "r_flaresize", (uiVidOptions.glareReduction.curValue * 200.0f ) + 100.0f );
 	CVAR_SET_FLOAT( "r_fastsky", uiVidOptions.fastSky.enabled );
+	CVAR_SET_FLOAT( "host_allow_materials", uiVidOptions.hiTextures.enabled );
+
+	if( CVAR_GET_FLOAT( "gl_ignorehwgamma" ))
+		PIC_SetGamma( uiVidOptions.hTestImage, RemapVal( uiVidOptions.gammaIntensity.curValue, 0.0f, 1.0f, 1.8f, 3.0f ));
+	else CVAR_SET_FLOAT( "gamma", RemapVal( uiVidOptions.gammaIntensity.curValue, 0.0f, 1.0f, 0.5f, 2.3f ));
+}
+
+static void UI_VidOptions_SetConfig( void )
+{
+	CVAR_SET_FLOAT( "viewsize", RemapVal( uiVidOptions.screenSize.curValue, 0.0f, 1.0f, 30.0f, 120.0f ));
+	CVAR_SET_FLOAT( "r_flaresize", (uiVidOptions.glareReduction.curValue * 200.0f ) + 100.0f );
+	CVAR_SET_FLOAT( "r_fastsky", uiVidOptions.fastSky.enabled );
+	CVAR_SET_FLOAT( "host_allow_materials", uiVidOptions.hiTextures.enabled );
+
+	if( CVAR_GET_FLOAT( "gl_ignorehwgamma" ))
+		CVAR_SET_FLOAT( "gamma", RemapVal( uiVidOptions.gammaIntensity.curValue, 0.0f, 1.0f, 1.8f, 3.0f ));
+	else CVAR_SET_FLOAT( "gamma", RemapVal( uiVidOptions.gammaIntensity.curValue, 0.0f, 1.0f, 0.5f, 2.3f ));
 }
 
 /*
@@ -98,8 +123,34 @@ static void UI_VidOptions_Ownerdraw( void *self )
 {
 	menuCommon_s	*item = (menuCommon_s *)self;
 	int		color = 0xFFFF0000; // 255, 0, 0, 255
+	int		viewport[4];
+	int		viewsize, size, sb_lines;
 
-	UI_DrawPic( item->x, item->y, item->width, item->height, uiColorWhite, ((menuBitmap_s *)self)->pic );
+	viewsize = CVAR_GET_FLOAT( "viewsize" );
+
+	if( viewsize >= 120 )
+		sb_lines = 0;	// no status bar at all
+	else if( viewsize >= 110 )
+		sb_lines = 24;	// no inventory
+	else sb_lines = 48;
+
+	size = min( viewsize, 100 );
+
+	viewport[2] = item->width * size / 100;
+	viewport[3] = item->height * size / 100;
+
+	if( viewport[3] > item->height - sb_lines )
+		viewport[3] = item->height - sb_lines;
+	if( viewport[3] > item->height )
+		viewport[3] = item->height;
+
+	viewport[2] &= ~7;
+	viewport[3] &= ~1;
+
+	viewport[0] = (item->width - viewport[2]) / 2;
+	viewport[1] = (item->height - sb_lines - viewport[3]) / 2;
+
+	UI_DrawPic( item->x + viewport[0], item->y + viewport[1], viewport[2], viewport[3], uiColorWhite, ((menuBitmap_s *)self)->pic );
 	UI_DrawRectangleExt( item->x, item->y, item->width, item->height, color, uiVidOptions.outlineWidth );
 }
 
@@ -134,6 +185,7 @@ static void UI_VidOptions_Callback( void *self, int event )
 	switch( item->id )
 	{
 	case ID_DONE:
+		UI_VidOptions_SetConfig();
 		UI_PopMenu();
 		break;
 	}
@@ -147,6 +199,8 @@ UI_VidOptions_Init
 static void UI_VidOptions_Init( void )
 {
 	memset( &uiVidOptions, 0, sizeof( uiVidOptions_t ));
+
+	uiVidOptions.hTestImage = PIC_Load( ART_GAMMA, PIC_KEEP_RGBDATA );
 
 	uiVidOptions.menu.vidInitFunc = UI_VidOptions_Init;
 
@@ -234,6 +288,15 @@ static void UI_VidOptions_Init( void )
 	uiVidOptions.fastSky.generic.callback = UI_VidOptions_Callback;
 	uiVidOptions.fastSky.generic.statusText = "enable/disable fast sky rendering (for old computers)";
 
+	uiVidOptions.hiTextures.generic.id = ID_ALLOW_MATERIALS;
+	uiVidOptions.hiTextures.generic.type = QMTYPE_CHECKBOX;
+	uiVidOptions.hiTextures.generic.flags = QMF_HIGHLIGHTIFFOCUS|QMF_ACT_ONRELEASE|QMF_MOUSEONLY|QMF_DROPSHADOW;
+	uiVidOptions.hiTextures.generic.name = "Allow materials";
+	uiVidOptions.hiTextures.generic.x = 72;
+	uiVidOptions.hiTextures.generic.y = 665;
+	uiVidOptions.hiTextures.generic.callback = UI_VidOptions_Callback;
+	uiVidOptions.hiTextures.generic.statusText = "let engine replace 8-bit textures with full color hi-res prototypes (if present)";
+
 	UI_VidOptions_GetConfig();
 
 	UI_AddItem( &uiVidOptions.menu, (void *)&uiVidOptions.background );
@@ -243,6 +306,7 @@ static void UI_VidOptions_Init( void )
 	UI_AddItem( &uiVidOptions.menu, (void *)&uiVidOptions.gammaIntensity );
 	UI_AddItem( &uiVidOptions.menu, (void *)&uiVidOptions.glareReduction );
 	UI_AddItem( &uiVidOptions.menu, (void *)&uiVidOptions.fastSky );
+	UI_AddItem( &uiVidOptions.menu, (void *)&uiVidOptions.hiTextures );
 	UI_AddItem( &uiVidOptions.menu, (void *)&uiVidOptions.testImage );
 }
 
@@ -255,7 +319,6 @@ void UI_VidOptions_Precache( void )
 {
 	PIC_Load( ART_BACKGROUND );
 	PIC_Load( ART_BANNER );
-	PIC_Load( ART_GAMMA );
 }
 
 /*
@@ -268,6 +331,5 @@ void UI_VidOptions_Menu( void )
 	UI_VidOptions_Precache();
 	UI_VidOptions_Init();
 
-	UI_VidOptions_UpdateConfig();
 	UI_PushMenu( &uiVidOptions.menu );
 }

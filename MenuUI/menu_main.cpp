@@ -76,7 +76,6 @@ typedef struct
 	menuAction_s	msgBox;
 	menuAction_s	quitMessage;
 	menuAction_s	dlgMessage1;
-	menuAction_s	dlgMessage2;
 	menuPicButton_s	yes;
 	menuPicButton_s	no;
 } uiMain_t;
@@ -105,11 +104,15 @@ static void UI_Background_Ownerdraw( void *self )
 	menuCommon_s	*item = (menuCommon_s *)self;
 
 	// map has background
-	if( CVAR_GET_FLOAT( "sv_background" )) return;
+	if( CVAR_GET_FLOAT( "sv_background" ))
+		return;
 
-	UI_DrawPic( item->x, item->y, item->width, item->height, uiColorWhite, ((menuBitmap_s *)self)->pic );
+	UI_DrawBackground_Callback( self );
 
-	if( GetLogoLength() <= 0.1 || GetLogoWidth() <= 32 )
+	if (uiStatic.m_fHaveSteamBackground || uiStatic.m_fDisableLogo)
+		return; // no logos for steam background
+
+	if( GetLogoLength() <= 0.05f || GetLogoWidth() <= 32 )
 		return;	// don't draw stub logo (GoldSrc rules)
 
 	float	logoWidth, logoHeight, logoPosY;
@@ -172,7 +175,6 @@ static void UI_PromptDialog( void )
 
 	uiMain.msgBox.generic.flags ^= QMF_HIDDEN;
 	uiMain.dlgMessage1.generic.flags ^= QMF_HIDDEN;
-	uiMain.dlgMessage2.generic.flags ^= QMF_HIDDEN;
 	uiMain.no.generic.flags ^= QMF_HIDDEN;
 	uiMain.yes.generic.flags ^= QMF_HIDDEN;
 
@@ -535,24 +537,21 @@ static void UI_Main_Init( void )
 
 	uiMain.quitMessage.generic.id = ID_MSGBOX;
 	uiMain.quitMessage.generic.type = QMTYPE_ACTION;
-	uiMain.quitMessage.generic.flags = QMF_INACTIVE|QMF_DROPSHADOW|QMF_HIDDEN;
+	uiMain.quitMessage.generic.flags = QMF_INACTIVE|QMF_DROPSHADOW|QMF_HIDDEN|QMF_CENTER_JUSTIFY;
 	uiMain.quitMessage.generic.name = "Are you sure you want to quit?";
-	uiMain.quitMessage.generic.x = 248;
+	uiMain.quitMessage.generic.x = 192;
 	uiMain.quitMessage.generic.y = 280;
+	uiMain.quitMessage.generic.width = 640;
+	uiMain.quitMessage.generic.height = 256;
 
 	uiMain.dlgMessage1.generic.id = ID_MSGTEXT;
 	uiMain.dlgMessage1.generic.type = QMTYPE_ACTION;
-	uiMain.dlgMessage1.generic.flags = QMF_INACTIVE|QMF_DROPSHADOW|QMF_HIDDEN;
+	uiMain.dlgMessage1.generic.flags = QMF_INACTIVE|QMF_DROPSHADOW|QMF_HIDDEN|QMF_CENTER_JUSTIFY;
 	uiMain.dlgMessage1.generic.name = "Starting a Hazard Course will exit";
-	uiMain.dlgMessage1.generic.x = 212;
+	uiMain.dlgMessage1.generic.x = 192;
 	uiMain.dlgMessage1.generic.y = 280;
-
-	uiMain.dlgMessage2.generic.id = ID_MSGTEXT;
-	uiMain.dlgMessage2.generic.type = QMTYPE_ACTION;
-	uiMain.dlgMessage2.generic.flags = QMF_INACTIVE|QMF_DROPSHADOW|QMF_HIDDEN;
-	uiMain.dlgMessage2.generic.name = "any current game, OK to exit?";
-	uiMain.dlgMessage2.generic.x = 256;
-	uiMain.dlgMessage2.generic.y = 310;
+	uiMain.dlgMessage1.generic.width = 640;
+	uiMain.dlgMessage1.generic.height = 256;
 
 	uiMain.yes.generic.id = ID_YES;
 	uiMain.yes.generic.type = QMTYPE_BM_BUTTON;
@@ -601,7 +600,6 @@ static void UI_Main_Init( void )
 	UI_AddItem( &uiMain.menu, (void *)&uiMain.msgBox );
 	UI_AddItem( &uiMain.menu, (void *)&uiMain.quitMessage );
 	UI_AddItem( &uiMain.menu, (void *)&uiMain.dlgMessage1 );
-	UI_AddItem( &uiMain.menu, (void *)&uiMain.dlgMessage2 );
 	UI_AddItem( &uiMain.menu, (void *)&uiMain.no );
 	UI_AddItem( &uiMain.menu, (void *)&uiMain.yes );
 }

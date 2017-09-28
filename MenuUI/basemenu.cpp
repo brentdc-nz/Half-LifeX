@@ -331,6 +331,106 @@ void UI_DrawMouseCursor( void )
 
 /*
 =================
+UI_DrawBackground_Callback
+=================
+*/
+void UI_DrawBackground_Callback( void *self )
+{
+	if (!uiStatic.m_fHaveSteamBackground)
+	{
+		menuCommon_s *item = (menuCommon_s *)self;
+		UI_DrawPic( item->x, item->y, item->width, item->height, uiColorWhite, ((menuBitmap_s *)self)->pic );
+		return;
+	}
+
+	int xpos, ypos;
+	float xScale, yScale;
+
+	// work out scaling factors
+	xScale = ScreenWidth / uiStatic.m_flTotalWidth;
+	yScale = ScreenHeight / uiStatic.m_flTotalHeight;
+
+	// iterate and draw all the background pieces
+	ypos = 0;
+	for (int y = 0; y < BACKGROUND_ROWS; y++)
+	{
+		xpos = 0;
+		for (int x = 0; x < BACKGROUND_COLUMNS; x++)
+		{
+			bimage_t &bimage = uiStatic.m_SteamBackground[y][x];
+
+			int dx = (int)ceil(xpos * xScale);
+			int dy = (int)ceil(ypos * yScale);
+			int dw = (int)ceil(bimage.width * xScale);
+			int dt = (int)ceil(bimage.height * yScale);
+
+			if (x == 0) dx = 0;
+			if (y == 0) dy = 0;
+
+			PIC_Set( bimage.hImage, 255, 255, 255, 255 );
+			PIC_Draw( dx, dy, dw, dt );
+			xpos += bimage.width;
+		}
+		ypos += uiStatic.m_SteamBackground[y][0].height;
+	}
+}
+
+/*
+=================
+UI_LoadBackgroundImage
+=================
+*/
+void UI_LoadBackgroundImage( void )
+{
+	int num_background_images = 0;
+	char filename[512];
+
+	for( int y = 0; y < BACKGROUND_ROWS; y++ )
+	{
+		for( int x = 0; x < BACKGROUND_COLUMNS; x++ )
+		{
+			sprintf( filename, "resource/background/800_%d_%c_loading.tga", y + 1, 'a' + x );
+			if (g_engfuncs.pfnFileExists( filename, TRUE ))
+				num_background_images++;
+		}
+	}
+
+	if (num_background_images == (BACKGROUND_COLUMNS * BACKGROUND_ROWS))
+		uiStatic.m_fHaveSteamBackground = TRUE;
+	else uiStatic.m_fHaveSteamBackground = FALSE;
+
+	if (uiStatic.m_fHaveSteamBackground)
+	{
+		uiStatic.m_flTotalWidth = uiStatic.m_flTotalHeight = 0.0f;
+
+		for( int y = 0; y < BACKGROUND_ROWS; y++ )
+		{
+			for( int x = 0; x < BACKGROUND_COLUMNS; x++ )
+			{
+				bimage_t &bimage = uiStatic.m_SteamBackground[y][x];
+				sprintf(filename, "resource/background/800_%d_%c_loading.tga", y + 1, 'a' + x);
+				bimage.hImage = PIC_Load( filename, PIC_NOFLIP_TGA );
+				bimage.width = PIC_Width( bimage.hImage );
+				bimage.height = PIC_Height( bimage.hImage );
+
+				if (y==0) uiStatic.m_flTotalWidth += bimage.width;
+				if (x==0) uiStatic.m_flTotalHeight += bimage.height;
+			}
+		}
+	}
+	else
+	{
+		if( g_engfuncs.pfnFileExists( "gfx\\shell\\splash.bmp", TRUE )) //MARTY
+		{
+			// if we doesn't have logo.avi in gamedir we don't want to draw it
+			if( !g_engfuncs.pfnFileExists( "media\\logo.avi", TRUE )) //MARTY
+				uiStatic.m_fDisableLogo = TRUE;
+		}
+	}
+}
+
+/*
+=================
 UI_StartSound
 =================
 */
@@ -1407,11 +1507,10 @@ int UI_VidInit( void )
 	// trying to load chapterbackgrounds.txt
 	UI_LoadBackgroundMapList ();
 
-//MARTY START - Pulled from Xash3D 0.91 Rev 1770 to fix tga 0.85 rev 1540 version
-
 	// register menu font
 	uiStatic.hFont = PIC_Load( "#XASH_SYSTEMFONT_001.bmp", menufont_bmp, sizeof( menufont_bmp ));
 
+	UI_LoadBackgroundImage ();
 #if 0
 	FILE *f;
 
@@ -1421,7 +1520,6 @@ int UI_VidInit( void )
 	fclose( f );
 #endif
 
-//MARTY END
 	// reload all menu buttons
 	UI_LoadBmpButtons ();
 

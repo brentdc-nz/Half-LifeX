@@ -460,7 +460,7 @@ long _stdcall Sys_Crash( PEXCEPTION_POINTERS pInfo )
 		return host.oldFilter( pInfo );
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
-#endif _XBOX //MARTY
+#endif //_XBOX
 
 /*
 ================

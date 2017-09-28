@@ -34,9 +34,9 @@ extern ui_enginefuncs_t g_engfuncs;
 //
 //MARTY - Renamed UIDLL_
 #ifdef _DEBUG
-void UIDLL_DBG_AssertFunction( BOOL fExpr, const char* szExpr, const char* szFile, int szLine, const char* szMessage );
-#define ASSERT( f )		UIDLL_DBG_AssertFunction( f, #f, __FILE__, __LINE__, NULL )
-#define ASSERTSZ( f, sz )	UIDLL_DBG_AssertFunction( f, #f, __FILE__, __LINE__, sz )
+void UILIB_DBG_AssertFunction( BOOL fExpr, const char* szExpr, const char* szFile, int szLine, const char* szMessage );
+#define ASSERT( f )		UILIB_BG_AssertFunction( f, #f, __FILE__, __LINE__, NULL )
+#define ASSERTSZ( f, sz )	UILIB_DBG_AssertFunction( f, #f, __FILE__, __LINE__, sz )
 #else
 #define ASSERT( f )
 #define ASSERTSZ( f, sz )
@@ -116,5 +116,6 @@ extern int UI_FadeAlpha( int starttime, int endtime );
 extern void StringConcat( char *dst, const char *src, size_t size );	// strncat safe prototype
 extern char *Info_ValueForKey( const char *s, const char *key );
 extern int KEY_GetKey( const char *binding );			// ripped out from engine
+extern int COM_CompareSaves( const void **a, const void **b );
 
 #endif//UTILS_H

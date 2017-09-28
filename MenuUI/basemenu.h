@@ -352,6 +352,13 @@ typedef struct
 
 	HIMAGE		hFont;		// mainfont
 
+	// handle steam background images
+	bimage_t		m_SteamBackground[BACKGROUND_ROWS][BACKGROUND_COLUMNS];
+	float		m_flTotalWidth;
+	float		m_flTotalHeight;
+	bool		m_fHaveSteamBackground;
+	bool		m_fDisableLogo;
+
 	float		scaleX;
 	float		scaleY;
 	int		outlineWidth;
@@ -415,6 +422,7 @@ void UI_DrawString( int x, int y, int w, int h, const char *str, const int col, 
 void UI_StartSound( const char *sound );
 void UI_LoadBmpButtons( void );
 
+void UI_DrawBackground_Callback( void *self );
 void UI_AddItem ( menuFramework_s *menu, void *item );
 void UI_CursorMoved( menuFramework_s *menu );
 void UI_SetCursor( menuFramework_s *menu, int cursor );

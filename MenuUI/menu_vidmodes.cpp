@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ID_DONE		3
 #define ID_VIDMODELIST	4
 #define ID_FULLSCREEN	5
-#define ID_SOFTWARE		6
+#define ID_VERTICALSYNC	6
 #define ID_TABLEHINT	7
 
 #define MAX_VIDMODES	(sizeof( uiVideoModes ) / sizeof( uiVideoModes[0] )) + 1
@@ -74,7 +74,7 @@ typedef struct
 	menuPicButton_s	ok;
 	menuPicButton_s	cancel;
 	menuCheckBox_s	windowed;
-	menuCheckBox_s	software;
+	menuCheckBox_s	vsync;
 
 	menuScrollList_s	vidList;
 	menuAction_s	listCaption;
@@ -99,8 +99,8 @@ static void UI_VidModes_GetConfig( void )
 	if( !CVAR_GET_FLOAT( "fullscreen" ))
 		uiVidModes.windowed.enabled = 1;
 
-	if( CVAR_GET_FLOAT( "r_allow_software" ))
-		uiVidModes.software.enabled = 1;
+	if( CVAR_GET_FLOAT( "gl_swapInterval" ))
+		uiVidModes.vsync.enabled = 1;
 }
 
 /*
@@ -112,7 +112,7 @@ static void UI_VidOptions_SetConfig( void )
 {
 	CVAR_SET_FLOAT( "vid_mode", uiVidModes.vidList.curItem );
 	CVAR_SET_FLOAT( "fullscreen", !uiVidModes.windowed.enabled );
-	CVAR_SET_FLOAT( "r_allow_software", uiVidModes.software.enabled );
+	CVAR_SET_FLOAT( "gl_swapInterval", uiVidModes.vsync.enabled );
 }
 
 /*
@@ -122,7 +122,7 @@ UI_VidModes_UpdateConfig
 */
 static void UI_VidOptions_UpdateConfig( void )
 {
-	CVAR_SET_FLOAT( "r_allow_software", uiVidModes.software.enabled );
+	CVAR_SET_FLOAT( "gl_swapInterval", uiVidModes.vsync.enabled );
 }
 
 /*
@@ -137,7 +137,7 @@ static void UI_VidModes_Callback( void *self, int event )
 	switch( item->id )
 	{
 	case ID_FULLSCREEN:
-	case ID_SOFTWARE:
+	case ID_VERTICALSYNC:
 		if( event == QM_PRESSED )
 			((menuCheckBox_s *)self)->focusPic = UI_CHECKBOX_PRESSED;
 		else ((menuCheckBox_s *)self)->focusPic = UI_CHECKBOX_FOCUS;
@@ -242,14 +242,14 @@ static void UI_VidModes_Init( void )
 	uiVidModes.windowed.generic.callback = UI_VidModes_Callback;
 	uiVidModes.windowed.generic.statusText = "Run game in window mode";
 
-	uiVidModes.software.generic.id = ID_SOFTWARE;
-	uiVidModes.software.generic.type = QMTYPE_CHECKBOX;
-	uiVidModes.software.generic.flags = QMF_HIGHLIGHTIFFOCUS|QMF_ACT_ONRELEASE|QMF_MOUSEONLY|QMF_DROPSHADOW;
-	uiVidModes.software.generic.name = "Allow software";
-	uiVidModes.software.generic.x = 400;
-	uiVidModes.software.generic.y = 670;
-	uiVidModes.software.generic.callback = UI_VidModes_Callback;
-	uiVidModes.software.generic.statusText = "allow software rendering when hardware support is missing";
+	uiVidModes.vsync.generic.id = ID_VERTICALSYNC;
+	uiVidModes.vsync.generic.type = QMTYPE_CHECKBOX;
+	uiVidModes.vsync.generic.flags = QMF_HIGHLIGHTIFFOCUS|QMF_ACT_ONRELEASE|QMF_MOUSEONLY|QMF_DROPSHADOW;
+	uiVidModes.vsync.generic.name = "Vertical sync";
+	uiVidModes.vsync.generic.x = 400;
+	uiVidModes.vsync.generic.y = 670;
+	uiVidModes.vsync.generic.callback = UI_VidModes_Callback;
+	uiVidModes.vsync.generic.statusText = "enable vertical synchronization";
 
 	UI_VidModes_GetConfig();
 
@@ -258,7 +258,7 @@ static void UI_VidModes_Init( void )
 	UI_AddItem( &uiVidModes.menu, (void *)&uiVidModes.ok );
 	UI_AddItem( &uiVidModes.menu, (void *)&uiVidModes.cancel );
 	UI_AddItem( &uiVidModes.menu, (void *)&uiVidModes.windowed );
-	UI_AddItem( &uiVidModes.menu, (void *)&uiVidModes.software );
+	UI_AddItem( &uiVidModes.menu, (void *)&uiVidModes.vsync );
 	UI_AddItem( &uiVidModes.menu, (void *)&uiVidModes.listCaption );
 	UI_AddItem( &uiVidModes.menu, (void *)&uiVidModes.vidList );
 }

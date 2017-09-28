@@ -134,6 +134,9 @@ static void UI_SaveGame_GetGameList( void )
 
 	filenames = FS_SEARCH( "save\\*.sav", &numFiles, TRUE ); //MARTY - Fixed Slashes
 
+	// sort the saves in reverse order (oldest past at the end)
+	qsort( filenames, numFiles, sizeof( char* ), (cmpfunc)COM_CompareSaves );
+
 	if ( CL_IsActive() && !gpGlobals->demoplayback )
 	{
 		// create new entry for current save game

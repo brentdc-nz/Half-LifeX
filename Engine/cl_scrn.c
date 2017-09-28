@@ -615,7 +615,6 @@ void SCR_Init( void )
 
 	SCR_LoadCreditsFont ();
 	SCR_InstallParticlePalette ();
-
 	SCR_RegisterTextures ();
 	SCR_InitCinematic();
 	SCR_VidInit();

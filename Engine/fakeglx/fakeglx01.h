@@ -21,8 +21,6 @@ typedef float GLclampf;
 typedef double GLdouble;
 typedef double GLclampd;
 typedef void GLvoid;
-
-typedef int HGLRCx; //We dont return a handle
 typedef int	BOOL;
 
 //OpenGL Defs - pulled from gl.h
@@ -1023,7 +1021,7 @@ extern "C"
 {
 #endif
 
-HGLRCx/*WINAPI*/wglCreateContext(/*maindc*/);
+HGLRC/*WINAPI*/wglCreateContext(/*maindc*/);
 BOOL /*WINAPI*/ wglMakeCurrent(/*HDC hdc, HGLRC hglrc*/);
 BOOL /*WINAPI*/ wglDeleteContext(/*HGLRC hglrc*/);
 BOOL /*WINAPI*/ FakeSwapBuffers();

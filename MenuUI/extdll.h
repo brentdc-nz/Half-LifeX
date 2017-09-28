@@ -42,6 +42,8 @@ GNU General Public License for more details.
 
 #define bound( min, num, max )	((num) >= (min) ? ((num) < (max) ? (num) : (max)) : (min))
 
+typedef int (*cmpfunc)( const void *a, const void *b );
+
 #include "common\menu_int.h"
 
 #endif//EXTDLL_H

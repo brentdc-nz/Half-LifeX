@@ -742,6 +742,10 @@ void UI_ScrollList_Draw( menuScrollList_s *sl )
 	w = sl->generic.width2;
 	h = sl->generic.charHeight;
 	y = sl->generic.y2 + sl->generic.charHeight;
+
+	// prevent the columns out of rectangle bounds
+	PIC_EnableScissor( x, y, sl->generic.width - arrowWidth - uiStatic.outlineWidth, sl->generic.height );
+
 	for( i = sl->topItem; i < sl->topItem + sl->numRows; i++, y += sl->generic.charHeight )
 	{
 		if( !sl->itemNames[i] )
@@ -776,6 +780,8 @@ void UI_ScrollList_Draw( menuScrollList_s *sl )
 		if( sl->generic.flags & QMF_FOCUSBEHIND )
 			UI_DrawString( x, y, w, h, sl->itemNames[i], sl->generic.color, false, sl->generic.charWidth, sl->generic.charHeight, justify, shadow );
 	}
+
+	PIC_DisableScissor();
 }
 
 /*
@@ -1989,8 +1995,15 @@ UI_Bitmap_Draw
 */
 void UI_Bitmap_Draw( menuBitmap_s *b )
 {
-	if( CVAR_GET_FLOAT( "sv_background" ) && b->generic.id == 0 )
-		return;	// has background map disable images
+	if( b->generic.id == ID_BACKGROUND )	// background is always 0!
+	{
+		if( CVAR_GET_FLOAT( "sv_background" ))
+			return;	// has background map disable images
+
+		// UGLY HACK for replace all backgrounds
+		UI_DrawBackground_Callback( b );
+		return;
+	}
 
 	//CR
 	if( b->generic.id == 1 )

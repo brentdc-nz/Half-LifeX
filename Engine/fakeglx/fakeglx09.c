@@ -136,15 +136,6 @@ D3DVIEWPORT8 d3d_Viewport;
 //#define D3D_SAFE_RELEASE(p) {if (p) (p)->lpVtbl->Release (p);  (p) = NULL;}
 #define D3D_SAFE_RELEASE(p) {if (p) (p)->Release();            (p)=NULL;} 
 
-//MARTY - Needed for glTexSubImage2D
-typedef struct rgba_s
-{
-    char b;
-    char g;
-    char r;
-    char a;
-} rgba_t;
-
 DWORD GL_ColorToD3D (GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
 	return D3DCOLOR_ARGB
@@ -2318,16 +2309,15 @@ void glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, 
 	dstdata = (byte *) lrunswiz.pBits;
 
 	//TODO: setup for when dstbytes and srcbytes !=4 (not used in Xash3D atm)
+
 	for (y = yoffset; y < (yoffset + height); y++)
 	{
 		for (x = xoffset; x < (xoffset + width); x++)
 		{
-			rgba_t pixel;
-			pixel.r = srcdata[0];
-			pixel.g = srcdata[1];
-			pixel.b = srcdata[2];
-			pixel.a = srcdata[3];
-			memcpy( &dstdata[lrunswiz.Pitch * y + dstbytes * x], &pixel, dstbytes );
+			dstdata[lrunswiz.Pitch * y + dstbytes * x ] = srcdata[2];
+			dstdata[lrunswiz.Pitch * y + dstbytes * x + 1] = srcdata[1];
+			dstdata[lrunswiz.Pitch * y + dstbytes * x + 2] = srcdata[0];
+			dstdata[lrunswiz.Pitch * y + dstbytes * x + 3] = srcdata[3];
 
 			srcdata += srcbytes;
 		}

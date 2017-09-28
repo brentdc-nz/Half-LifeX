@@ -147,6 +147,9 @@ static void UI_PlayerSetup_GetConfig( void )
 		}
 	}
 
+	if( gMenu.m_gameinfo.flags & GFL_NOMODELS )
+		uiPlayerSetup.model.curValue = 0.0f; // force to default
+
 	strcpy( uiPlayerSetup.currentModel, uiPlayerSetup.models[(int)uiPlayerSetup.model.curValue] );
 	uiPlayerSetup.model.maxValue = (float)(uiPlayerSetup.num_models - 1);
 
@@ -227,7 +230,6 @@ static void UI_PlayerSetup_UpdateConfig( void )
 			if( lastImage[0] && playerImage )
 			{
 				// release old image
-//				Con_NPrintf( 1, "release %s\n", lastImage );
 				PIC_Free( lastImage );
 				lastImage[0] = '\0';
 				playerImage = 0;
@@ -237,11 +239,9 @@ static void UI_PlayerSetup_UpdateConfig( void )
 			{
 				sprintf( lastImage, "models/player/%s/%s.bmp", name, name );
 				playerImage = PIC_Load( lastImage, PIC_KEEP_8BIT ); // if present of course
-//				Con_NPrintf( 2, "loading %s[%i]\n", lastImage, playerImage );
 			}
 			else if( lastImage[0] && playerImage )
 			{
-//				Con_NPrintf( 1, "release %s\n", lastImage );
 				// release old image
 				PIC_Free( lastImage );
 				lastImage[0] = '\0';
@@ -338,12 +338,16 @@ UI_PlayerSetup_Init
 static void UI_PlayerSetup_Init( void )
 {
 	bool game_hlRally = FALSE;
+	int addFlags = 0;
 
 	memset( &uiPlayerSetup, 0, sizeof( uiPlayerSetup_t ));
 
 	// disable playermodel preview for HLRally to prevent crash
 	if( !stricmp( gMenu.m_gameinfo.gamefolder, "hlrally" ))
 		game_hlRally = TRUE;
+
+	if( gMenu.m_gameinfo.flags & GFL_NOMODELS )
+		addFlags |= QMF_INACTIVE;
 
 	uiPlayerSetup.menu.vidInitFunc = UI_PlayerSetup_Init;
 
@@ -409,7 +413,7 @@ static void UI_PlayerSetup_Init( void )
 
 	uiPlayerSetup.model.generic.id = ID_MODEL;
 	uiPlayerSetup.model.generic.type = QMTYPE_SPINCONTROL;
-	uiPlayerSetup.model.generic.flags = QMF_CENTER_JUSTIFY|QMF_HIGHLIGHTIFFOCUS|QMF_DROPSHADOW;
+	uiPlayerSetup.model.generic.flags = QMF_CENTER_JUSTIFY|QMF_HIGHLIGHTIFFOCUS|QMF_DROPSHADOW|addFlags;
 	uiPlayerSetup.model.generic.x = game_hlRally ? 320 : 702;
 	uiPlayerSetup.model.generic.y = game_hlRally ? 320 : 590;
 	uiPlayerSetup.model.generic.width = game_hlRally ? 256 : 176;
@@ -422,7 +426,7 @@ static void UI_PlayerSetup_Init( void )
 
 	uiPlayerSetup.topColor.generic.id = ID_TOPCOLOR;
 	uiPlayerSetup.topColor.generic.type = QMTYPE_SLIDER;
-	uiPlayerSetup.topColor.generic.flags = QMF_PULSEIFFOCUS|QMF_DROPSHADOW;
+	uiPlayerSetup.topColor.generic.flags = QMF_PULSEIFFOCUS|QMF_DROPSHADOW|addFlags;
 	uiPlayerSetup.topColor.generic.name = "Top color";
 	uiPlayerSetup.topColor.generic.x = 250;
 	uiPlayerSetup.topColor.generic.y = 550;
@@ -435,7 +439,7 @@ static void UI_PlayerSetup_Init( void )
 
 	uiPlayerSetup.bottomColor.generic.id = ID_BOTTOMCOLOR;
 	uiPlayerSetup.bottomColor.generic.type = QMTYPE_SLIDER;
-	uiPlayerSetup.bottomColor.generic.flags = QMF_PULSEIFFOCUS|QMF_DROPSHADOW;
+	uiPlayerSetup.bottomColor.generic.flags = QMF_PULSEIFFOCUS|QMF_DROPSHADOW|addFlags;
 	uiPlayerSetup.bottomColor.generic.name = "Bottom color";
 	uiPlayerSetup.bottomColor.generic.x = 250;
 	uiPlayerSetup.bottomColor.generic.y = 620;
@@ -448,7 +452,7 @@ static void UI_PlayerSetup_Init( void )
 
 	uiPlayerSetup.showModels.generic.id = ID_SHOWMODELS;
 	uiPlayerSetup.showModels.generic.type = QMTYPE_CHECKBOX;
-	uiPlayerSetup.showModels.generic.flags = QMF_HIGHLIGHTIFFOCUS|QMF_ACT_ONRELEASE|QMF_MOUSEONLY|QMF_DROPSHADOW;
+	uiPlayerSetup.showModels.generic.flags = QMF_HIGHLIGHTIFFOCUS|QMF_ACT_ONRELEASE|QMF_MOUSEONLY|QMF_DROPSHADOW|addFlags;
 	uiPlayerSetup.showModels.generic.name = "Show Player Models";
 	uiPlayerSetup.showModels.generic.x = 72;
 	uiPlayerSetup.showModels.generic.y = 380;
@@ -457,7 +461,7 @@ static void UI_PlayerSetup_Init( void )
 
 	uiPlayerSetup.hiModels.generic.id = ID_HIMODELS;
 	uiPlayerSetup.hiModels.generic.type = QMTYPE_CHECKBOX;
-	uiPlayerSetup.hiModels.generic.flags = QMF_HIGHLIGHTIFFOCUS|QMF_ACT_ONRELEASE|QMF_MOUSEONLY|QMF_DROPSHADOW;
+	uiPlayerSetup.hiModels.generic.flags = QMF_HIGHLIGHTIFFOCUS|QMF_ACT_ONRELEASE|QMF_MOUSEONLY|QMF_DROPSHADOW|addFlags;
 	uiPlayerSetup.hiModels.generic.name = "High quality models";
 	uiPlayerSetup.hiModels.generic.x = 72;
 	uiPlayerSetup.hiModels.generic.y = 430;
@@ -474,12 +478,15 @@ static void UI_PlayerSetup_Init( void )
 	if( game_hlRally == FALSE )
 		UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.view );
 	UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.name );
-	UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.model );
-	UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.topColor );
-	UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.bottomColor );
-	UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.showModels );
-	UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.hiModels );
 
+	if( !gMenu.m_gameinfo.flags & GFL_NOMODELS )
+	{
+		UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.model );
+		UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.topColor );
+		UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.bottomColor );
+		UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.showModels );
+		UI_AddItem( &uiPlayerSetup.menu, (void *)&uiPlayerSetup.hiModels );
+	}
 	// setup render and actor
 	uiPlayerSetup.refdef.fov_x = 40;
 

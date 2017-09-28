@@ -902,7 +902,7 @@ int /*EXPORT*/ Host_Main( const char *progname, int bChangeGame, pfnChangeGame f
 	switch( host.type )
 	{
 	case HOST_NORMAL:
-#ifndef _XBOX //MARTY - No dedicated server console on XBox
+#ifndef _XBOX //MARTY - No pre-startup console on XBox
 		Con_ShowConsole( false ); // hide console
 #endif
 		// execute startup config and cmdline

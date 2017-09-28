@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static const char *uiCreditsDefault[] = 
 {
 	"",
-	"Copyright XashXT Group 2011 (C)",
+	"Copyright XashXT Group 2013 (C)",
 	0
 };
 
@@ -143,7 +143,7 @@ static void UI_Credits_Init( void )
 			{
 				char *tmp = (char *)MALLOC( count + 2 );
 				memcpy( tmp, uiCredits.buffer, count ); 
-				FREE( uiCredits.buffer );
+				FREE_FILE( uiCredits.buffer );
 				uiCredits.buffer = tmp; 
 				strncpy( uiCredits.buffer + count, "\r", 1 ); // add terminator
 				count += 2; // added "\r\0"

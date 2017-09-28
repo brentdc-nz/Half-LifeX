@@ -1759,7 +1759,7 @@ void Host_ClientFrame( void )
 	// decay dynamic lights
 	CL_DecayLights ();
 
-//	SCR_RunCinematic(); //MARTY FIXME WIP
+	SCR_RunCinematic();
 	Con_RunConsole();
 
 	cls.framecount++;

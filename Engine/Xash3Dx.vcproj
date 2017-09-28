@@ -327,7 +327,8 @@
 				Name="XboxDeploymentTool"/>
 			<Tool
 				Name="XboxImageTool"
-				StackSize="425536"
+				StackSize="340000"
+				LimitAvailableMemoryTo64MB="FALSE"
 				SuppressStartupBanner="FALSE"
 				DontModifyHD="FALSE"
 				NoLibWarn="TRUE"
@@ -386,7 +387,7 @@
 				Name="XboxDeploymentTool"/>
 			<Tool
 				Name="XboxImageTool"
-				StackSize="425536"
+				StackSize="340000"
 				SuppressStartupBanner="FALSE"
 				DontModifyHD="FALSE"
 				NoLibWarn="TRUE"
@@ -439,7 +440,7 @@
 			<Tool
 				Name="XboxImageTool"
 				FileName="$(TargetDir)$(TargetName).xbe"
-				StackSize="425536"
+				StackSize="340000"
 				IncludeDebugInfo="TRUE"
 				LimitAvailableMemoryTo64MB="FALSE"
 				NoLibWarn="TRUE"
@@ -492,7 +493,7 @@
 			<Tool
 				Name="XboxImageTool"
 				FileName="$(TargetDir)$(TargetName).xbe"
-				StackSize="425536"
+				StackSize="340000"
 				IncludeDebugInfo="TRUE"
 				LimitAvailableMemoryTo64MB="FALSE"
 				NoLibWarn="TRUE"
@@ -832,6 +833,63 @@
 						RelativePath=".\gl_cull.c">
 					</File>
 					<File
+						RelativePath=".\gl_decals.c">
+						<FileConfiguration
+							Name="Debug|Xbox">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Profile|Xbox">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Profile_FastCap|Xbox">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Xbox">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release_LTCG|Xbox">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release FakeGLx01|Xbox">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release FakeGLx09|Xbox">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug FakeGLx01|Xbox">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug FakeGLx09|Xbox">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+					</File>
+					<File
 						RelativePath=".\gl_draw.c">
 					</File>
 					<File
@@ -980,63 +1038,6 @@
 						</File>
 						<File
 							RelativePath=".\gamma.c">
-						</File>
-						<File
-							RelativePath=".\gl_decals.c">
-							<FileConfiguration
-								Name="Debug|Xbox">
-								<Tool
-									Name="VCCLCompilerTool"
-									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-							</FileConfiguration>
-							<FileConfiguration
-								Name="Profile|Xbox">
-								<Tool
-									Name="VCCLCompilerTool"
-									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-							</FileConfiguration>
-							<FileConfiguration
-								Name="Profile_FastCap|Xbox">
-								<Tool
-									Name="VCCLCompilerTool"
-									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-							</FileConfiguration>
-							<FileConfiguration
-								Name="Release|Xbox">
-								<Tool
-									Name="VCCLCompilerTool"
-									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-							</FileConfiguration>
-							<FileConfiguration
-								Name="Release_LTCG|Xbox">
-								<Tool
-									Name="VCCLCompilerTool"
-									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-							</FileConfiguration>
-							<FileConfiguration
-								Name="Release FakeGLx01|Xbox">
-								<Tool
-									Name="VCCLCompilerTool"
-									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-							</FileConfiguration>
-							<FileConfiguration
-								Name="Release FakeGLx09|Xbox">
-								<Tool
-									Name="VCCLCompilerTool"
-									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-							</FileConfiguration>
-							<FileConfiguration
-								Name="Debug FakeGLx01|Xbox">
-								<Tool
-									Name="VCCLCompilerTool"
-									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-							</FileConfiguration>
-							<FileConfiguration
-								Name="Debug FakeGLx09|Xbox">
-								<Tool
-									Name="VCCLCompilerTool"
-									ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-							</FileConfiguration>
 						</File>
 						<File
 							RelativePath=".\hpak.c">

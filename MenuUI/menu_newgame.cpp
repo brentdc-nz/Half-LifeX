@@ -54,7 +54,6 @@ typedef struct
 	// newgame prompt dialog
 	menuAction_s	msgBox;
 	menuAction_s	dlgMessage1;
-	menuAction_s	dlgMessage2;
 	menuPicButton_s	yes;
 	menuPicButton_s	no;
 
@@ -103,7 +102,6 @@ static void UI_PromptDialog( float skill )
 
 	uiNewGame.msgBox.generic.flags ^= QMF_HIDDEN;
 	uiNewGame.dlgMessage1.generic.flags ^= QMF_HIDDEN;
-	uiNewGame.dlgMessage2.generic.flags ^= QMF_HIDDEN;
 	uiNewGame.no.generic.flags ^= QMF_HIDDEN;
 	uiNewGame.yes.generic.flags ^= QMF_HIDDEN;
 
@@ -256,17 +254,12 @@ static void UI_NewGame_Init( void )
 
 	uiNewGame.dlgMessage1.generic.id = ID_MSGTEXT;
 	uiNewGame.dlgMessage1.generic.type = QMTYPE_ACTION;
-	uiNewGame.dlgMessage1.generic.flags = QMF_INACTIVE|QMF_HIDDEN|QMF_DROPSHADOW;
+	uiNewGame.dlgMessage1.generic.flags = QMF_INACTIVE|QMF_HIDDEN|QMF_DROPSHADOW|QMF_CENTER_JUSTIFY;
 	uiNewGame.dlgMessage1.generic.name = "Starting a new game will exit";
-	uiNewGame.dlgMessage1.generic.x = 248;
+	uiNewGame.dlgMessage1.generic.x = 192;
 	uiNewGame.dlgMessage1.generic.y = 280;
-
-	uiNewGame.dlgMessage2.generic.id = ID_MSGTEXT;
-	uiNewGame.dlgMessage2.generic.type = QMTYPE_ACTION;
-	uiNewGame.dlgMessage2.generic.flags = QMF_INACTIVE|QMF_HIDDEN|QMF_DROPSHADOW;
-	uiNewGame.dlgMessage2.generic.name = "any current game, OK to exit?";
-	uiNewGame.dlgMessage2.generic.x = 248;
-	uiNewGame.dlgMessage2.generic.y = 310;
+	uiNewGame.dlgMessage1.generic.width = 640;
+	uiNewGame.dlgMessage1.generic.height = 256;
 
 	uiNewGame.yes.generic.id = ID_YES;
 	uiNewGame.yes.generic.type = QMTYPE_BM_BUTTON;
@@ -296,7 +289,6 @@ static void UI_NewGame_Init( void )
 	UI_AddItem( &uiNewGame.menu, (void *)&uiNewGame.cancel );
 	UI_AddItem( &uiNewGame.menu, (void *)&uiNewGame.msgBox );
 	UI_AddItem( &uiNewGame.menu, (void *)&uiNewGame.dlgMessage1 );
-	UI_AddItem( &uiNewGame.menu, (void *)&uiNewGame.dlgMessage2 );
 	UI_AddItem( &uiNewGame.menu, (void *)&uiNewGame.no );
 	UI_AddItem( &uiNewGame.menu, (void *)&uiNewGame.yes );
 }

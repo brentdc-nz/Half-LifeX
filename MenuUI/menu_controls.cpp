@@ -34,8 +34,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ID_CANCEL		5
 #define ID_KEYLIST		6
 #define ID_TABLEHINT	7
-#define ID_MSGBOX	 	8
-#define ID_MSGTEXT	 	9
+#define ID_MSGBOX1	 	8
+#define ID_MSGBOX2	 	9
+#define ID_MSGTEXT	 	10
+#define ID_PROMPT	 	11
+#define ID_YES	 	130
+#define ID_NO	 	131
 
 #define MAX_KEYS		256
 #define CMD_LENGTH		38
@@ -60,8 +64,12 @@ typedef struct
 	menuPicButton_s	cancel;
 
 	// redefine key wait dialog
-	menuAction_s	msgBox;
+	menuAction_s	msgBox1;	// small msgbox
+	menuAction_s	msgBox2;	// large msgbox
 	menuAction_s	dlgMessage;
+	menuAction_s	promptMessage;
+	menuPicButton_s	yes;
+	menuPicButton_s	no;
 
 	menuScrollList_s	keysList;
 	menuAction_s	hintMessage;
@@ -72,6 +80,23 @@ typedef struct
 
 static uiControls_t		uiControls;
 extern bool		hold_button_stack;
+
+static void UI_ResetToDefaultsDialog( void )
+{
+	// toggle main menu between active\inactive
+	// show\hide reset to defaults dialog
+	uiControls.defaults.generic.flags ^= QMF_INACTIVE; 
+	uiControls.advanced.generic.flags ^= QMF_INACTIVE;
+	uiControls.done.generic.flags ^= QMF_INACTIVE;
+	uiControls.cancel.generic.flags ^= QMF_INACTIVE;
+
+	uiControls.keysList.generic.flags ^= QMF_INACTIVE;
+
+	uiControls.msgBox2.generic.flags ^= QMF_HIDDEN;
+	uiControls.promptMessage.generic.flags ^= QMF_HIDDEN;
+	uiControls.yes.generic.flags ^= QMF_HIDDEN;
+	uiControls.no.generic.flags ^= QMF_HIDDEN;
+}
 
 /*
 =================
@@ -218,7 +243,7 @@ static void UI_PromptDialog( void )
 
 	uiControls.keysList.generic.flags ^= QMF_INACTIVE;
 
-	uiControls.msgBox.generic.flags ^= QMF_HIDDEN;
+	uiControls.msgBox1.generic.flags ^= QMF_HIDDEN;
 	uiControls.dlgMessage.generic.flags ^= QMF_HIDDEN;
 }
 
@@ -289,6 +314,15 @@ UI_Controls_KeyFunc
 static const char *UI_Controls_KeyFunc( int key, int down )
 {
 	char	cmd[128];
+
+	if( uiControls.msgBox1.generic.flags & QMF_HIDDEN )
+	{
+		if( down && key == K_ESCAPE && uiControls.defaults.generic.flags & QMF_INACTIVE )
+		{
+			UI_ResetToDefaultsDialog();
+			return uiSoundNull;
+		}
+	}
 	
 	if( down )
 	{
@@ -384,6 +418,10 @@ static void UI_Controls_Callback( void *self, int event )
 		UI_PopMenu();
 		break;
 	case ID_DEFAULTS:
+	case ID_NO:
+		UI_ResetToDefaultsDialog ();
+		break;
+	case ID_YES:
 		UI_Controls_ResetKeysList ();
 		break;
 	case ID_ADVANCED:
@@ -492,14 +530,23 @@ static void UI_Controls_Init( void )
 
 	UI_Controls_ParseKeysList();
 
-	uiControls.msgBox.generic.id = ID_MSGBOX;
-	uiControls.msgBox.generic.type = QMTYPE_ACTION;
-	uiControls.msgBox.generic.flags = QMF_INACTIVE|QMF_HIDDEN;
-	uiControls.msgBox.generic.ownerdraw = UI_MsgBox_Ownerdraw; // just a fill rectangle
-	uiControls.msgBox.generic.x = 192;
-	uiControls.msgBox.generic.y = 256;
-	uiControls.msgBox.generic.width = 640;
-	uiControls.msgBox.generic.height = 128;
+	uiControls.msgBox1.generic.id = ID_MSGBOX1;
+	uiControls.msgBox1.generic.type = QMTYPE_ACTION;
+	uiControls.msgBox1.generic.flags = QMF_INACTIVE|QMF_HIDDEN;
+	uiControls.msgBox1.generic.ownerdraw = UI_MsgBox_Ownerdraw; // just a fill rectangle
+	uiControls.msgBox1.generic.x = 192;
+	uiControls.msgBox1.generic.y = 256;
+	uiControls.msgBox1.generic.width = 640;
+	uiControls.msgBox1.generic.height = 128;
+
+	uiControls.msgBox2.generic.id = ID_MSGBOX2;
+	uiControls.msgBox2.generic.type = QMTYPE_ACTION;
+	uiControls.msgBox2.generic.flags = QMF_INACTIVE|QMF_HIDDEN;
+	uiControls.msgBox2.generic.ownerdraw = UI_MsgBox_Ownerdraw; // just a fill rectangle
+	uiControls.msgBox2.generic.x = 192;
+	uiControls.msgBox2.generic.y = 256;
+	uiControls.msgBox2.generic.width = 640;
+	uiControls.msgBox2.generic.height = 256;
 
 	uiControls.dlgMessage.generic.id = ID_MSGTEXT;
 	uiControls.dlgMessage.generic.type = QMTYPE_ACTION;
@@ -507,6 +554,33 @@ static void UI_Controls_Init( void )
 	uiControls.dlgMessage.generic.name = "Press a key or button";
 	uiControls.dlgMessage.generic.x = 320;
 	uiControls.dlgMessage.generic.y = 280;
+
+	uiControls.promptMessage.generic.id = ID_PROMPT;
+	uiControls.promptMessage.generic.type = QMTYPE_ACTION;
+	uiControls.promptMessage.generic.flags = QMF_INACTIVE|QMF_DROPSHADOW|QMF_HIDDEN;
+	uiControls.promptMessage.generic.name = "Reset buttons to default?";
+	uiControls.promptMessage.generic.x = 290;
+	uiControls.promptMessage.generic.y = 280;
+
+	uiControls.yes.generic.id = ID_YES;
+	uiControls.yes.generic.type = QMTYPE_BM_BUTTON;
+	uiControls.yes.generic.flags = QMF_HIGHLIGHTIFFOCUS|QMF_DROPSHADOW|QMF_HIDDEN;
+	uiControls.yes.generic.name = "Ok";
+	uiControls.yes.generic.x = 380;
+	uiControls.yes.generic.y = 460;
+	uiControls.yes.generic.callback = UI_Controls_Callback;
+
+	UI_UtilSetupPicButton( &uiControls.yes, PC_OK );
+
+	uiControls.no.generic.id = ID_NO;
+	uiControls.no.generic.type = QMTYPE_BM_BUTTON;
+	uiControls.no.generic.flags = QMF_HIGHLIGHTIFFOCUS|QMF_DROPSHADOW|QMF_HIDDEN;
+	uiControls.no.generic.name = "Cancel";
+	uiControls.no.generic.x = 530;
+	uiControls.no.generic.y = 460;
+	uiControls.no.generic.callback = UI_Controls_Callback;
+
+	UI_UtilSetupPicButton( &uiControls.no, PC_CANCEL );
 
 	UI_AddItem( &uiControls.menu, (void *)&uiControls.background );
 	UI_AddItem( &uiControls.menu, (void *)&uiControls.banner );
@@ -516,8 +590,12 @@ static void UI_Controls_Init( void )
 	UI_AddItem( &uiControls.menu, (void *)&uiControls.cancel );
 	UI_AddItem( &uiControls.menu, (void *)&uiControls.hintMessage );
 	UI_AddItem( &uiControls.menu, (void *)&uiControls.keysList );
-	UI_AddItem( &uiControls.menu, (void *)&uiControls.msgBox );
+	UI_AddItem( &uiControls.menu, (void *)&uiControls.msgBox1 );
+	UI_AddItem( &uiControls.menu, (void *)&uiControls.msgBox2 );
 	UI_AddItem( &uiControls.menu, (void *)&uiControls.dlgMessage );
+	UI_AddItem( &uiControls.menu, (void *)&uiControls.promptMessage );
+	UI_AddItem( &uiControls.menu, (void *)&uiControls.no );
+	UI_AddItem( &uiControls.menu, (void *)&uiControls.yes );
 }
 
 /*
