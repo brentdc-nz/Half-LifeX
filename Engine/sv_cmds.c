@@ -403,6 +403,11 @@ SV_AutoSave_f
 */
 void SV_AutoSave_f( void )
 {
+#ifdef _XBOX //MARTY
+	if(!sv_autosave->integer)
+		return;
+#endif
+
 	SV_SaveGame( "autosave" );
 }
 

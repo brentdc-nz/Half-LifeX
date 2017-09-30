@@ -381,6 +381,10 @@ extern	server_t		sv;			// local server
 extern	svgame_static_t	svgame;			// persistant game info
 extern	areanode_t	sv_areanodes[];		// AABB dynamic tree
 
+#ifdef _XBOX //MARTY
+extern	convar_t		*sv_autosave;
+#endif
+
 extern	convar_t		*sv_pausable;		// allows pause in multiplayer
 extern	convar_t		*sv_newunit;
 extern	convar_t		*sv_airaccelerate;

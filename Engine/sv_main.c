@@ -19,6 +19,10 @@ GNU General Public License for more details.
 
 #define HEARTBEAT_SECONDS	300.0f 		// 300 seconds
 
+#ifdef _XBOX //MARTY
+convar_t	*sv_autosave;
+#endif
+
 convar_t	*sv_zmax;
 convar_t	*sv_novis;			// disable server culling entities by vis
 convar_t	*sv_unlag;
@@ -655,6 +659,10 @@ void SV_Init( void )
 	Cvar_Get( "sv_airmove", "1", CVAR_SERVERNOTIFY, "enable airmovement (legacy, unused)" );
 	Cvar_Get( "mp_autocrosshair", "0", 0, "allow auto crosshair in multiplayer (legacy, unused)" );
 		
+#ifdef _XBOX //MARTY
+	sv_autosave = Cvar_Get( "sv_autosave", "0", CVAR_ARCHIVE, "Autosave games using check points" );
+#endif
+
 	// half-life shared variables
 	sv_zmax = Cvar_Get ("sv_zmax", "4096", CVAR_PHYSICINFO, "zfar server value" );
 	sv_wateramp = Cvar_Get ("sv_wateramp", "0", CVAR_PHYSICINFO, "global water wave height" );
