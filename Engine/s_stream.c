@@ -19,6 +19,7 @@ GNU General Public License for more details.
 
 portable_samplepair_t	s_rawsamples[MAX_RAW_SAMPLES];
 static bg_track_t		s_bgTrack;
+static musicfade_t		musicfade;	// controlled by game dlls
 int			s_rawend;
 
 void S_PrintBackgroundTrackState( void )
@@ -41,6 +42,33 @@ void S_CheckLerpingState( void )
 
 	if( info && ((float)info->rate / SOUND_DMA_SPEED ) >= 1.0f )
 		s_listener.lerping = s_lerping->integer;
+}
+
+/*
+=================
+S_FadeMusicVolume
+=================
+*/
+void S_FadeMusicVolume( float fadePercent )
+{
+	musicfade.percent = bound( 0.0f, fadePercent, 100.0f );       
+}
+
+/*
+=================
+S_GetMusicVolume
+=================
+*/
+float S_GetMusicVolume( void )
+{
+	float	scale = 1.0f;
+
+	if( !s_listener.inmenu && musicfade.percent != 0 )
+	{
+		scale = bound( 0.0f, musicfade.percent / 100.0f, 1.0f );
+		scale = 1.0f - scale;
+	}
+	return s_musicvolume->value * scale;
 }
 
 /*
@@ -73,6 +101,7 @@ void S_StartBackgroundTrack( const char *introTrack, const char *mainTrack, long
 	// open stream
 	s_bgTrack.stream = FS_OpenStream( va( "media\\%s", introTrack )); //MARTY - Fixed slashes
 	Q_strncpy( s_bgTrack.current, introTrack, sizeof( s_bgTrack.current ));
+	Q_memset( &musicfade, 0, sizeof( musicfade )); // clear any soundfade
 	s_bgTrack.source = cls.key_dest;
 
 	if( position != 0 )
@@ -93,6 +122,7 @@ void S_StopBackgroundTrack( void )
 
 	FS_FreeStream( s_bgTrack.stream );
 	Q_memset( &s_bgTrack, 0, sizeof( bg_track_t ));
+	Q_memset( &musicfade, 0, sizeof( musicfade ));
 	s_listener.lerping = false;
 	s_rawend = 0;
 }

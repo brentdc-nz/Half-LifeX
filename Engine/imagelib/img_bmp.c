@@ -487,7 +487,7 @@ qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
 	{
 		i = (bmih.biHeight - 1 - y ) * (bmih.biWidth);
 
-		for( x = 0; x < bmih.biWidth; x++ )
+		for( x = 0; x < pix->width; x++ )
 		{
 			if( pixel_size == 1 )
 			{
@@ -507,7 +507,7 @@ qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
 			i++;
 		}
 
-		pb += bmih.biWidth * pixel_size;
+		pb += pix->width * pixel_size;
 	}
 
 #ifndef _XBOX //MARTY

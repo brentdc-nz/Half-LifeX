@@ -20,6 +20,7 @@ GNU General Public License for more details.
 #include "mathlib.h"
 #include "input.h"
 #include "features.h"
+#include "render_api.h"	// decallist_t
 #include "host.h" //MARTY
 
 typedef void (*pfnChangeGame)( const char *progname );
@@ -80,18 +81,19 @@ void Host_PrintEngineFeatures( void )
 		MsgDev( D_AICONSOLE, "^3EXT:^7 big world support enabled\n" );
 
 	if( host.features & ENGINE_BUILD_SURFMESHES )
-	{
 		MsgDev( D_AICONSOLE, "^3EXT:^7 surfmeshes enabled\n" );
 
-		if( host.features & ENGINE_BUILD_STVECTORS )
-			MsgDev( D_AICONSOLE, "^3EXT:^7 ST-vectors generate enabled\n" );
-	}
+	if( host.features & ENGINE_LOAD_DELUXEDATA )
+		MsgDev( D_AICONSOLE, "^3EXT:^7 deluxemap support enabled\n" );
 
 	if( host.features & ENGINE_TRANSFORM_TRACE_AABB )
 		MsgDev( D_AICONSOLE, "^3EXT:^7 Transform trace AABB enabled\n" );
 
 	if( host.features & ENGINE_LARGE_LIGHTMAPS )
 		MsgDev( D_AICONSOLE, "^3EXT:^7 Large lightmaps enabled\n" );
+
+	if( host.features & ENGINE_COMPENSATE_QUAKE_BUG )
+		MsgDev( D_AICONSOLE, "^3EXT:^7 Compensate quake bug enabled\n" );
 }
 
 /*
@@ -107,6 +109,7 @@ qboolean Host_NewGame( const char *mapName, qboolean loadGame )
 
 	return iRet;
 }
+
 /*
 ================
 Host_EndGame
@@ -131,12 +134,15 @@ void Host_EndGame( const char *message, ... )
 	
 	if( host.type == HOST_DEDICATED )
 		Sys_Break( "Host_EndGame: %s\n", string ); // dedicated servers exit
-	
-	if( CL_NextDemo( ));
-	else CL_Disconnect();
+
+	SV_Shutdown( false );
+	CL_Disconnect();
+
+	// recreate world if needs
+	CL_ClearEdicts ();
 
 	// release all models
-	Mod_ClearAll();
+	Mod_ClearAll( true );
 
 	Host_AbortCurrentFrame ();
 }
@@ -221,8 +227,8 @@ Host_Exec_f
 void Host_Exec_f( void )
 {
 	string	cfgpath;
+	char	*f, *txt; 
 	size_t	len;
-	char	*f; 
 
 	if( Cmd_Argc() != 2 )
 	{
@@ -247,9 +253,15 @@ void Host_Exec_f( void )
 		return;
 	}
 
-	MsgDev( D_INFO, "execing %s\n", Cmd_Argv( 1 ));
-	Cbuf_InsertText( f );
+	// adds \n\0 at end of the file
+	txt = Z_Malloc( len + 2 );
+	Q_memcpy( txt, f, len );
+	Q_strncat( txt, "\n", len + 2 );
 	Mem_Free( f );
+
+	MsgDev( D_INFO, "execing %s\n", Cmd_Argv( 1 ));
+	Cbuf_InsertText( txt );
+	Mem_Free( txt );
 }
 
 /*
@@ -389,6 +401,66 @@ void Host_RestartAmbientSounds( void )
 }
 
 /*
+=================
+Host_RestartDecals
+
+Write all the decals into demo
+=================
+*/
+void Host_RestartDecals( void )
+{
+	decallist_t	*entry;
+	int		decalIndex;
+	int		modelIndex;
+	sizebuf_t		*msg;
+	int		i;
+
+	if( !SV_Active( ))
+	{
+		return;
+	}
+
+	// g-cont. add space for studiodecals if present
+	host.decalList = (decallist_t *)Z_Malloc( sizeof( decallist_t ) * MAX_RENDER_DECALS * 2 );
+	host.numdecals = R_CreateDecalList( host.decalList, false );
+
+	// remove decals from map
+	R_ClearAllDecals();
+
+	// write decals into reliable datagram
+	msg = SV_GetReliableDatagram();
+
+	// restore decals and write them into network message
+	for( i = 0; i < host.numdecals; i++ )
+	{
+		entry = &host.decalList[i];
+		modelIndex = pfnPEntityOfEntIndex( entry->entityIndex )->v.modelindex;
+
+		// game override
+		if( SV_RestoreCustomDecal( entry, pfnPEntityOfEntIndex( entry->entityIndex ), false ))
+			continue;
+
+		decalIndex = pfnDecalIndex( entry->name );
+
+		// BSP and studio decals has different messages
+		if( entry->flags & FDECAL_STUDIO )
+		{
+			// NOTE: studio decal trace start saved into impactPlaneNormal
+			SV_CreateStudioDecal( msg, entry->position, entry->impactPlaneNormal, decalIndex, entry->entityIndex,
+			modelIndex, entry->flags, &entry->studio_state );
+		}
+		else
+		{
+			SV_CreateDecal( msg, entry->position, decalIndex, entry->entityIndex, modelIndex, entry->flags, entry->scale );
+		}
+	}
+
+	Z_Free( host.decalList );
+	host.decalList = NULL;
+	host.numdecals = 0;
+}
+
+/*
 ===================
 Host_GetConsoleCommands
 
@@ -447,7 +519,7 @@ qboolean Host_FilterTime( float time )
 	host.realframetime = bound( MIN_FRAMETIME, host.frametime, MAX_FRAMETIME );
 	oldtime = host.realtime;
 
-	if( host_framerate->value > 0 && ( Host_IsLocalGame()/* || CL_IsPlaybackDemo() */))
+	if( host_framerate->value > 0 && ( Host_IsLocalGame()))
 	{
 		float fps = host_framerate->value;
 		if( fps > 1 ) fps = 1.0f / fps;
@@ -589,7 +661,7 @@ void Host_Error( const char *error, ... )
 	CL_ClearEdicts ();
 
 	// release all models
-	Mod_ClearAll();
+	Mod_ClearAll( false );
 
 	recursive = false;
 	Host_AbortCurrentFrame();
@@ -890,7 +962,7 @@ int /*EXPORT*/ Host_Main( const char *progname, int bChangeGame, pfnChangeGame f
 	else
 	{
 #ifndef _XBOX //MARTY
-		Cmd_AddCommand( "minimize", Host_Minimize_f, "minimize main window to tray" ); //MARTY
+		Cmd_AddCommand( "minimize", Host_Minimize_f, "minimize main window to tray" );
 #endif
 		Cbuf_AddText( "exec config.cfg\n" );
 	}

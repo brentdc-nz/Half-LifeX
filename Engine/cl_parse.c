@@ -465,6 +465,10 @@ void CL_ParseStaticEntity( sizebuf_t *msg )
 	ent->curstate = state;
 	ent->prevstate = state;
 
+	// statics may be respawned in game e.g. for demo recording
+	if( cls.state == ca_connected )
+		ent->trivial_accept = INVALID_HANDLE;
+
 	// setup the new static entity
 	CL_UpdateEntityFields( ent );
 
@@ -489,9 +493,11 @@ CL_ParseStaticDecal
 */
 void CL_ParseStaticDecal( sizebuf_t *msg )
 {
-	vec3_t	origin;
-	int	decalIndex, entityIndex, modelIndex;
-	int	flags;
+	vec3_t		origin;
+	int		decalIndex, entityIndex, modelIndex;
+	cl_entity_t	*ent = NULL;
+	float		scale;
+	int		flags;
 
 	BF_ReadVec3Coord( msg, origin );
 	decalIndex = BF_ReadWord( msg );
@@ -501,8 +507,9 @@ void CL_ParseStaticDecal( sizebuf_t *msg )
 		modelIndex = BF_ReadWord( msg );
 	else modelIndex = 0;
 	flags = BF_ReadByte( msg );
+	scale = (float)BF_ReadWord( msg ) / 4096.0f;
 
-	CL_DecalShoot( CL_DecalIndex( decalIndex ), entityIndex, modelIndex, origin, flags );
+	CL_FireCustomDecal( CL_DecalIndex( decalIndex ), entityIndex, modelIndex, origin, flags, scale );
 }
 
 /*
@@ -550,6 +557,7 @@ CL_ParseServerData
 void CL_ParseServerData( sizebuf_t *msg )
 {
 	string	gamefolder;
+	qboolean	background;
 	int	i;
 
 	MsgDev( D_NOTE, "Serverdata packet received.\n" );
@@ -577,12 +585,25 @@ void CL_ParseServerData( sizebuf_t *msg )
 	clgame.maxEntities = bound( 600, clgame.maxEntities, 4096 );
 	Q_strncpy( clgame.mapname, BF_ReadString( msg ), MAX_STRING );
 	Q_strncpy( clgame.maptitle, BF_ReadString( msg ), MAX_STRING );
-	cl.background = BF_ReadOneBit( msg );
+	background = BF_ReadOneBit( msg );
 	Q_strncpy( gamefolder, BF_ReadString( msg ), MAX_STRING );
 	host.features = (uint)BF_ReadLong( msg );
 
 	if( cl.maxclients > 1 && host.developer < 1 )
 		host.developer++;
+
+	// set the background state
+	if( cls.demoplayback && ( cls.demonum != -1 ))
+	{
+		// re-init mouse
+		host.mouse_visible = false;
+		cl.background = true;
+	}
+	else cl.background = background;
+
+	if( cl.background )	// tell the game parts about background state
+		Cvar_FullSet( "cl_background", "1", CVAR_READ_ONLY );
+	else Cvar_FullSet( "cl_background", "0", CVAR_READ_ONLY );
 
 	if( !cls.changelevel ) 
 	{
@@ -593,7 +614,10 @@ void CL_ParseServerData( sizebuf_t *msg )
 	// NOTE: this is not tested as well. Use with precaution
 	CL_ChangeGame( gamefolder, false );
 #endif
-	UI_SetActiveMenu( cl.background );
+	if( !cls.changedemo )
+		UI_SetActiveMenu( cl.background );
+	else if( !cls.demoplayback )
+		Key_SetKeyDest( key_menu );
 
 	cl.refdef.viewentity = cl.playernum + 1; // always keep viewent an actual
 
@@ -604,16 +628,16 @@ void CL_ParseServerData( sizebuf_t *msg )
 		CL_InitEdicts (); // re-arrange edicts
 
 	// get splash name
-	Cvar_Set( "cl_levelshot_name", va( "levelshots/%s", clgame.mapname ));
+	if( cls.demoplayback && ( cls.demonum != -1 ))
+		Cvar_Set( "cl_levelshot_name", va( "levelshots/%s_%s", cls.demoname, glState.wideScreen ? "16x9" : "4x3" ));
+	else Cvar_Set( "cl_levelshot_name", va( "levelshots/%s_%s", clgame.mapname, glState.wideScreen ? "16x9" : "4x3" ));
 	Cvar_SetFloat( "scr_loading", 0.0f ); // reset progress bar
 
 	if(( cl_allow_levelshots->integer && !cls.changelevel ) || cl.background )
 	{
 		if( !FS_FileExists( va( "%s.bmp", cl_levelshot_name->string ), true )) 
-		{
-			Cvar_Set( "cl_levelshot_name", "*black" );	// render a black screen
-			cls.scrshot_request = scrshot_plaque;		// make levelshot
-		}
+			Cvar_Set( "cl_levelshot_name", "*black" ); // render a black screen
+		cls.scrshot_request = scrshot_plaque; // request levelshot even if exist (check filetime)
 	}
 
 	if( scr_dark->integer )
@@ -764,11 +788,13 @@ void CL_ParseLightStyle( sizebuf_t *msg )
 {
 	int		style;
 	const char	*s;
+	float		f;
 
 	style = BF_ReadByte( msg );
 	s = BF_ReadString( msg );
+	f = BF_ReadFloat( msg );
 
-	CL_SetLightstyle( style, s );
+	CL_SetLightstyle( style, s, f );
 }
 
 /*
@@ -1101,8 +1127,8 @@ void CL_ParseStudioDecal( sizebuf_t *msg )
 
 	BF_ReadVec3Coord( msg, pos );
 	BF_ReadVec3Coord( msg, start );
-	decalIndex = BF_ReadShort( msg );
-	entityIndex = BF_ReadShort( msg );
+	decalIndex = BF_ReadWord( msg );
+	entityIndex = BF_ReadWord( msg );
 	flags = BF_ReadByte( msg );
 
 	state.sequence = BF_ReadShort( msg );
@@ -1113,14 +1139,9 @@ void CL_ParseStudioDecal( sizebuf_t *msg )
 	state.controller[1] = BF_ReadByte( msg );
 	state.controller[2] = BF_ReadByte( msg );
 	state.controller[3] = BF_ReadByte( msg );
-
-	if( cls.state == ca_connected )
-	{
-		// this message came on restore.
-		// read modelindex in case client models are not linked with entities
-		// because first client frame has not yet received
-		modelIndex = BF_ReadShort( msg );
-	}
+	modelIndex = BF_ReadWord( msg );
+	state.body = BF_ReadByte( msg );
+	state.skin = BF_ReadByte( msg );
 
 	if( clgame.drawFuncs.R_StudioDecalShoot != NULL )
 	{
@@ -1411,7 +1432,10 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 				S_StopAllSounds();
 
 				if( cls.demoplayback )
+				{
 					SCR_BeginLoadingPlaque( cl.background );
+					cls.changedemo = true;
+				}
 			}
 			else MsgDev( D_INFO, "Server disconnected, reconnecting\n" );
 
@@ -1419,7 +1443,10 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 			CL_InitEdicts (); // re-arrange edicts
 
 			if( cls.demoplayback )
+			{
+				cl.background = (cls.demonum != -1) ? true : false;
 				cls.state = ca_connected;
+			}
 			else cls.state = ca_connecting;
 			cls.connect_time = MAX_HEARTBEAT; // CL_CheckForResend() will fire immediately
 			break;
@@ -1437,7 +1464,7 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 		case svc_print:
 			i = BF_ReadByte( msg );
 			MsgDev( D_INFO, "^6%s", BF_ReadString( msg ));
-			if( i == PRINT_CHAT ) S_StartLocalSound( "common/menu2.wav" );
+			if( i == PRINT_CHAT ) S_StartLocalSound( "common/menu2.wav", VOL_NORM, false );
 			break;
 		case svc_stufftext:
 			s = BF_ReadString( msg );

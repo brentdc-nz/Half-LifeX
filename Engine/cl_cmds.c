@@ -226,6 +226,7 @@ void CL_ScreenShot_f( void )
 	}
 
 	cls.envshot_vieworg = NULL; // no custom view
+	cls.envshot_viewsize = 0;
 }
 
 /* 
@@ -266,6 +267,7 @@ void CL_SnapShot_f( void )
 	}
 
 	cls.envshot_vieworg = NULL; // no custom view
+	cls.envshot_viewsize = 0;
 }
 
 /* 
@@ -286,6 +288,7 @@ void CL_EnvShot_f( void ) //MARTY FIXME WIP
 	Q_sprintf( cls.shotname, "gfx/env/%s", Cmd_Argv( 1 )); //MARTY FIXME WIP
 	cls.scrshot_action = scrshot_envshot;	// build new frame for envshot
 	cls.envshot_vieworg = NULL; // no custom view*/
+	cls.envshot_viewsize = 0;
 }
 
 /* 
@@ -306,6 +309,7 @@ void CL_SkyShot_f( void ) //MARTY FIXME WIP
 	Q_sprintf( cls.shotname, "gfx/env/%s", Cmd_Argv( 1 )); //MARTY FIXME WIP
 	cls.scrshot_action = scrshot_skyshot;	// build new frame for skyshot
 	cls.envshot_vieworg = NULL; // no custom view*/
+	cls.envshot_viewsize = 0;
 }
 
 /* 

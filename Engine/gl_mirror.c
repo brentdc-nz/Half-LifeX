@@ -600,14 +600,46 @@ Build mirror chains for this frame
 */
 void R_FindMirrors( const ref_params_t *fd )
 {
+	vec3_t	viewOrg, viewAng;
+
 	if( !world.has_mirrors || RI.drawOrtho || !RI.drawWorld || RI.refdef.onlyClientDraw || !cl.worldmodel )
 		return;
 
 	RI.refdef = *fd;
 
 	// build the transformation matrix for the given view angles
-	VectorCopy( RI.refdef.vieworg, RI.vieworg );
-	AngleVectors( RI.refdef.viewangles, RI.vforward, RI.vright, RI.vup );
+	if( cl.thirdperson )
+	{
+		vec3_t	cam_ofs, vpn;
+
+		clgame.dllFuncs.CL_CameraOffset( cam_ofs );
+
+		viewAng[PITCH] = cam_ofs[PITCH];
+		viewAng[YAW] = cam_ofs[YAW];
+		viewAng[ROLL] = 0;
+
+		AngleVectors( viewAng, vpn, NULL, NULL );
+		VectorMA( RI.refdef.vieworg, -cam_ofs[ROLL], vpn, viewOrg );
+	}
+	else
+	{
+		VectorCopy( RI.refdef.vieworg, viewOrg );
+		VectorCopy( RI.refdef.viewangles, viewAng );
+	}
+
+	// build the transformation matrix for the given view angles
+	VectorCopy( viewOrg, RI.vieworg );
+	AngleVectors( viewAng, RI.vforward, RI.vright, RI.vup );
+
+	VectorCopy( RI.vieworg, RI.pvsorigin );
+
+	if( !r_lockcull->integer )
+	{
+		VectorCopy( RI.vieworg, RI.cullorigin );
+		VectorCopy( RI.vforward, RI.cull_vforward );
+		VectorCopy( RI.vright, RI.cull_vright );
+		VectorCopy( RI.vup, RI.cull_vup );
+	}
 
 	R_FindViewLeaf();
 	R_SetupFrustum();

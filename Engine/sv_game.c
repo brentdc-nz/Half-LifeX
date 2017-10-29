@@ -570,28 +570,54 @@ qboolean SV_Send( int dest, const vec3_t origin, const edict_t *ent )
 
 /*
 =======================
+SV_GetReliableDatagram
+
+Get shared reliable buffer
+=======================
+*/
+sizebuf_t *SV_GetReliableDatagram( void )
+{
+	return &sv.reliable_datagram;
+}
+
+qboolean SV_RestoreCustomDecal( decallist_t *entry, edict_t *pEdict, qboolean adjacent )
+{
+	if( svgame.physFuncs.pfnRestoreDecal != NULL )
+	{
+		if( !pEdict ) pEdict = EDICT_NUM( entry->entityIndex );
+
+		// true if decal was sucessfully restored at the game-side
+		return svgame.physFuncs.pfnRestoreDecal( entry, pEdict, adjacent );
+	}
+
+	return false;
+}
+
+/*
+=======================
 SV_CreateDecal
 
 NOTE: static decals only accepted when game is loading
 =======================
 */
-void SV_CreateDecal( const float *origin, int decalIndex, int entityIndex, int modelIndex, int flags )
+void SV_CreateDecal( sizebuf_t *msg, const float *origin, int decalIndex, int entityIndex, int modelIndex, int flags, float scale )
 {
-	if( sv.state != ss_loading )
+	if( msg == &sv.signon && sv.state != ss_loading )
 		return;
 
 	// this can happens if serialized map contain 4096 static decals...
-	if(( BF_GetNumBytesWritten( &sv.signon ) + 20 ) >= BF_GetMaxBytes( &sv.signon ))
+	if(( BF_GetNumBytesWritten( msg ) + 20 ) >= BF_GetMaxBytes( msg ))
 		return;
 
 	// static decals are posters, it's always reliable
-	BF_WriteByte( &sv.signon, svc_bspdecal );
-	BF_WriteVec3Coord( &sv.signon, origin );
-	BF_WriteWord( &sv.signon, decalIndex );
-	BF_WriteShort( &sv.signon, entityIndex );
+	BF_WriteByte( msg, svc_bspdecal );
+	BF_WriteVec3Coord( msg, origin );
+	BF_WriteWord( msg, decalIndex );
+	BF_WriteShort( msg, entityIndex );
 	if( entityIndex > 0 )
-		BF_WriteWord( &sv.signon, modelIndex );
-	BF_WriteByte( &sv.signon, flags );
+		BF_WriteWord( msg, modelIndex );
+	BF_WriteByte( msg, flags );
+	BF_WriteWord( msg, scale * 4096 );
 }
 
 /*
@@ -601,9 +627,9 @@ SV_CreateStudioDecal
 NOTE: static decals only accepted when game is loading
 =======================
 */
-void SV_CreateStudioDecal( const float *origin, const float *start, int decalIndex, int entityIndex, int modelIndex, int flags, modelstate_t *state )
+void SV_CreateStudioDecal( sizebuf_t *msg, const float *origin, const float *start, int decalIndex, int entityIndex, int modelIndex, int flags, modelstate_t *state )
 {
-	if( sv.state != ss_loading )
+	if( msg == &sv.signon && sv.state != ss_loading )
 		return;
 
 	// bad model or bad entity (e.g. changelevel)
@@ -614,29 +640,29 @@ void SV_CreateStudioDecal( const float *origin, const float *start, int decalInd
 	ASSERT( start );
 
 	// this can happens if serialized map contain 4096 static decals...
-	if(( BF_GetNumBytesWritten( &sv.signon ) + 28 ) >= BF_GetMaxBytes( &sv.signon ))
+	if(( BF_GetNumBytesWritten( msg ) + 30 ) >= BF_GetMaxBytes( msg ))
 		return;
 
 	// static decals are posters, it's always reliable
-	BF_WriteByte( &sv.signon, svc_studiodecal );
-	BF_WriteVec3Coord( &sv.signon, origin );
-	BF_WriteVec3Coord( &sv.signon, start );
-	BF_WriteWord( &sv.signon, decalIndex );
-	BF_WriteShort( &sv.signon, entityIndex );
-	BF_WriteByte( &sv.signon, flags );
+	BF_WriteByte( msg, svc_studiodecal );
+	BF_WriteVec3Coord( msg, origin );
+	BF_WriteVec3Coord( msg, start );
+	BF_WriteWord( msg, decalIndex );
+	BF_WriteWord( msg, entityIndex );
+	BF_WriteByte( msg, flags );
 
 	// write model state
-	BF_WriteShort( &sv.signon, state->sequence );
-	BF_WriteShort( &sv.signon, state->frame );
-	BF_WriteByte( &sv.signon, state->blending[0] );
-	BF_WriteByte( &sv.signon, state->blending[1] );
-	BF_WriteByte( &sv.signon, state->controller[0] );
-	BF_WriteByte( &sv.signon, state->controller[1] );
-	BF_WriteByte( &sv.signon, state->controller[2] );
-	BF_WriteByte( &sv.signon, state->controller[3] );
-
-	// write additional data (excluded from the game message)
-	BF_WriteShort( &sv.signon, modelIndex );
+	BF_WriteShort( msg, state->sequence );
+	BF_WriteShort( msg, state->frame );
+	BF_WriteByte( msg, state->blending[0] );
+	BF_WriteByte( msg, state->blending[1] );
+	BF_WriteByte( msg, state->controller[0] );
+	BF_WriteByte( msg, state->controller[1] );
+	BF_WriteByte( msg, state->controller[2] );
+	BF_WriteByte( msg, state->controller[3] );
+	BF_WriteWord( msg, modelIndex );
+	BF_WriteByte( msg, state->body );
+	BF_WriteByte( msg, state->skin );
 }
 
 /*
@@ -646,38 +672,61 @@ SV_CreateStaticEntity
 NOTE: static entities only accepted when game is loading
 =======================
 */
-void SV_CreateStaticEntity( sv_static_entity_t *ent )
+void SV_CreateStaticEntity( sizebuf_t *msg, sv_static_entity_t *ent )
 {
 	int	index, i;
 
 	// this can happens if serialized map contain too many static entities...
-	if(( BF_GetNumBytesWritten( &sv.signon ) + 64 ) >= BF_GetMaxBytes( &sv.signon ))
+	if(( BF_GetNumBytesWritten( msg ) + 64 ) >= BF_GetMaxBytes( msg ))
 		return;
 
 	index = SV_ModelIndex( ent->model );
 
-	BF_WriteByte( &sv.signon, svc_spawnstatic );
-	BF_WriteShort(&sv.signon, index );
-	BF_WriteByte( &sv.signon, ent->sequence );
-	BF_WriteByte( &sv.signon, ent->frame );
-	BF_WriteWord( &sv.signon, ent->colormap );
-	BF_WriteByte( &sv.signon, ent->skin );
+	BF_WriteByte( msg, svc_spawnstatic );
+	BF_WriteShort(msg, index );
+	BF_WriteByte( msg, ent->sequence );
+	BF_WriteByte( msg, ent->frame );
+	BF_WriteWord( msg, ent->colormap );
+	BF_WriteByte( msg, ent->skin );
 
 	for( i = 0; i < 3; i++ )
 	{
-		BF_WriteCoord( &sv.signon, ent->origin[i] );
-		BF_WriteBitAngle( &sv.signon, ent->angles[i], 16 );
+		BF_WriteCoord( msg, ent->origin[i] );
+		BF_WriteBitAngle( msg, ent->angles[i], 16 );
 	}
 
-	BF_WriteByte( &sv.signon, ent->rendermode );
+	BF_WriteByte( msg, ent->rendermode );
 
 	if( ent->rendermode != kRenderNormal )
 	{
-		BF_WriteByte( &sv.signon, ent->renderamt );
-		BF_WriteByte( &sv.signon, ent->rendercolor.r );
-		BF_WriteByte( &sv.signon, ent->rendercolor.g );
-		BF_WriteByte( &sv.signon, ent->rendercolor.b );
-		BF_WriteByte( &sv.signon, ent->renderfx );
+		BF_WriteByte( msg, ent->renderamt );
+		BF_WriteByte( msg, ent->rendercolor.r );
+		BF_WriteByte( msg, ent->rendercolor.g );
+		BF_WriteByte( msg, ent->rendercolor.b );
+		BF_WriteByte( msg, ent->renderfx );
+	}
+}
+
+/*
+=================
+SV_RestartStaticEnts
+
+Write all the static ents into demo
+=================
+*/
+void SV_RestartStaticEnts( void )
+{
+	sv_static_entity_t	*clent;
+	int		i;
+
+	// remove all the static entities on the client
+	R_ClearStaticEntities();
+
+	// resend them again
+	for( i = 0; i < sv.num_static_entities; i++ )
+	{
+		clent = &sv.static_entities[i];
+		SV_CreateStaticEntity( &sv.reliable_datagram, clent );
 	}
 }
 
@@ -1044,7 +1093,7 @@ edict_t *SV_AllocEdict( void )
 	}
 
 	if( i >= svgame.globals->maxEntities )
-		Host_Error( "ED_AllocEdict: no free edicts\n" );
+		Sys_Error( "ED_AllocEdict: no free edicts\n" );
 
 	svgame.numEntities++;
 	pEdict = EDICT_NUM( i );
@@ -2489,16 +2538,7 @@ edict_t* pfnFindClientInPVS( edict_t *pEdict )
 
 	mod = Mod_Handle( pEdict->v.modelindex );
 
-	if( mod && mod->type == mod_brush && !( mod->flags & MODEL_HAS_ORIGIN ))
-	{
-		// handle PVS origin for bmodels
-		VectorAverage( pEdict->v.mins, pEdict->v.maxs, view );
-		VectorAdd( view, pEdict->v.origin, view );
-	}
-	else
-	{
-		VectorAdd( pEdict->v.origin, pEdict->v.view_ofs, view );
-	}
+	VectorAdd( pEdict->v.origin, pEdict->v.view_ofs, view );
 
 	if( pEdict->v.effects & EF_INVLIGHT )
 		view[2] -= 1.0f; // HACKHACK for barnacle
@@ -2651,7 +2691,7 @@ static void pfnMakeStatic( edict_t *ent )
 	clent->rendercolor.b = ent->v.rendercolor[2];
 	clent->renderfx = ent->v.renderfx;
 
-	SV_CreateStaticEntity( clent );
+	SV_CreateStaticEntity( &sv.signon, clent );
 
 	// remove at end of the frame
 	ent->v.flags |= FL_KILLME;
@@ -3368,7 +3408,7 @@ void pfnLightStyle( int style, const char* val )
 	if( style >= MAX_LIGHTSTYLES )
 		Host_Error( "SV_LightStyle: style: %i >= %d", style, MAX_LIGHTSTYLES );
 
-	SV_SetLightStyle( style, val ); // set correct style
+	SV_SetLightStyle( style, val, 0.0f ); // set correct style
 }
 
 /*
@@ -3428,14 +3468,11 @@ void pfnMessageBegin( int msg_dest, int msg_num, const float *pOrigin, edict_t *
 
 	if( msg_num < svc_lastmsg )
 	{
-		svgame.msg_name = NULL;
-		svgame.msg_index = -1; // this is a system message
+		svgame.msg_index = -msg_num; // this is a system message
+		svgame.msg_name = svc_strings[msg_num];
 
 		if( msg_num == svc_temp_entity )
-		{
-			svgame.msg_name = "TempEntity";
 			iSize = -1; // temp entity have variable size
-		}
 		else iSize = 0;
 	}
 	else
@@ -3493,14 +3530,14 @@ void pfnMessageEnd( void )
 	svgame.msg_started = false;
 
 	// HACKHACK: clearing HudText in background mode
-	if( sv.background && svgame.msg[svgame.msg_index].number == svgame.gmsgHudText )
+	if( sv.background && svgame.msg_index >= 0 && svgame.msg[svgame.msg_index].number == svgame.gmsgHudText )
 	{
 		BF_Clear( &sv.multicast );
 		return;
 	}
 
 	// check for system message
-	if( svgame.msg_index == -1 )
+	if( svgame.msg_index < 0 )
 	{
 		if( svgame.msg_size_index != -1 )
 		{
@@ -3558,6 +3595,15 @@ void pfnMessageEnd( void )
 		MsgDev( D_ERROR, "SV_Message: %s have encountered error\n", name );
 		BF_Clear( &sv.multicast );
 		return;
+	}
+
+	if( svgame.msg_index < 0 && abs( svgame.msg_index ) == svc_studiodecal && svgame.msg_realsize == 27 )
+	{
+		// oldstyle message for svc_studiodecal has missed four additional bytes:
+		// modelIndex, skin and body. Write it here for backward compatibility
+		BF_WriteWord( &sv.multicast, 0 );
+		BF_WriteByte( &sv.multicast, 0 );
+		BF_WriteByte( &sv.multicast, 0 );
 	}
 
 	if( !VectorIsNull( svgame.msg_org )) org = svgame.msg_org;
@@ -3652,10 +3698,11 @@ void pfnWriteString( const char *src )
 {
 	char	*dst, string[MAX_SYSPATH];
 	int	len = Q_strlen( src ) + 1;
+	int	rem = (255 - svgame.msg_realsize);
 
-	if( len >= MAX_SYSPATH )
+	if( len >= rem )
 	{
-		MsgDev( D_ERROR, "pfnWriteString: exceeds %i symbols\n", MAX_SYSPATH );
+		MsgDev( D_ERROR, "pfnWriteString: exceeds %i symbols\n", rem );
 		BF_WriteChar( &sv.multicast, 0 );
 		svgame.msg_realsize += 1; 
 		return;
@@ -4301,7 +4348,7 @@ void pfnStaticDecal( const float *origin, int decalIndex, int entityIndex, int m
 		return;
 	}
 
-	SV_CreateDecal( origin, decalIndex, entityIndex, modelIndex, FDECAL_PERMANENT );
+	SV_CreateDecal( &sv.signon, origin, decalIndex, entityIndex, modelIndex, FDECAL_PERMANENT, 1.0f );
 }
 
 /*
@@ -4817,23 +4864,44 @@ so we can't use a single PVS point
 */
 byte *pfnSetFatPVS( const float *org )
 {
-	if( !sv.worldmodel->visdata || sv_novis->integer || !org )
+	if( !sv.worldmodel->visdata || sv_novis->integer || !org || CL_DisableVisibility( ))
 		return Mod_DecompressVis( NULL );
 
 	ASSERT( svs.currentPlayerNum >= 0 && svs.currentPlayerNum < MAX_CLIENTS );
 
+	fatbytes = (sv.worldmodel->numleafs+31)>>3;
+	bitvector = fatpvs;
+
 	// portals can't change viewpoint!
 	if(!( sv.hostflags & SVF_PORTALPASS ))
 	{
-		// save viewpoint in case this overrided by custom camera code 
-		VectorCopy( org, viewPoint[svs.currentPlayerNum] );
-	}
+		vec3_t	viewPos, offset;
 
-	bitvector = fatpvs;
-	fatbytes = (sv.worldmodel->numleafs+31)>>3;
-	if(!( sv.hostflags & SVF_PORTALPASS ))
+		// see code from client.cpp for understanding:
+		// org = pView->v.origin + pView->v.view_ofs;
+		// if ( pView->v.flags & FL_DUCKING )
+		// {
+		//	org = org + ( VEC_HULL_MIN - VEC_DUCK_HULL_MIN );
+		// }
+		// so we have unneeded duck calculations who have affect when player
+		// is ducked into water. Remove offset to restore right PVS position
+		if( svs.currentPlayer->edict->v.flags & FL_DUCKING )
+		{
+			VectorSubtract( svgame.pmove->player_mins[0], svgame.pmove->player_mins[1], offset );
+			VectorSubtract( org, offset, viewPos );
+		}
+		else VectorCopy( org, viewPos );
+
+		// build a new PVS frame
 		Q_memset( bitvector, 0, fatbytes );
-	SV_AddToFatPVS( org, DVIS_PVS, sv.worldmodel->nodes );
+
+		SV_AddToFatPVS( viewPos, DVIS_PVS, sv.worldmodel->nodes );
+		VectorCopy( viewPos, viewPoint[svs.currentPlayerNum] );
+	}
+	else
+	{
+		SV_AddToFatPVS( org, DVIS_PVS, sv.worldmodel->nodes );
+	}
 
 	return bitvector;
 }
@@ -4848,16 +4916,44 @@ so we can't use a single PHS point
 */
 byte *pfnSetFatPAS( const float *org )
 {
-	if( !sv.worldmodel->visdata || sv_novis->integer || !org )
+	if( !sv.worldmodel->visdata || sv_novis->integer || !org || CL_DisableVisibility( ))
 		return Mod_DecompressVis( NULL );
 
 	ASSERT( svs.currentPlayerNum >= 0 && svs.currentPlayerNum < MAX_CLIENTS );
 
-	bitvector = fatphs;
 	fatbytes = (sv.worldmodel->numleafs+31)>>3;
+	bitvector = fatphs;
+
+	// portals can't change viewpoint!
 	if(!( sv.hostflags & SVF_PORTALPASS ))
+	{
+		vec3_t	viewPos, offset;
+
+		// see code from client.cpp for understanding:
+		// org = pView->v.origin + pView->v.view_ofs;
+		// if ( pView->v.flags & FL_DUCKING )
+		// {
+		//	org = org + ( VEC_HULL_MIN - VEC_DUCK_HULL_MIN );
+		// }
+		// so we have unneeded duck calculations who have affect when player
+		// is ducked into water. Remove offset to restore right PVS position
+		if( svs.currentPlayer->edict->v.flags & FL_DUCKING )
+		{
+			VectorSubtract( svgame.pmove->player_mins[0], svgame.pmove->player_mins[1], offset );
+			VectorSubtract( org, offset, viewPos );
+		}
+		else VectorCopy( org, viewPos );
+
+		// build a new PHS frame
 		Q_memset( bitvector, 0, fatbytes );
-	SV_AddToFatPVS( org, DVIS_PHS, sv.worldmodel->nodes );
+
+		SV_AddToFatPVS( viewPos, DVIS_PHS, sv.worldmodel->nodes );
+	}
+	else
+	{
+		// merge PVS
+		SV_AddToFatPVS( org, DVIS_PHS, sv.worldmodel->nodes );
+	}
 
 	return bitvector;
 }
@@ -4880,6 +4976,9 @@ int pfnCheckVisibility( const edict_t *ent, byte *pset )
 
 	// vis not set - fullvis enabled
 	if( !pset ) return 1;
+
+	if( ent->v.flags & FL_CUSTOMENTITY && ent->v.owner && ent->v.owner->v.flags & FL_CLIENT )
+		ent = ent->v.owner;	// upcast beams to my owner
 
 	if( ent->headnode < 0 )
 	{
@@ -4988,7 +5087,7 @@ void pfnEndSection( const char *pszSection )
 {
 	if( !Q_stricmp( "oem_end_credits", pszSection ))
 		Host_Credits ();
-	else Host_EndGame( pszSection );
+	else Cbuf_AddText( va( "endgame \"%s\"\n", pszSection ));
 }
 
 /*
@@ -5253,6 +5352,25 @@ void pfnQueryClientCvarValue2( const edict_t *player, const char *cvarName, int 
 			svgame.dllFuncs2.pfnCvarValue2( player, requestID, cvarName, "Bad Player" );
 		MsgDev( D_ERROR, "QueryClientCvarValue: tried to send to a non-client!\n" );
 	}
+}
+
+/*
+=============
+pfnCheckParm
+
+=============
+*/
+static int pfnCheckParm( char *parm, char **ppnext )
+{
+	static char	str[64];
+
+	if( Sys_GetParmFromCmdLine( parm, str ))
+	{
+		// get the pointer on cmdline param
+		if( ppnext ) *ppnext = str;
+		return 1;
+	}
+	return 0;
 }
 					
 // engine callbacks
@@ -5770,6 +5888,7 @@ qboolean SV_LoadProgs( const char *name )
 			svgame.hInstance = NULL;
 			return false;
 		}
+		else MsgDev( D_AICONSOLE, "SV_LoadProgs: ^2initailized extended EntityAPI ^7ver. %i\n", version );
 	}
 
 	if( /*!SV_InitStudioAPI( )*/0) //MARTY FIXME WIP

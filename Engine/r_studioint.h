@@ -108,8 +108,9 @@ typedef struct engine_studio_api_s
 	void		( *GL_StudioDrawShadow )( void );
 	void		( *GL_SetRenderMode )( int mode );
 
-	// Xash3D extension
-	struct mstudiotex_s *( *StudioGetTexture )( struct cl_entity_s *e );
+	void		( *StudioSetRenderamt )( int iRenderamt );
+	void		( *StudioSetCullState )( int iCull );
+	void		( *StudioRenderShadow )( int iSprite, float *p1, float *p2, float *p3, float *p4 );
 } engine_studio_api_t;
 
 typedef struct server_studio_api_s
@@ -146,8 +147,8 @@ typedef struct sv_blending_interface_s
 					const vec3_t origin,
 					const byte *pcontroller,
 					const byte *pblending,
-					const edict_t *pEdict,
-					int iBone ); // g-cont. right ordering here
+					int iBone,
+					const edict_t *pEdict );
 } sv_blending_interface_t;
 
 #endif//R_STUDIOINT_H

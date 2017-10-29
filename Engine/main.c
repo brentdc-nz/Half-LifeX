@@ -17,8 +17,8 @@ GNU General Public License for more details.
 #include "host.h"
 #endif
 
-//MARTY
-//Just launches Half-Life at the momment, may re-implemet for mods in future after port is complete.
+// MARTY
+// Only launches Half-Life at the momment, may re-implemet for mods in future after port is complete.
 
 #define GAME_PATH	"valve"	// default dir to start from
 /*
@@ -34,7 +34,9 @@ HINSTANCE	hEngine;
 
 int main (int c, char **v)
 {
-	//Sys_LoadEngine(); //MARTY - Engine is no longer loaded via DLL
+#ifndef _HARDLINKED //MARTY - Engine is no longer loaded via DLL
+	Sys_LoadEngine(); 
+#endif
 
 	return Host_Main( GAME_PATH, FALSE, NULL/*( Host_Shutdown != NULL ) ? Sys_ChangeGame : NULL*/);
 }

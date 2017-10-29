@@ -138,7 +138,7 @@ hull_t *PM_HullForBsp( physent_t *pe, playermove_t *pmove, float *offset )
 	ASSERT( hull != NULL );
 
 	// force to use hull0 because other hulls doesn't exist for water
-	if( pe->model->flags & MODEL_LIQUID )
+	if( pe->model->flags & MODEL_LIQUID && pe->solid != SOLID_TRIGGER )
 		hull = &pe->model->hulls[0];
 
 	// calculate an offset value to center the origin
@@ -431,7 +431,7 @@ pmtrace_t PM_PlayerTraceExt( playermove_t *pmove, vec3_t start, vec3_t end, int 
 		else if( pe->solid == SOLID_CUSTOM )
 		{
 			// run custom sweep callback
-			if( pmove->server )
+			if( pmove->server || Host_IsLocalGame( ))
 				SV_ClipPMoveToEntity( pe, start, mins, maxs, end, &trace_bbox );
 			else CL_ClipPMoveToEntity( pe, start, mins, maxs, end, &trace_bbox );
 		}
@@ -598,7 +598,7 @@ int PM_TestPlayerPosition( playermove_t *pmove, vec3_t pos, pmtrace_t *ptrace, p
 			trace.fraction = 1.0f;
 
 			// run custom sweep callback
-			if( pmove->server )
+			if( pmove->server || Host_IsLocalGame( ))
 				SV_ClipPMoveToEntity( pe, pos, mins, maxs, pos, &trace );
 			else CL_ClipPMoveToEntity( pe, pos, mins, maxs, pos, &trace );
 

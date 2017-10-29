@@ -77,9 +77,9 @@ typedef struct texture_s
 	int		anim_min, anim_max;	// time for this frame min <=time< max
 	struct texture_s	*anim_next;	// in the animation sequence
 	struct texture_s	*alternate_anims;	// bmodels in frame 1 use these
-	int		fb_texturenum;	// auto-luma texturenum
-	int		dt_texturenum;	// detail-texture binding
-	unsigned int	unused[2];	// reserved 
+	unsigned short	fb_texturenum;	// auto-luma texturenum
+	unsigned short	dt_texturenum;	// detail-texture binding
+	unsigned int	unused[3];	// reserved 
 } texture_t;
 
 typedef struct
@@ -91,6 +91,20 @@ typedef struct
 	texture_t		*texture;
 	int		flags;		// sky or slime, no lightmap or 256 subdivision
 } mtexinfo_t;
+
+// 73 bytes per VBO vertex
+// FIXME: align to 32 bytes
+typedef struct glvert_s
+{
+	vec3_t		vertex;		// position
+	vec3_t		normal;		// normal
+	vec2_t		stcoord;		// ST texture coords
+	vec2_t		lmcoord;		// ST lightmap coords
+	vec2_t		sccoord;		// ST scissor coords (decals only) - for normalmap coords migration
+	vec3_t		tangent;		// tangent
+	vec3_t		binormal;		// binormal
+	byte		color[4];		// colors per vertex
+} glvert_t;
 
 typedef struct glpoly_s
 {
@@ -126,16 +140,17 @@ struct decal_s
 {
 	decal_t		*pnext;		// linked list for each surface
 	msurface_t	*psurface;	// Surface id for persistence / unlinking
-	short		dx;		// Offsets into surface texture 
-	short		dy;		// (in texture coordinates, so we don't need floats)
+	float		dx;		// local texture coordinates
+	float		dy;		// 
+	float		scale;		// Pixel scale
 	short		texture;		// Decal texture
-	byte		scale;		// Pixel scale
 	byte		flags;		// Decal flags  FDECAL_*
-
 	short		entityIndex;	// Entity this is attached to
 // Xash3D added
 	vec3_t		position;		// location of the decal center in world space.
 	vec3_t		saxis;		// direction of the s axis in world space
+	struct msurfmesh_s	*mesh;		// decal mesh in local space
+	int		reserved[4];	// for future expansions
 };
 
 typedef struct mleaf_s
@@ -196,14 +211,11 @@ typedef struct msurfmesh_s
 {
 	unsigned short	numVerts;
 	unsigned short	numElems;		// ~ 20 000 vertex per one surface. Should be enough
+	unsigned int	startVert;	// user-variable. may be used for construct world single-VBO
+	unsigned int	startElem;	// user-variable. may be used for construct world single-VBO
 
-	vec3_t		*vertices;	// vertexes array
-	vec2_t		*stcoords;	// s\t coords array
-	vec2_t		*lmcoords;	// l\m coords array
-	vec3_t		*normals;		// normals array
-	vec4_t		*svectors;	// s-component, may be null (fourth component keep polarity of T vector)
-	byte		*colors;		// colors array for vertex lighting (filling 0xFF by default)
-	unsigned int	*indices;		// indices		
+	glvert_t		*verts;		// vertexes array
+	unsigned short	*elems;		// indices		
 
 	struct msurface_s	*surf;		// pointer to parent surface. Just for consistency
 	struct msurfmesh_s	*next;		// temporary chain of subdivided surfaces
@@ -222,8 +234,9 @@ typedef struct mextrasurf_s
 	float		mirrormatrix[4][4];
 	struct mextrasurf_s	*mirrorchain;	// for gl_texsort drawing
 	struct mextrasurf_s	*detailchain;	// for detail textures drawing
+	color24		*deluxemap;	// note: this is the actual deluxemap data for this surface
 
-	int		reserved[7];	// just for future expansions or mod-makers
+	int		reserved[32];	// just for future expansions or mod-makers
 } mextrasurf_t;
 
 typedef struct hull_s

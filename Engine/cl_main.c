@@ -94,6 +94,21 @@ qboolean CL_IsPlaybackDemo( void )
 	return cls.demoplayback;
 }
 
+qboolean CL_DisableVisibility( void )
+{
+	return cls.envshot_disable_vis;
+}
+
+qboolean CL_IsBackgroundDemo( void )
+{
+	return ( cls.demoplayback && cls.demonum != -1 );
+}
+
+qboolean CL_IsBackgroundMap( void )
+{
+	return ( cl.background && !cls.demoplayback );
+}
+
 /*
 ===============
 CL_ChangeGame
@@ -123,7 +138,7 @@ qboolean CL_ChangeGame( const char *gamefolder, qboolean bReset )
 			jlook_active = true;
 	
 		// so reload all images (remote connect)
-		Mod_ClearAll();
+		Mod_ClearAll( true );
 		R_ShutdownImages();
 		FS_LoadGameInfo( (bReset) ? host.gamefolder : gamefolder );
 		R_InitImages();
@@ -264,6 +279,7 @@ void CL_CreateCmd( void )
 
 	ms = host.frametime * 1000;
 	if( ms > 250 ) ms = 100;	// time was unreasonable
+	else if( ms <= 0 ) ms = 1;	// keep time an actual
 
 	Q_memset( &cmd, 0, sizeof( cmd ));
 
@@ -311,7 +327,7 @@ void CL_CreateCmd( void )
 	V_ProcessOverviewCmds( &cmd );
 	V_ProcessShowTexturesCmds( &cmd );
 
-	if( cl.background || gl_overview->integer )
+	if(( cl.background && !cls.demoplayback ) || gl_overview->integer || cls.changelevel )
 	{
 		VectorCopy( angles, cl.refdef.cl_viewangles );
 		VectorCopy( angles, cmd.viewangles );
@@ -629,7 +645,7 @@ void CL_CheckForResend( void )
 	if( cls.demoplayback || cls.state != ca_connecting )
 		return;
 
-	if(( host.realtime - cls.connect_time ) < 3.0f )
+	if(( host.realtime - cls.connect_time ) < 10.0f )
 		return;
 
 	if( !NET_StringToAdr( cls.servername, &adr ))
@@ -758,6 +774,7 @@ void CL_ClearState( void )
 	BF_Clear( &cls.netchan.message );
 	Q_memset( &clgame.fade, 0, sizeof( clgame.fade ));
 	Q_memset( &clgame.shake, 0, sizeof( clgame.shake ));
+	Cvar_FullSet( "cl_background", "0", CVAR_READ_ONLY );
 	cl.refdef.movevars = &clgame.movevars;
 	cl.maxclients = 1; // allow to drawing player in menu
 
@@ -1474,7 +1491,7 @@ void CL_ReadPackets( void )
 		return;
           
 	// check timeout
-	if( cls.state >= ca_connected && !cls.demoplayback )
+	if( cls.state >= ca_connected && !cls.demoplayback && cls.state != ca_cinematic )
 	{
 		if( host.realtime - cls.netchan.last_received > cl_timeout->value )
 		{
@@ -1504,7 +1521,7 @@ void CL_ProcessFile( BOOL successfully_received, const char *filename )
 
 	if( cls.downloadfileid == cls.downloadcount - 1 )
 	{
-		MsgDev( D_INFO,"All Files downloaded\n" );
+		MsgDev( D_INFO, "All Files downloaded\n" );
 
 		BF_WriteByte( &cls.netchan.message, clc_stringcmd );
 		BF_WriteString( &cls.netchan.message, "continueloading" );
@@ -1575,7 +1592,7 @@ void CL_Escape_f( void )
 	if( UI_CreditsActive( )) return;
 
 	if( cls.state == ca_cinematic )
-		SCR_StopCinematic();
+		SCR_NextMovie(); // jump to next movie
 	else UI_SetActiveMenu( true );
 }
 
@@ -1619,6 +1636,7 @@ void CL_InitLocal( void )
 	Cvar_Get( "hud_scale", "0", CVAR_ARCHIVE|CVAR_LATCH, "scale hud at current resolution" );
 	Cvar_Get( "skin", "", CVAR_USERINFO, "player skin" ); // XDM 3.3 want this cvar
 	Cvar_Get( "cl_updaterate", "60", CVAR_USERINFO|CVAR_ARCHIVE, "refresh rate of server messages" );
+	Cvar_Get( "cl_background", "0", CVAR_READ_ONLY, "indicate what background map is running" );
 
 	// these two added to shut up CS 1.5 about 'unknown' commands
 	Cvar_Get( "lightgamma", "1", CVAR_ARCHIVE, "ambient lighting level (legacy, unused)" );
@@ -1792,8 +1810,9 @@ void CL_Init( void )
 
 	cls.initialized = true;
 	cl.maxclients = 1; // allow to drawing player in menu
+	cls.olddemonum = -1;
+	cls.demonum = -1;
 }
-
 
 /*
 ===============
@@ -1817,6 +1836,8 @@ void CL_Shutdown( void )
 	SCR_Shutdown ();
 	CL_UnloadProgs ();
 
+	FS_Delete( "demoheader.tmp" ); // remove tmp file
+	SCR_FreeCinematic (); // release AVI's *after* client.dll because custom renderer may use them
 	S_Shutdown ();
 	R_Shutdown ();
 }

@@ -841,7 +841,8 @@ void FS_ClearSearchPath( void )
 		{
 			W_Close( search->wad );
 		}
-		Mem_Free( search );
+
+		if( search ) Mem_Free( search );
 	}
 }
 
@@ -1042,6 +1043,9 @@ static qboolean FS_WriteGameInfo( const char *filepath, gameinfo_t *GameInfo )
 	if( GameInfo->nomodels )
 		FS_Printf( f, "nomodels\t\t\"%i\"\n", GameInfo->nomodels );
 
+	if( GameInfo->soundclip_dist > 0 )
+		FS_Printf( f, "soundclip_dist\t\"%i\"\n", GameInfo->soundclip_dist );
+
 	for( i = 0; i < 4; i++ )
 	{
 		float	*min, *max;
@@ -1084,6 +1088,7 @@ void FS_CreateDefaultGameInfo( const char *filename )
 	defGI.max_edicts = 900;	// default value if not specified
 	defGI.max_tents = 500;
 	defGI.max_beams = 128;
+	defGI.soundclip_dist = 1536;
 	defGI.max_particles = 4096;
 	defGI.version = 1.0;
 	defGI.falldir[0] = '\0';
@@ -1126,6 +1131,7 @@ static qboolean FS_ParseLiblistGam( const char *filename, const char *gamedir, g
 	GameInfo->max_edicts = 900;	// default value if not specified
 	GameInfo->max_tents = 500;
 	GameInfo->max_beams = 128;
+	GameInfo->soundclip_dist = 1536;
 	GameInfo->max_particles = 4096;
 	GameInfo->version = 1.0f;
 	GameInfo->falldir[0] = '\0';
@@ -1188,7 +1194,7 @@ static qboolean FS_ParseLiblistGam( const char *filename, const char *gamedir, g
 		else if( !Q_stricmp( token, "gamedll" ))
 		{
 			pfile = COM_ParseFile( pfile, GameInfo->game_dll );
-//			COM_FixSlashes( GameInfo->game_dll ); //MARTY
+			COM_FixSlashes( GameInfo->game_dll );
 		}
 #ifndef _XBOX
 		else if( !Q_stricmp( token, "icon" ))
@@ -1306,6 +1312,7 @@ static qboolean FS_ParseGameInfo( const char *gamedir, gameinfo_t *GameInfo )
 	GameInfo->max_edicts = 900;	// default value if not specified
 	GameInfo->max_tents = 500;
 	GameInfo->max_beams = 128;
+	GameInfo->soundclip_dist = 1536;
 	GameInfo->max_particles = 4096;
 	GameInfo->version = 1.0f;
 	GameInfo->falldir[0] = '\0';
@@ -1452,6 +1459,11 @@ static qboolean FS_ParseGameInfo( const char *gamedir, gameinfo_t *GameInfo )
 			pfile = COM_ParseFile( pfile, token );
 			GameInfo->nomodels = Q_atoi( token );
 		}
+		else if( !Q_stricmp( token, "soundclip_dist" ))
+		{
+			pfile = COM_ParseFile( pfile, token );
+			GameInfo->soundclip_dist = Q_atoi( token );
+		}
 		else if( !Q_strnicmp( token, "hull", 4 ))
 		{
 			int	hullNum = Q_atoi( token + 4 );
@@ -1488,7 +1500,8 @@ static qboolean FS_ParseGameInfo( const char *gamedir, gameinfo_t *GameInfo )
 	if( !FS_SysFolderExists( va( "%s\\%s", host.rootdir, GameInfo->falldir )))
 		GameInfo->falldir[0] = '\0';
 
-	Mem_Free( afile );
+	if( afile != NULL )
+		Mem_Free( afile );
 
 	return true;
 }
@@ -1584,8 +1597,6 @@ void FS_Init( void )
 
 		for( i = 0; i < dirs.numstrings; i++ )
 		{
-			const char *ext = FS_FileExtension( dirs.strings[i] );
-
 			if( !FS_SysFolderExists( dirs.strings[i] ) || (!Q_stricmp( dirs.strings[i], ".." ) && !fs_ext_path ))
 				continue;
 
@@ -2332,7 +2343,7 @@ indicates at reached end of file
 qboolean FS_Eof( file_t* file )
 {
 	if( !file ) return true;
-	return (file->position == file->real_length) ? true : false;
+	return (( file->position - file->buff_len + file->buff_ind ) == file->real_length ) ? true : false;
 }
 
 /*
@@ -2721,7 +2732,7 @@ qboolean FS_Delete( const char *path )
 		return false;
 
 	Q_snprintf( real_path, sizeof( real_path ), "%s%s", fs_gamedir, path );
-	//COM_FixSlashes( real_path ); //MARTY FIXME WIP - Screws it up for XBox!
+	COM_FixSlashes( real_path );
 	iRet = remove( real_path );
 
 	return (iRet == 0);

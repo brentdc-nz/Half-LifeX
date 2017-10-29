@@ -84,7 +84,10 @@ void CL_ClearTempEnts( void )
 	if( !cl_tempents ) return;
 
 	for( i = 0; i < GI->max_tents - 1; i++ )
+	{
 		cl_tempents[i].next = &cl_tempents[i+1];
+		cl_tempents[i].entity.trivial_accept = INVALID_HANDLE;
+	}
 
 	cl_tempents[GI->max_tents-1].next = NULL;
 	cl_free_tents = cl_tempents;
@@ -115,10 +118,12 @@ void CL_PrepareTEnt( TEMPENTITY *pTemp, model_t *pmodel )
 {
 	int	frameCount = 0;
 	int	modelIndex = 0;
+	int	modelHandle = pTemp->entity.trivial_accept;
 
 	Q_memset( pTemp, 0, sizeof( *pTemp ));
 
 	// use these to set per-frame and termination conditions / actions
+	pTemp->entity.trivial_accept = modelHandle; // keep unchanged
 	pTemp->flags = FTENT_NONE;		
 	pTemp->die = cl.time + 0.75f;
 
@@ -784,6 +789,10 @@ void CL_MuzzleFlash( const vec3_t pos, int type )
 		pTemp->entity.curstate.scale = scale;
 		pTemp->entity.angles[2] = Com_RandomLong( 0, 359 );
 	}
+
+	// play playermodel muzzleflashes only for mirror pass
+	if( RP_LOCALCLIENT( RI.currententity ) && !RI.thirdPerson && ( RI.params & RP_MIRRORVIEW ))
+		pTemp->entity.curstate.effects |= EF_REFLECTONLY;
 
 	CL_TEntAddEntity( &pTemp->entity );
 }
@@ -1777,8 +1786,13 @@ Create a wallpuff
 */
 void CL_Sprite_WallPuff( TEMPENTITY *pTemp, float scale )
 {
-	// UNDONE: g-cont. i'm dont know what this doing
-	Msg( "CL_Sprite_WallPuff: %g\n", scale );
+	if( !pTemp ) return;
+
+	pTemp->entity.curstate.renderamt = 255;
+	pTemp->entity.curstate.rendermode = kRenderTransAlpha;
+	pTemp->entity.angles[ROLL] = Com_RandomLong( 0, 359 );
+	pTemp->entity.curstate.scale = scale;
+	pTemp->die = cl.time + 0.01f;
 }
 
 /*
@@ -2295,7 +2309,7 @@ void CL_ClearLightStyles( void )
 	Q_memset( cl.lightstyles, 0, sizeof( cl.lightstyles ));
 }
 
-void CL_SetLightstyle( int style, const char *s )
+void CL_SetLightstyle( int style, const char *s, float f )
 {
 	int		i, k;
 	lightstyle_t	*ls;
@@ -2309,15 +2323,16 @@ void CL_SetLightstyle( int style, const char *s )
 	Q_strncpy( ls->pattern, s, sizeof( ls->pattern ));
 
 	ls->length = Q_strlen( s );
+	ls->time = f; // set local time
 
 	for( i = 0; i < ls->length; i++ )
 		ls->map[i] = (float)(s[i] - 'a');
 
-	ls->interp = true;
+	ls->interp = (ls->length <= 1) ? false : true;
 
 	// check for allow interpolate
 	// NOTE: fast flickering styles looks ugly when interpolation is running
-	for( k = 0; k < ls->length; k++ )
+	for( k = 0; k < (ls->length - 1); k++ )
 	{
 		val1 = ls->map[(k+0) % ls->length];
 		val2 = ls->map[(k+1) % ls->length];
@@ -2328,6 +2343,7 @@ void CL_SetLightstyle( int style, const char *s )
 			break;
 		}
 	}
+	MsgDev( D_AICONSOLE, "Lightstyle %i (%s), interp %s\n", style, ls->pattern, ls->interp ? "Yes" : "No" );
 }
 
 /*
@@ -2592,7 +2608,19 @@ normal temporary decal
 */
 void CL_DecalShoot( int textureIndex, int entityIndex, int modelIndex, float *pos, int flags )
 {
-	R_DecalShoot( textureIndex, entityIndex, modelIndex, pos, (flags|FDECAL_CLIPTEST), NULL );
+	R_DecalShoot( textureIndex, entityIndex, modelIndex, pos, flags, NULL, 1.0f );
+}
+
+/*
+===============
+CL_FireCustomDecal
+
+custom temporary decal
+===============
+*/
+void CL_FireCustomDecal( int textureIndex, int entityIndex, int modelIndex, float *pos, int flags, float scale )
+{
+	R_DecalShoot( textureIndex, entityIndex, modelIndex, pos, flags, NULL, scale );
 }
 
 /*
@@ -2604,7 +2632,7 @@ spray custom colored decal (clan logo etc)
 */
 void CL_PlayerDecal( int textureIndex, int entityIndex, float *pos )
 {
-	R_DecalShoot( textureIndex, entityIndex, 0, pos, 0, NULL );
+	R_DecalShoot( textureIndex, entityIndex, 0, pos, 0, NULL, 1.0f );
 }
 
 /*
@@ -2646,7 +2674,7 @@ int CL_DecalIndex( int id )
 	{
 		qboolean	load_external = false;
 
-		if( mod_allow_materials != NULL && mod_allow_materials->integer )
+		if( Mod_AllowMaterials( ))
 		{
 			char	decalname[64];
 			int	gl_texturenum = 0;

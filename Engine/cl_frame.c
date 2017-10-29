@@ -66,13 +66,27 @@ FRAME PARSING
 */
 void CL_UpdateEntityFields( cl_entity_t *ent )
 {
+	// parametric rockets code
+	if( ent->curstate.starttime != 0.0f && ent->curstate.impacttime != 0.0f )
+	{
+		float	lerp = ( cl.time - ent->curstate.starttime ) / ( ent->curstate.impacttime - ent->curstate.starttime );
+		vec3_t	dir;
+
+		lerp = bound( 0.0f, lerp, 1.0f );
+
+		// first we need to calc actual origin
+		VectorLerp( ent->curstate.startpos, lerp, ent->curstate.endpos, ent->curstate.origin );
+		VectorSubtract( ent->curstate.endpos, ent->curstate.startpos, dir );
+		VectorAngles( dir, ent->curstate.angles ); // re-aim projectile		
+	}
+
 	VectorCopy( ent->curstate.origin, ent->origin );
 	VectorCopy( ent->curstate.angles, ent->angles );
 
 	ent->model = Mod_Handle( ent->curstate.modelindex );
 	ent->curstate.msg_time = cl.time;
 
-	if( ent->player ) // stupid Half-Life bug
+	if( ent->player && RP_LOCALCLIENT( ent )) // stupid Half-Life bug
 		ent->angles[PITCH] = -ent->angles[PITCH] / 3.0f;
 
 	// make me lerp
@@ -155,16 +169,14 @@ void CL_UpdateEntityFields( cl_entity_t *ent )
 			{
 				qboolean	applyVel, applyAvel;
 
-				d = -1.0f;
-
 				applyVel = !VectorCompare( m_pGround->curstate.origin, m_pGround->prevstate.origin );
 				applyAvel = !VectorCompare( m_pGround->curstate.angles, m_pGround->prevstate.angles );
 
 				if( applyVel || applyAvel )
 				{
-					ent->origin[0] += ( m_pGround->curstate.origin[0] - m_pGround->prevstate.origin[0] ) * d;
-					ent->origin[1] += ( m_pGround->curstate.origin[1] - m_pGround->prevstate.origin[1] ) * d;
-//					ent->origin[2] += ( m_pGround->curstate.origin[2] - m_pGround->prevstate.origin[2] ) * d;
+					ent->origin[0] += ( m_pGround->curstate.origin[0] - m_pGround->prevstate.origin[0] ) * -1.0f;
+					ent->origin[1] += ( m_pGround->curstate.origin[1] - m_pGround->prevstate.origin[1] ) * -1.0f;
+//					ent->origin[2] += ( m_pGround->curstate.origin[2] - m_pGround->prevstate.origin[2] ) * -1.0f;
 					ent->latched.prevorigin[2] = ent->origin[2];
 				}
 
@@ -176,11 +188,31 @@ void CL_UpdateEntityFields( cl_entity_t *ent )
 
 						ang1 = m_pGround->curstate.angles[i];
 						ang2 = m_pGround->prevstate.angles[i];
-						f = ang1 - ang2;
-						if( d > 180.0f ) f -= 360.0f;
-						else if( d < -180.0f ) f += 360.0f;
-						ent->angles[i] += d * f;
+						d = ang1 - ang2;
+						if( d > 180.0f ) d -= 360.0f;
+						else if( d < -180.0f ) d += 360.0f;
+						ent->angles[i] += d * -1.0f;
 					}
+				}
+			}
+
+			// move code from StudioSetupTransform here
+			if( host.features & ENGINE_COMPUTE_STUDIO_LERP )
+			{
+				ent->origin[0] += ( ent->curstate.origin[0] - ent->latched.prevorigin[0] ) * f;
+				ent->origin[1] += ( ent->curstate.origin[1] - ent->latched.prevorigin[1] ) * f;
+				ent->origin[2] += ( ent->curstate.origin[2] - ent->latched.prevorigin[2] ) * f;
+
+				for( i = 0; i < 3; i++ )
+				{
+					float	ang1, ang2;
+
+					ang1 = ent->angles[i];
+					ang2 = ent->latched.prevangles[i];
+					d = ang1 - ang2;
+					if( d > 180.0f ) d -= 360.0f;
+					else if( d < -180.0f ) d += 360.0f;
+					ent->angles[i] += d * f;
 				}
 			}
 		}
@@ -189,7 +221,8 @@ void CL_UpdateEntityFields( cl_entity_t *ent )
 
 qboolean CL_AddVisibleEntity( cl_entity_t *ent, int entityType )
 {
-	if( !ent->model ) return false;
+	if( !ent || !ent->model )
+		return false;
 
 	if( entityType == ET_TEMPENTITY )
 	{
@@ -351,7 +384,6 @@ Set new weapon animation
 void CL_WeaponAnim( int iAnim, int body )
 {
 	cl_entity_t	*view = &clgame.viewent;
-	static int	viewmodel = -1;
 
 	view->curstate.modelindex = cl.frame.local.client.viewmodel;
 
@@ -367,7 +399,6 @@ void CL_WeaponAnim( int iAnim, int body )
 
 		// save animtime
 		view->latched.prevanimtime = view->curstate.animtime;
-		view->syncbase = -0.01f; // back up to get 0'th frame animations
 		view->latched.sequencetime = 0.0f;
 	}
 
@@ -429,11 +460,7 @@ void CL_UpdateStudioVars( cl_entity_t *ent, entity_state_t *newstate, qboolean n
 		for( i = 0; i < 2; i++ )
 			ent->latched.prevseqblending[i] = ent->curstate.blending[i];
 		ent->latched.prevsequence = ent->curstate.sequence; // save old sequence	
-		ent->syncbase = -0.01f; // back up to get 0'th frame animations
 	}
-
-	if( !ent->curstate.frame )
-		ent->syncbase = -0.01f; // back up to get 0'th frame animations
 
 	if( newstate->animtime != ent->curstate.animtime )
 	{
@@ -778,7 +805,7 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 		SCR_MakeLevelShot();		// make levelshot if needs
 		Cvar_SetFloat( "scr_loading", 0.0f );	// reset progress bar	
 
-		if( cls.disable_servercount != cl.servercount && cl.video_prepped )
+		if(( cls.demoplayback || cls.disable_servercount != cl.servercount ) && cl.video_prepped )
 			SCR_EndLoadingPlaque(); // get rid of loading plaque
 	}
 

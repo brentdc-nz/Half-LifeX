@@ -149,6 +149,10 @@ void Con_SetColor_f( void )
 		Q_atov( color, Cmd_Argv( 1 ), 3 );
 		Con_DefaultColor( color[0], color[1], color[2] );
 		break;
+	case 4:
+		VectorSet( color, Q_atof( Cmd_Argv( 1 )), Q_atof( Cmd_Argv( 2 )), Q_atof( Cmd_Argv( 3 )));
+		Con_DefaultColor( color[0], color[1], color[2] );
+		break;
 	default:
 		Msg( "Usage: con_color \"r g b\"\n" );
 		break;
@@ -281,7 +285,7 @@ void Con_ToggleConsole_f( void )
 
 	if( cls.key_dest == key_console )
 	{
-		if( Cvar_VariableInteger( "sv_background" ))
+		if( Cvar_VariableInteger( "sv_background" ) || Cvar_VariableInteger( "cl_background" ))
 			UI_SetActiveMenu( true );
 		else UI_SetActiveMenu( false );
 	}
@@ -373,9 +377,9 @@ void Con_CheckResize( void )
 Con_PageUp
 ================
 */
-void Con_PageUp( void )
+void Con_PageUp( int lines )
 {
-	con.display -= 2;
+	con.display -= abs( lines );
 
 	if( con.current - con.display >= con.totallines )
 		con.display = con.current - con.totallines + 1;
@@ -386,9 +390,9 @@ void Con_PageUp( void )
 Con_PageDown
 ================
 */
-void Con_PageDown( void )
+void Con_PageDown( int lines )
 {
-	con.display += 2;
+	con.display += abs( lines );
 
 	if( con.display > con.current )
 		con.display = con.current;
@@ -441,18 +445,18 @@ static void Con_LoadConsoleFont( int fontNumber, cl_font_t *font )
 	if( font->valid ) return; // already loaded
 
 	// loading conchars
-	font->hFontTexture = GL_LoadTexture( va( "fonts/font%i", fontNumber ), NULL, 0, TF_FONT|TF_NEAREST );
+	font->hFontTexture = GL_LoadTexture( va( "fonts.wad/font%i", fontNumber ), NULL, 0, TF_FONT|TF_NEAREST );
 	R_GetTextureParms( &fontWidth, NULL, font->hFontTexture );
 		
 	// setup creditsfont
-	if( FS_FileExists( va( "fonts/font%i.fnt", fontNumber ), false ) && fontWidth != 0 )
+	if( FS_FileExists( va( "fonts.wad/font%i.fnt", fontNumber ), false ) && fontWidth != 0 )
 	{
 		byte	*buffer;
 		size_t	length;
 		qfont_t	*src;
 	
 		// half-life font with variable chars witdh
-		buffer = FS_LoadFile( va( "fonts/font%i", fontNumber ), &length, false );
+		buffer = FS_LoadFile( va( "fonts.wad/font%i", fontNumber ), &length, false );
 
 		if( buffer && length >= sizeof( qfont_t ))
 		{
@@ -621,6 +625,7 @@ int Con_DrawGenericString( int x, int y, const char *string, rgba_t setColor, qb
 		if( *s == '\n' )
 		{
 			s++;
+			if( !*s ) break; // at end the string
 			drawLen = 0; // begin new row
 			y += con.curFont->charHeight;
 		}
@@ -1122,7 +1127,7 @@ void Field_Paste( field_t *edit )
 	char	*cbd;
 	int	i, pasteLen;
 
-	cbd = Sys_GetClipboardData(); //MARTY - Returns NULL. No pasting on XBox, maybe virtual keyboard in future,
+	cbd = Sys_GetClipboardData(); //MARTY - Returns NULL, no pasting on XBox
 	if( !cbd ) return;
 
 	// send as if typed, so insert / overstrike works properly
@@ -1430,35 +1435,29 @@ void Key_Console( int key )
 	// console scrolling
 	if( key == K_PGUP )
 	{
-		Con_PageUp();
+		Con_PageUp( 2 );
 		return;
 	}
 
 	if( key == K_PGDN )
 	{
-		Con_PageDown();
+		Con_PageDown( 2 );
 		return;
 	}
 
 	if( key == K_MWHEELUP )
 	{
-		Con_PageUp();
 		if( Key_IsDown( K_CTRL ))
-		{
-			Con_PageUp();
-			Con_PageUp();
-		}
+			Con_PageUp( 8 );
+		else Con_PageUp( 2 );
 		return;
 	}
 
 	if( key == K_MWHEELDOWN )
 	{	
-		Con_PageDown();
 		if( Key_IsDown( K_CTRL ))
-		{	
-			Con_PageDown();
-			Con_PageDown();
-		}
+			Con_PageDown( 8 );
+		else Con_PageDown( 2 );
 		return;
 	}
 
@@ -1592,7 +1591,7 @@ Draws the debug messages (not passed to console history)
 */
 void Con_DrawDebug( void )
 {
-	if( !host.developer || Cvar_VariableInteger( "sv_background" ))
+	if( !host.developer || Cvar_VariableInteger( "cl_background" ) || Cvar_VariableInteger( "sv_background" ))
 		return;
 
 	if( con.draw_notify && !Con_Visible( ))
@@ -1618,7 +1617,7 @@ void Con_DrawNotify( void )
 
 	if( !con.curFont ) return;
 
-	if( host.developer && !Cvar_VariableInteger( "sv_background" ))
+	if( host.developer && ( !Cvar_VariableInteger( "cl_background" ) && !Cvar_VariableInteger( "sv_background" )))
 	{
 		currentColor = 7;
 		/*p*/glColor4ubv( g_color_table[currentColor] );
@@ -1776,7 +1775,8 @@ Con_DrawConsole
 void Con_DrawConsole( void )
 {
 	// never draw console when changelevel in-progress
-	if( cls.changelevel || cls.changedemo ) return;
+	if( cls.state != ca_disconnected && ( cls.changelevel || cls.changedemo ))
+		return;
 
 	// check for console width changes from a vid mode change
 	Con_CheckResize ();
@@ -1785,7 +1785,7 @@ void Con_DrawConsole( void )
 	{
 		if( !cl_allow_levelshots->integer )
 		{
-			if( Cvar_VariableInteger( "sv_background" ) && cls.key_dest != key_console )
+			if(( Cvar_VariableInteger( "cl_background" ) || Cvar_VariableInteger( "sv_background" )) && cls.key_dest != key_console )
 				con.displayFrac = con.finalFrac = 0.0f;
 			else con.displayFrac = con.finalFrac = 1.0f;
 		}
@@ -1825,7 +1825,7 @@ void Con_DrawConsole( void )
 		break;
 	case ca_active:
 	case ca_cinematic: 
-		if( Cvar_VariableInteger( "sv_background" ))
+		if( Cvar_VariableInteger( "cl_background" ) || Cvar_VariableInteger( "sv_background" ))
 		{
 			if( cls.key_dest == key_console ) 
 				Con_DrawSolidConsole( 1.0f );

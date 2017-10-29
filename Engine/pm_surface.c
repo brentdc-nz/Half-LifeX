@@ -98,9 +98,8 @@ find the face where the traceline hit
 assume physentity is valid
 ==================
 */
-const char *PM_TraceTexture( physent_t *pe, vec3_t start, vec3_t end )
+msurface_t *PM_TraceSurface( physent_t *pe, vec3_t start, vec3_t end )
 {
-	msurface_t	*surf;
 	matrix4x4		matrix;
 	model_t		*bmodel;
 	hull_t		*hull;
@@ -127,7 +126,20 @@ const char *PM_TraceTexture( physent_t *pe, vec3_t start, vec3_t end )
 		Matrix4x4_VectorITransform( matrix, end, end_l );
 	}
 
-	surf = PM_RecursiveSurfCheck( bmodel, &bmodel->nodes[hull->firstclipnode], start_l, end_l );
+	return PM_RecursiveSurfCheck( bmodel, &bmodel->nodes[hull->firstclipnode], start_l, end_l );
+}
+
+/*
+==================
+PM_TraceTexture
+
+find the face where the traceline hit
+assume physentity is valid
+==================
+*/
+const char *PM_TraceTexture( physent_t *pe, vec3_t start, vec3_t end )
+{
+	msurface_t	*surf = PM_TraceSurface( pe, start, end );
 
 	if( !surf || !surf->texinfo || !surf->texinfo->texture )
 		return NULL;

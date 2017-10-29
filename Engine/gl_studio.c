@@ -28,7 +28,7 @@ GNU General Public License for more details.
 #define STUDIO_MERGE_TEXTURES
 
 #define EVENT_CLIENT	5000	// less than this value it's a server-side studio events
-#define MAXARRAYVERTS	16384	// used for draw shadows
+#define MAXARRAYVERTS	20000	// used for draw shadows
 #define LEGS_BONES_COUNT	8
 
 static vec3_t hullcolor[8] = 
@@ -112,6 +112,7 @@ char			g_nCachedBoneNames[MAXSTUDIOBONES][32];
 int			g_nCachedBones;		// number of bones in cache
 int			g_nStudioCount;		// for chrome update
 int			g_iRenderMode;		// currentmodel rendermode
+int			g_iBackFaceCull;
 vec3_t			studio_mins, studio_maxs;
 float			studio_radius;
 
@@ -516,8 +517,8 @@ void R_StudioSetUpTransform( cl_entity_t *e )
 	VectorCopy( e->origin, origin );
 	VectorCopy( e->angles, angles );
 
-	// interpolate monsters position
-	if( e->curstate.movetype == MOVETYPE_STEP ) 
+	// interpolate monsters position (moved into UpdateEntityFields by user request)
+	if( e->curstate.movetype == MOVETYPE_STEP && !( host.features & ENGINE_COMPUTE_STUDIO_LERP )) 
 	{
 		float	d, f = 0.0f;
 		int	i;
@@ -1502,7 +1503,7 @@ void R_StudioDynamicLight( cl_entity_t *ent, alight_t *lightinfo )
 		VectorSubtract( dl->origin, origin, direction );
 		dist = VectorLength( direction );
 
-		if( !dist || dist > dl->radius + ent->model->radius )
+		if( !dist || dist > dl->radius + studio_radius )
 			continue;
 
 		radius2 = dl->radius * dl->radius; // squared radius
@@ -1588,7 +1589,7 @@ void R_StudioEntityLight( alight_t *lightinfo )
 		VectorSubtract( el->origin, origin, direction );
 		dist = VectorLength( direction );
 
-		if( !dist || dist > el->radius + ent->model->radius )
+		if( !dist || dist > el->radius + studio_radius )
 			continue;
 
 		radius2 = el->radius * el->radius; // squared radius
@@ -1835,9 +1836,65 @@ mstudiotexture_t *R_StudioGetTexture( cl_entity_t *e )
 	return ptexture;
 }
 
+void R_StudioSetRenderamt( int iRenderamt )
+{
+	if( !RI.currententity ) return;
+
+	RI.currententity->curstate.renderamt = iRenderamt;
+	RI.currententity->curstate.renderamt = R_ComputeFxBlend( RI.currententity );
+}
+
 /*
 ===============
-R_SolidEntityCompare
+R_StudioSetCullState
+
+sets true for enable backculling (for left-hand viewmodel)
+===============
+*/
+void R_StudioSetCullState( int iCull )
+{
+	g_iBackFaceCull = iCull;
+}
+
+/*
+===============
+R_StudioRenderShadow
+
+just a prefab for render shadow
+===============
+*/
+void R_StudioRenderShadow( int iSprite, float *p1, float *p2, float *p3, float *p4 )
+{
+	if( !p1 || !p2 || !p3 || !p4 )
+		return;
+
+	if( TriSpriteTexture( Mod_Handle( iSprite ), 0 ))
+	{
+		/*p*/glEnable( GL_BLEND );
+		/*p*/glDisable( GL_ALPHA_TEST );
+		/*p*/glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+		/*p*/glColor4f( 0.0f, 0.0f, 0.0f, 1.0f ); // render only alpha
+
+		/*p*/glBegin( GL_QUADS );
+			/*p*/glTexCoord2f( 0.0f, 0.0f );
+			/*p*/glVertex3fv( p1 );
+			/*p*/glTexCoord2f( 0.0f, 1.0f );
+			/*p*/glVertex3fv( p2 );
+			/*p*/glTexCoord2f( 1.0f, 1.0f );
+			/*p*/glVertex3fv( p3 );
+			/*p*/glTexCoord2f( 1.0f, 0.0f );
+			/*p*/glVertex3fv( p4 );
+		/*p*/glEnd();
+
+		/*p*/glDisable( GL_BLEND );
+		/*p*/glDisable( GL_ALPHA_TEST );
+	}
+}
+
+/*
+===============
+R_StudioMeshCompare
 
 Sorting opaque entities by model type
 ===============
@@ -1963,6 +2020,7 @@ static void R_StudioDrawPoints( void )
 		else if( g_nFaceFlags & STUDIO_NF_TRANSPARENT )
 		{
 			GL_SetRenderMode( kRenderTransAlpha );
+			/*p*/glAlphaFunc( GL_GREATER, 0.0f );
 			alpha = 1.0f;
 		}
 		else if( g_nFaceFlags & STUDIO_NF_ADDITIVE )
@@ -1970,6 +2028,12 @@ static void R_StudioDrawPoints( void )
 			GL_SetRenderMode( kRenderTransAdd );
 			alpha = RI.currententity->curstate.renderamt * (1.0f / 255.0f);
 			/*p*/glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+			/*p*/glDepthMask( GL_FALSE );
+		}
+		else if( g_nFaceFlags & STUDIO_NF_ALPHA )
+		{
+			GL_SetRenderMode( kRenderTransTexture );
+			alpha = RI.currententity->curstate.renderamt * (1.0f / 255.0f);
 			/*p*/glDepthMask( GL_FALSE );
 		}
 		else
@@ -2390,7 +2454,7 @@ static model_t *R_StudioSetupPlayerModel( int index )
 	// set to invisible, skip
 	if( !info->model[0] ) return NULL;
 
-	if( GI->nomodels || !Q_stricmp( info->model, "player" ))
+	if( !Q_stricmp( info->model, "player" ))
 	{
 		Q_strncpy( modelpath, "models/player.mdl", sizeof( modelpath ));
 	}
@@ -2419,43 +2483,19 @@ static void R_StudioClientEvents( void )
 {
 	mstudioseqdesc_t	*pseqdesc;
 	mstudioevent_t	*pevent;
-	float		flEventFrame;
-	qboolean		bLooped = false;
 	cl_entity_t	*e = RI.currententity;
+	float		f, start;
 	int		i;
 
 	pseqdesc = (mstudioseqdesc_t *)((byte *)m_pStudioHeader + m_pStudioHeader->seqindex) + e->curstate.sequence;
 	pevent = (mstudioevent_t *)((byte *)m_pStudioHeader + pseqdesc->eventindex);
 
-	// curstate.frame not used for viewmodel animating
-	flEventFrame = e->latched.prevframe;
-
-	if( pseqdesc->numevents == 0 )
+	// no events for this animation or gamepaused
+	if( pseqdesc->numevents == 0 || cl.time == cl.oldtime )
 		return;
 
-	if( e->syncbase == -0.01f )
-		flEventFrame = 0.0f;
-
-	// stalled?
-	if( flEventFrame == e->syncbase )
-		return;
-
-	//Msg( "(seq %d cycle %.3f ) evframe %.3f prevevframe %.3f (time %.3f)\n", e->curstate.sequence, e->latched.prevframe, flEventFrame, e->syncbase, RI.refdef.time );
-
-	// check for looping
-	if( flEventFrame <= e->syncbase )
-	{
-		if( e->syncbase - flEventFrame > 0.5f )
-		{
-			bLooped = true;
-		}
-		else
-		{
-			// things have backed up, which is bad since it'll probably result in a hitch in the animation playback
-			// but, don't play events again for the same time slice
-			return;
-		}
-	}
+	f = R_StudioEstimateFrame( e, pseqdesc ) + 0.01f;	// get start offset
+	start = f - e->curstate.framerate * host.frametime * pseqdesc->fps;
 
 	for( i = 0; i < pseqdesc->numevents; i++ )
 	{
@@ -2463,20 +2503,9 @@ static void R_StudioClientEvents( void )
 		if( pevent[i].event < EVENT_CLIENT )
 			continue;
 
-		// looped
-		if( bLooped )
-		{
-			if(( pevent[i].frame > e->syncbase || pevent[i].frame <= flEventFrame ))
-				clgame.dllFuncs.pfnStudioEvent( &pevent[i], e );
-		}
-		else
-		{
-			if(( pevent[i].frame > e->syncbase && pevent[i].frame <= flEventFrame ))
-				clgame.dllFuncs.pfnStudioEvent( &pevent[i], e );
-		}
+		if( (float)pevent[i].frame > start && f >= (float)pevent[i].frame )
+			clgame.dllFuncs.pfnStudioEvent( &pevent[i], e );
 	}
-
-	e->syncbase = flEventFrame;
 }
 
 /*
@@ -2541,6 +2570,11 @@ static void R_StudioSetupRenderer( int rendermode )
 	// enable depthmask on studiomodels
 	if( glState.drawTrans && g_iRenderMode != kRenderTransAdd )
 		/*p*/glDepthMask( GL_TRUE );
+
+	/*p*/glAlphaFunc( GL_GREATER, 0.0f );
+
+	if( g_iBackFaceCull )
+		GL_FrontFace( true );
 }
 
 /*
@@ -2559,6 +2593,10 @@ static void R_StudioRestoreRenderer( void )
 		/*p*/glDepthMask( GL_FALSE );
 	else /*p*/glDepthMask( GL_TRUE );
 
+	if( g_iBackFaceCull )
+		GL_FrontFace( false );
+
+	g_iBackFaceCull = false;
 	m_fDoRemap = false;
 }
 
@@ -3301,7 +3339,8 @@ void R_DrawViewModel( void )
 	/*p*/glDepthRange( gldepthmin, gldepthmin + 0.3f * ( gldepthmax - gldepthmin ));
 
 	// backface culling for left-handed weapons
-	if( r_lefthand->integer == 1 ) GL_FrontFace( !glState.frontFace );
+	if( r_lefthand->integer == 1 || g_iBackFaceCull )
+		GL_FrontFace( !glState.frontFace );
 
 	pStudioDraw->StudioDrawModel( STUDIO_RENDER );
 
@@ -3309,7 +3348,8 @@ void R_DrawViewModel( void )
 	/*p*/glDepthRange( gldepthmin, gldepthmax );
 
 	// backface culling for left-handed weapons
-	if( r_lefthand->integer == 1 ) GL_FrontFace( !glState.frontFace );
+	if( r_lefthand->integer == 1 || g_iBackFaceCull )
+		GL_FrontFace( !glState.frontFace );
 
 	RI.currententity = NULL;
 	RI.currentmodel = NULL;
@@ -3324,14 +3364,17 @@ load model texture with unique name
 */
 static void R_StudioLoadTexture( model_t *mod, studiohdr_t *phdr, mstudiotexture_t *ptexture )
 {
-	size_t	size;
-	int	flags = 0;
-	qboolean	load_external = false;
-	char	texname[128], name[128], mdlname[128];
-	texture_t	*tx = NULL;
+	size_t		size;
+	int		flags = 0;
+	qboolean		load_external = false;
+	char		texname[128], name[128], mdlname[128];
+	texture_t		*tx = NULL;
 	
 	if( ptexture->flags & STUDIO_NF_TRANSPARENT )
 		flags |= (TF_CLAMP|TF_NOMIPMAP);
+
+	if( ptexture->flags & STUDIO_NF_NORMALMAP )
+		flags |= (TF_NORMALMAP);
 
 	// store some textures for remapping
 	if( !Q_strnicmp( ptexture->name, "DM_Base", 7 ) || !Q_strnicmp( ptexture->name, "remap", 5 ))
@@ -3386,7 +3429,7 @@ static void R_StudioLoadTexture( model_t *mod, studiohdr_t *phdr, mstudiotexture
 	FS_StripExtension( mdlname );
 
 	// NOTE: colormaps must have the palette for properly work. Ignore it.
-	if( mod_allow_materials != NULL && mod_allow_materials->integer && !( ptexture->flags & STUDIO_NF_COLORMAP ))
+	if( Mod_AllowMaterials( ) && !( ptexture->flags & STUDIO_NF_COLORMAP ))
 	{
 		int	gl_texturenum = 0;
 
@@ -3537,6 +3580,18 @@ void Mod_LoadStudioModel( model_t *mod, const void *buffer, qboolean *loaded )
 	loadmodel->radius = RadiusFromBounds( loadmodel->mins, loadmodel->maxs );
 	loadmodel->flags = phdr->flags; // copy header flags
 
+	// check for static model
+	if( phdr->numseqgroups == 1 && phdr->numseq == 1 && phdr->numbones == 1 )
+	{
+		mstudioseqdesc_t	*pseqdesc = (mstudioseqdesc_t *)((byte *)phdr + phdr->seqindex);
+
+		// HACKHACK: MilkShape created a default animations with 30 frames
+		// TODO: analyze real frames for more predicatable results
+		// TODO: analyze all the sequences
+		if( pseqdesc->numframes == 1 || pseqdesc->numframes == 30 )
+			pseqdesc->flags |= STUDIO_STATIC;
+	}
+
 	if( loaded ) *loaded = true;
 }
 
@@ -3618,7 +3673,9 @@ static engine_studio_api_t gStudioAPI =
 	pfnIsHardware,
 	GL_StudioDrawShadow,
 	GL_SetRenderMode,
-	R_StudioGetTexture,	// Xash3D
+	R_StudioSetRenderamt,
+	R_StudioSetCullState,
+	R_StudioRenderShadow,
 };
 
 static r_studio_interface_t gStudioDraw =
@@ -3643,8 +3700,15 @@ void CL_InitStudioAPI( void )
 	if( !clgame.dllFuncs.pfnGetStudioModelInterface )
 		return;
 
+	MsgDev( D_NOTE, "InitStudioAPI " );
+
 	if( clgame.dllFuncs.pfnGetStudioModelInterface( STUDIO_INTERFACE_VERSION, &pStudioDraw, &gStudioAPI ))
+	{
+		MsgDev( D_NOTE, "- ok\n" );
 		return;
+	}
+
+	MsgDev( D_NOTE, "- failed\n" );
 
 	// NOTE: we always return true even if game interface was not correct
 	// because we need Draw our StudioModels

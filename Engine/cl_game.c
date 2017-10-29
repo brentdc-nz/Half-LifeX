@@ -585,8 +585,8 @@ static void SPR_DrawGeneric( int frame, float x, float y, float width, float hei
 		rc = *prc;
 
 		// Sigh! some stupid modmakers set wrong rectangles in hud.txt 
-		if( rc.left <= 0 || rc.left > width ) rc.left = 0;
-		if( rc.top <= 0 || rc.top > height ) rc.top = 0;
+		if( rc.left <= 0 || rc.left >= width ) rc.left = 0;
+		if( rc.top <= 0 || rc.top >= height ) rc.top = 0;
 		if( rc.right <= 0 || rc.right > width ) rc.right = width;
 		if( rc.bottom <= 0 || rc.bottom > height ) rc.bottom = height;
 
@@ -2028,7 +2028,7 @@ pfnIsSpectateOnly
 static int pfnIsSpectateOnly( void )
 {
 	cl_entity_t *pPlayer = CL_GetLocalPlayer();
-	return (pPlayer->curstate.spectator != 0);
+	return pPlayer ? (pPlayer->curstate.spectator != 0) : 0;
 }
 
 /*
@@ -2852,7 +2852,7 @@ pfnMP3_InitStream
 
 =============
 */
-void pfnMP3_InitStream( char *filename, int flags )
+void pfnMP3_InitStream( char *filename, int looping )
 {
 	if( !filename )
 	{
@@ -2860,8 +2860,7 @@ void pfnMP3_InitStream( char *filename, int flags )
 		return;
 	}
 
-	// g-cont. flag 1 is probably 'LOOP'
-	if( flags & 1 )
+	if( looping )
 	{
 		S_StartBackgroundTrack( filename, filename, 0 );
 	}
@@ -2917,6 +2916,28 @@ void pfnFillRGBA2( int x, int y, int width, int height, int r, int g, int b, int
 
 	R_DrawStretchPic( x, y, width, height, 0, 0, 1, 1, cls.fillImage );
 	/*p*/glColor4ub( 255, 255, 255, 255 );
+}
+
+/*
+=============
+pfnGetAppID
+
+=============
+*/
+int pfnGetAppID( void )
+{
+	return 220; // standard Valve value
+}
+
+/*
+=============
+pfnVguiWrap2_GetMouseDelta
+
+TODO: implement
+=============
+*/
+void pfnVguiWrap2_GetMouseDelta( int *x, int *y )
+{
 }
 
 /*
@@ -3516,6 +3537,18 @@ float Voice_GetControlFloat( VoiceTweakControl iControl )
 	return 1.0f;
 }
 
+/*
+=================
+Voice_GetSpeakingVolume
+
+=================
+*/
+int Voice_GetSpeakingVolume( void )
+{
+	// TODO: implement
+	return 255;
+}
+
 // shared between client and server			
 triangleapi_t gTriApi =
 {
@@ -3779,7 +3812,7 @@ static cl_enginefunc_t gEngfuncs =
 	pfnSetMouseEnable,
 //MARTY - Extensions
 	Cvar_GetList,
-	Cmd_GetList,
+	Cmd_GetFirstFunctionHandle,
 	Cvar_GetName,
 	Cmd_GetName,
 	pfnGetServerTime,
@@ -3827,6 +3860,7 @@ void CL_UnloadProgs( void )
 	if( !( !Q_stricmp( GI->gamedir, "hlfx" ) && GI->version == 0.5f ))
 		clgame.dllFuncs.pfnShutdown();
 
+	Cvar_FullSet( "cl_background", "0", CVAR_READ_ONLY );
 	Cvar_FullSet( "host_clientloaded", "0", CVAR_INIT );
 
 	Com_FreeLibrary( clgame.hInstance );
@@ -3932,6 +3966,9 @@ qboolean CL_LoadProgs( const char *name )
 #ifndef _HARDLINKED //MARTY
 	for( func = cdll_new_exports; func && func->name != NULL; func++ )
 	{
+		if( *func->func != NULL )
+			continue;	// already get through 'F'
+
 		// functions are cleared before all the extensions are evaluated
 		// NOTE: new exports can be missed without stop the engine
 		if(!( *func->func = (void *)Com_GetProcAddress( clgame.hInstance, func->name )))

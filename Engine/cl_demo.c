@@ -41,26 +41,25 @@ const char *demo_cmd[dem_lastcmd+1] =
 	"dem_userdata",
 	"dem_usercmd",
 	"dem_stop",
-	
 };
 
 typedef struct
 {
-	int	id;		// should be IDEM
-	int	dem_protocol;	// should be DEMO_PROTOCOL
-	int	net_protocol;	// should be PROTOCOL_VERSION
-	char	mapname[64];	// name of map
-	char	gamedir[64];	// name of game directory (FS_Gamedir())
-	int	directory_offset;	// offset of Entry Directory.
+	int		id;		// should be IDEM
+	int		dem_protocol;	// should be DEMO_PROTOCOL
+	int		net_protocol;	// should be PROTOCOL_VERSION
+	char		mapname[64];	// name of map
+	char		gamedir[64];	// name of game directory (FS_Gamedir())
+	int		directory_offset;	// offset of Entry Directory.
 } demoheader_t;
 
 typedef struct
 {
-	int	entrytype;	// DEMO_STARTUP or DEMO_NORMAL
-	float	playback_time;	// time of track
-	int	playback_frames;	// # of frames in track
-	int	offset;		// file offset of track data
-	int	length;		// length of track
+	int		entrytype;	// DEMO_STARTUP or DEMO_NORMAL
+	float		playback_time;	// time of track
+	int		playback_frames;	// # of frames in track
+	int		offset;		// file offset of track data
+	int		length;		// length of track
 } demoentry_t;
 
 typedef struct
@@ -123,11 +122,25 @@ void CL_CloseDemoHeader( void )
 	FS_Close( cls.demoheader );
 }
 
+/*
+====================
+CL_GetDemoRecordClock
+
+write time while demo is recording
+====================
+*/
 float CL_GetDemoRecordClock( void ) 
 {
 	return cl.mtime[0];
 }
 
+/*
+====================
+CL_GetDemoPlaybackClock
+
+overwrite host.realtime
+====================
+*/
 float CL_GetDemoPlaybackClock( void ) 
 {
 	return host.realtime + host.frametime;
@@ -164,7 +177,8 @@ Update level time on a next level
 */
 void CL_WriteDemoJumpTime( void )
 {
-	if( cls.demowaiting || !cls.demofile ) return;
+	if( cls.demowaiting || !cls.demofile )
+		return;
 
 	demo.starttime = CL_GetDemoRecordClock(); // setup the demo starttime
 
@@ -234,9 +248,9 @@ Dumps the current net message, prefixed by the length
 */
 void CL_WriteDemoMessage( qboolean startup, int start, sizebuf_t *msg )
 {
-	byte	c;
-	int	swlen;
 	file_t	*file = startup ? cls.demoheader : cls.demofile;
+	int	swlen;
+	byte	c;
 
 	if( !file ) return;
 
@@ -249,6 +263,7 @@ void CL_WriteDemoMessage( qboolean startup, int start, sizebuf_t *msg )
 
 	if( !startup )
 	{
+		cls.demotime += host.frametime;
 		demo.framecount++;
 	}
 
@@ -261,7 +276,7 @@ void CL_WriteDemoMessage( qboolean startup, int start, sizebuf_t *msg )
 	// write the length out.
 	FS_Write( file, &swlen, sizeof( int ));
 
-	// output the buffer.  Skip the network packet stuff.
+	// output the buffer. Skip the network packet stuff.
 	FS_Write( file, BF_GetData( msg ) + start, swlen );
 }
 
@@ -304,6 +319,7 @@ void CL_WriteDemoHeader( const char *name )
 	
 	MsgDev( D_INFO, "recording to %s.\n", name );
 	cls.demofile = FS_Open( name, "wb", false );
+	cls.demotime = 0.0;
 
 	if( !cls.demofile )
 	{
@@ -422,7 +438,8 @@ void CL_StopRecord( void )
 	menu.globals->demoname[0] = '\0';
 
 	Msg( "Completed demo\n" );
-	MsgDev( D_INFO, "Recording time %.2f\n", stoptime - demo.realstarttime );
+	MsgDev( D_INFO, "Recording time %.2f\n", cls.demotime );
+	cls.demotime = 0.0;
 }
 
 /*
@@ -667,7 +684,7 @@ qboolean CL_DemoReadMessage( byte *buffer, size_t *length )
 	if( !cls.netchan.remote_address.type )
 		cls.netchan.remote_address.type = NA_LOOPBACK;
 
-	if( cl.refdef.paused || cls.key_dest != key_game )
+	if(( !cl.background && ( cl.refdef.paused || cls.key_dest != key_game )) || cls.key_dest == key_console )
 	{
 		demo.starttime += host.frametime;
 		return false; // paused
@@ -753,23 +770,6 @@ qboolean CL_DemoReadMessage( byte *buffer, size_t *length )
 }
 
 /*
-=================
-CL_ReadDemoMessage
-
-obsolete
-=================
-*/
-void CL_ReadDemoMessage( void )
-{
-	if( cl.refdef.paused || cls.key_dest != key_game )
-		return;
-
-	// don't need another message yet
-	if(( cl.time + host.frametime ) <= cl.mtime[0] )
-		return;
-}
-
-/*
 ==============
 CL_StopPlayback
 
@@ -786,6 +786,7 @@ void CL_StopPlayback( void )
 	demo.framecount = 0;
 	cls.demofile = NULL;
 
+	cls.olddemonum = max( -1, cls.demonum - 1 );
 	Mem_Free( demo.directory.entries );
 	demo.directory.numentries = 0;
 	demo.directory.entries = NULL;
@@ -799,8 +800,10 @@ void CL_StopPlayback( void )
 
 	if( !cls.changedemo )
 	{
-		// let game known about movie state	
+		// let game known about demo state	
+		Cvar_FullSet( "cl_background", "0", CVAR_READ_ONLY );
 		cls.state = ca_disconnected;
+		cl.background = 0;
 		cls.demonum = -1;
 	}
 }
@@ -887,7 +890,6 @@ qboolean CL_NextDemo( void )
 
 	if( cls.demonum == -1 )
 		return false; // don't play demos
-
 	S_StopAllSounds();
 
 	if( !cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS )
@@ -916,20 +918,25 @@ CL_DemoGetName
 */  
 void CL_DemoGetName( int lastnum, char *filename )
 {
-	int	a, b;
+	int	a, b, c, d;
 
 	if( !filename ) return;
-	if( lastnum < 0 || lastnum > 99 )
+	if( lastnum < 0 || lastnum > 9999 )
 	{
 		// bound
-		Q_strcpy( filename, "demo99" );
+		Q_strcpy( filename, "demo9999" );
 		return;
 	}
 
-	a = lastnum / 10;
-	b = lastnum % 10;
+	a = lastnum / 1000;
+	lastnum -= a * 1000;
+	b = lastnum / 100;
+	lastnum -= b * 100;
+	c = lastnum / 10;
+	lastnum -= c * 10;
+	d = lastnum;
 
-	Q_sprintf( filename, "demo%i%i", a, b );
+	Q_sprintf( filename, "demo%i%i%i%i", a, b, c, d );
 }
 
 /*
@@ -981,14 +988,14 @@ void CL_Record_f( void )
 	if( !Q_stricmp( name, "new" ))
 	{
 		// scan for a free filename
-		for( n = 0; n < 100; n++ )
+		for( n = 0; n < 10000; n++ )
 		{
 			CL_DemoGetName( n, demoname );
-			if( !FS_FileExists( va( "demos\\%s.dem", demoname ), true )) //MARTY - Fixed slashes
+			if( !FS_FileExists( va( "demos/%s.dem", demoname ), true ))
 				break;
 		}
 
-		if( n == 100 )
+		if( n == 10000 )
 		{
 			Msg( "^3ERROR: no free slots for demo recording\n" );
 			return;
@@ -1102,7 +1109,7 @@ void CL_PlayDemo_f( void )
 	if( cls.changedemo )
 	{
 		S_StopAllSounds();
-		SCR_BeginLoadingPlaque( cl.background );
+		SCR_BeginLoadingPlaque( false );
 
 		CL_ClearState ();
 		CL_InitEdicts (); // re-arrange edicts
@@ -1132,6 +1139,7 @@ void CL_PlayDemo_f( void )
 
 	cls.demoplayback = true;
 	cls.state = ca_connected;
+	cl.background = (cls.demonum != -1) ? true : false;
 
 	demo.starttime = CL_GetDemoPlaybackClock(); // for determining whether to read another message
 
@@ -1156,6 +1164,12 @@ void CL_StartDemos_f( void )
 {
 	int	i, c;
 
+	if( cls.key_dest != key_menu )
+	{
+		MsgDev( D_INFO, "startdemos is not valid from the console\n" );
+		return;
+	}
+
 	c = Cmd_Argc() - 1;
 	if( c > MAX_DEMOS )
 	{
@@ -1168,8 +1182,10 @@ void CL_StartDemos_f( void )
 	for( i = 1; i < c + 1; i++ )
 		Q_strncpy( cls.demos[i-1], Cmd_Argv( i ), sizeof( cls.demos[0] ));
 
-	if( !SV_Active() && cls.demonum != -1 && !cls.demoplayback )
+	if( !SV_Active() && !cls.demoplayback )
 	{
+		// run demos loop in background mode
+		Cvar_SetFloat( "v_dark", 1.0f );
 		cls.demonum = 0;
 		CL_NextDemo ();
 	}
@@ -1185,11 +1201,23 @@ Return to looping demos
 */
 void CL_Demos_f( void )
 {
+	if( cls.key_dest != key_menu )
+	{
+		MsgDev( D_INFO, "demos is not valid from the console\n" );
+		return;
+	}
+
+	cls.demonum = cls.olddemonum;
+
 	if( cls.demonum == -1 )
 		cls.demonum = 0;
 
-	CL_Disconnect ();
-	CL_NextDemo ();
+	if( !SV_Active() && !cls.demoplayback )
+	{
+		// run demos loop in background mode
+		cls.changedemo = true;
+		CL_NextDemo ();
+	}
 }
 
 

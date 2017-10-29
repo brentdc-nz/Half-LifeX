@@ -71,7 +71,7 @@ static dframetype_t *R_SpriteLoadFrame( model_t *mod, void *pin, mspriteframe_t 
 	else
 	{
 		// partially HD-textures support
-		if( mod_allow_materials != NULL && mod_allow_materials->integer && !Q_strcmp( group_suffix, "one" ))
+		if( Mod_AllowMaterials() && !Q_strcmp( group_suffix, "one" ))
 		{
 			Q_strncpy( sprname, mod->name, sizeof( sprname ));
 			FS_StripExtension( sprname );
@@ -344,6 +344,7 @@ void Mod_LoadMapSprite( model_t *mod, const void *buffer, size_t size, qboolean 
 	mod->maxs[2] = h / 2;
 
 	// create a temporary pic
+	Q_memset( &temp, 0, sizeof( temp ));
 	temp.width = w;
 	temp.height = h;
 	temp.type = pix->type;
@@ -923,9 +924,9 @@ void R_DrawSpriteModel( cl_entity_t *e )
 	
 		parent = CL_GetEntityByIndex( e->curstate.aiment );
 
-		if( parent && parent->model && parent->model->type == mod_studio )
+		if( parent && parent->model )
 		{
-			if( e->curstate.body > 0 )
+			if( parent->model->type == mod_studio && e->curstate.body > 0 )
 			{
 				int num = bound( 1, e->curstate.body, MAXSTUDIOATTACHMENTS );
 				VectorCopy( parent->attachment[num-1], origin );
@@ -939,6 +940,7 @@ void R_DrawSpriteModel( cl_entity_t *e )
 
 	if( R_SpriteOccluded( e, origin, &alpha, &scale ))
 		return; // sprite culled
+
 	r_stats.c_sprite_models_drawn++;
 
 	if( psprite->texFormat == SPR_ALPHTEST && e->curstate.rendermode != kRenderTransAdd )
@@ -947,7 +949,7 @@ void R_DrawSpriteModel( cl_entity_t *e )
 		/*p*/glAlphaFunc( GL_GREATER, 0.0f );
 	}
 
-	if( e->curstate.rendermode == kRenderGlow )
+	if( e->curstate.rendermode == kRenderGlow || e->curstate.rendermode == kRenderWorldGlow )
 		/*p*/glDisable( GL_DEPTH_TEST );
 
 	// select properly rendermode
@@ -961,6 +963,7 @@ void R_DrawSpriteModel( cl_entity_t *e )
 		break;
 	case kRenderGlow:
 	case kRenderTransAdd:
+	case kRenderWorldGlow:
 		/*p*/glDisable( GL_FOG );
 		/*p*/glEnable( GL_BLEND );
 		/*p*/glBlendFunc( GL_SRC_ALPHA, GL_ONE );

@@ -476,6 +476,11 @@ qboolean SV_SpawnServer( const char *mapname, const char *startspot )
 		Cmd_ExecuteString( "latch\n", src_command );
 	else MsgDev( D_ERROR, "SV_SpawnServer: while 'maxplayers' was modified.\n" );
 
+	sv_maxclients->modified = false;
+	deathmatch->modified = false;
+	teamplay->modified = false;
+	coop->modified = false;
+
 	if( !svs.initialized )
 		return false;
 
@@ -526,9 +531,17 @@ qboolean SV_SpawnServer( const char *mapname, const char *startspot )
 
 	Cvar_SetFloat( "skill", (float)current_skill );
 
-	if( sv.background )	// tell the game parts about background state
+	if( sv.background )
+	{
+		// tell the game parts about background state
 		Cvar_FullSet( "sv_background", "1", CVAR_READ_ONLY );
-	else Cvar_FullSet( "sv_background", "0", CVAR_READ_ONLY );
+		Cvar_FullSet( "cl_background", "1", CVAR_READ_ONLY );
+	}
+	else
+	{
+		Cvar_FullSet( "sv_background", "0", CVAR_READ_ONLY );
+		Cvar_FullSet( "cl_background", "0", CVAR_READ_ONLY );
+	}
 
 	// make sure what server name doesn't contain path and extension
 	FS_FileBase( mapname, sv.name );

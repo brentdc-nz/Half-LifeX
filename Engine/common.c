@@ -170,14 +170,16 @@ COM_FixSlashes
 Changes all '/' characters into '\' characters, in place.
 ============
 */
-void COM_FixSlashes( char *pname ) // MARTY FIXME WIP - This screws things up on XBox when outside pak files
+void COM_FixSlashes( char *pname )
 {
+#ifndef _XBOX //MARTY FIXME - Screws some things up on XBox atm
 	while( *pname )
 	{
 		if( *pname == '\\' )
 			*pname = '/';
 		pname++;
 	}
+#endif
 }
 
 /*
@@ -422,14 +424,14 @@ Con_Printf
 */
 void Con_Printf( char *szFmt, ... )
 {
-	char	buffer[2048];	// must support > 1k messages
-	va_list	args;
+	static char	buffer[16384];	// must support > 1k messages
+	va_list		args;
 
 	if( host.developer <= 0 )
 		return;
 
 	va_start( args, szFmt );
-	Q_vsnprintf( buffer, 2048, szFmt, args );
+	Q_vsnprintf( buffer, 16384, szFmt, args );
 	va_end( args );
 
 	Sys_Print( buffer );
@@ -443,14 +445,14 @@ Con_DPrintf
 */
 void Con_DPrintf( char *szFmt, ... )
 {
-	char	buffer[2048];	// must support > 1k messages
-	va_list	args;
+	static char	buffer[16384];	// must support > 1k messages
+	va_list		args;
 
 	if( host.developer < D_INFO )
 		return;
 
 	va_start( args, szFmt );
-	Q_vsnprintf( buffer, 2048, szFmt, args );
+	Q_vsnprintf( buffer, 16384, szFmt, args );
 	va_end( args );
 
 	Sys_Print( buffer );
@@ -504,6 +506,7 @@ used by CS:CZ
 */
 void *pfnSequenceGet( const char *fileName, const char *entryName )
 {
+	Msg( "Sequence_Get: file %s, entry %s\n", fileName, entryName );
 	return NULL;
 }
 
@@ -516,6 +519,9 @@ used by CS:CZ
 */
 void *pfnSequencePickSentence( const char *groupName, int pickMethod, int *picked )
 {
+	Msg( "Sequence_PickSentence: group %s, pickMethod %i\n", groupName, pickMethod );
+	*picked = 0;
+
 	return NULL;
 }
 

@@ -73,7 +73,6 @@ struct cl_entity_s
 	entity_state_t	curstate;   	// The state information from the last message received from server
 
 	int		current_position;	// Last received history update index
-
 	position_history_t	ph[HISTORY_MAX];	// History of position and angle updates for this player
 
 	mouth_t		mouth;		// For synchronizing mouth movements.
@@ -100,7 +99,6 @@ struct cl_entity_s
 
 	float		syncbase;	// for client-side animations -- used by obsolete alias animation system, remove?
 	int		visframe;	// last frame this entity was found in an active leaf
-
 	colorVec		cvFloorColor;
 };
 

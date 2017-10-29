@@ -232,7 +232,7 @@ long Stream_ReadMPG( stream_t *stream, long needBytes, void *buffer )
 			{
 				int numReads = 0;
 
-				// HACKHACK: flush all the previous data				
+				// flush all the previous data				
 				while( read_mpeg_stream( mpg, NULL, 0 ) == MP3_OK && numReads++ < 255 );
 				read_len = FS_Read( stream->file, tempbuff, sizeof( tempbuff ));
 				result = read_mpeg_stream( mpg, tempbuff, read_len );

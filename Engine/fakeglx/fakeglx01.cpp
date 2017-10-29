@@ -122,9 +122,6 @@ public:
 	bool m_bReuse;
 };
 
-
-#define TASIZE 2000
-
 class TextureTable 
 {
 public:
@@ -241,6 +238,9 @@ public:
 
 	subImage_s* GetSubImageCache(IDirect3DDevice8* pDevice, int iNum)
 	{
+#if 0
+		D3DFORMAT d3dFormat = D3DFMT_A8R8G8B8;
+#endif
 		for(int i = 0; i < (int)m_SubImageCache.size(); i++)
 		{
 			subImage_s* pCurrentTex = m_SubImageCache[i];
@@ -250,20 +250,13 @@ public:
 		}
 
 		subImage_s* pNewSubImage = new subImage_s;
-
 		pNewSubImage->iTextureNum = iNum;
-
+#if 0		
+		if( g_force16bitTextures )
+			d3dFormat = D3DFMT_A4R4G4B4;
+#endif		
 		pDevice->CreateImageSurface(128, 128, D3DFMT_A8R8G8B8, &pNewSubImage->pTexture); //MARTY FIXME Don't hardcode these values (ok for now tho, as this is only used for lightmaps)
 
-#if 0 //Unnecessary??
-		//Clear the texture to black!
-		D3DLOCKED_RECT lockedRect;	
-		pNewSubImage->Texture->LockRect( &lockedRect, NULL, 0);
-
-		memset(lockedRect.pBits, 0, 128*128*lockedRect.Pitch); //MARTY FIXME Don't hardcode these values
-
-		pNewSubImage->Texture->UnlockRect();
-#endif
 		m_SubImageCache.push_back(pNewSubImage);
 
 		return pNewSubImage;
@@ -581,7 +574,6 @@ public:
 	void SetTexture2D(bool texture2D) { m_dirty = true; m_glTexture2D = texture2D; }
 
 private:
-	
 	GLuint m_currentTexture;
 	GLfloat m_glTextEnvMode;
 	bool m_glTexture2D;

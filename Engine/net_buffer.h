@@ -35,7 +35,7 @@ _inline int BitByte( int bits )
 	return PAD_NUMBER( bits, 8 ) >> 3;
 }
 
-typedef struct
+typedef struct sizebuf_s
 {
 	qboolean		bOverflow;	// overflow reading or writing
 	const char	*pDebugName;	// buffer name (pointer to const name)

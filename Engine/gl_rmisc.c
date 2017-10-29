@@ -162,13 +162,16 @@ static const char *R_DetailTextureForName( const char *name )
 void R_CreateDetailTexturesList( const char *filename )
 {
 	file_t		*detail_txt = NULL;
-	const char	*detail_name, *texname;
+	float		xScale, yScale;
+	const char	*detail_name;
+	texture_t		*tex;
+	rgbdata_t		*pic;
 	int		i;
 
 	for( i = 0; i < cl.worldmodel->numtextures; i++ )
 	{
-		texname = cl.worldmodel->textures[i]->name;
-		detail_name = R_DetailTextureForName( texname );
+		tex = cl.worldmodel->textures[i];
+		detail_name = R_DetailTextureForName( tex->name );
 		if( !detail_name ) continue;
 
 		// detailtexture detected
@@ -181,8 +184,18 @@ void R_CreateDetailTexturesList( const char *filename )
 				break;
 			}
 
+			pic = FS_LoadImage( va( "gfx/detail/%s", detail_name ), NULL, 0 );
+
+			if( pic )
+			{
+				xScale = (pic->width / tex->width) * gl_detailscale->value;
+				yScale = (pic->height / tex->height) * gl_detailscale->value;
+				FS_FreeImage( pic );
+			}
+			else xScale = yScale = 10.0f;
+
 			// store detailtexture description
-			FS_Printf( detail_txt, "%s detail/%s 10.0 10.0\n", texname, detail_name );
+			FS_Printf( detail_txt, "%s detail/%s %.2f %.2f\n", tex->name, detail_name, xScale, yScale );
 		}
 	}
 
@@ -226,7 +239,7 @@ void R_ParseDetailTextures( const char *filename )
 
 		// read detailtexture name
 		pfile = COM_ParseFile( pfile, token );
-		Q_snprintf( detail_texname, sizeof( detail_texname ), "gfx/%s.tga", token );
+		Q_snprintf( detail_texname, sizeof( detail_texname ), "gfx/%s", token );
 
 		// read scales
 		pfile = COM_ParseFile( pfile, token );
@@ -265,6 +278,29 @@ void R_ParseDetailTextures( const char *filename )
 	Mem_Free( afile );
 }
 
+/*
+=======================
+R_ClearStaticEntities
+
+e.g. by demo request
+=======================
+*/
+void R_ClearStaticEntities( void )
+{
+	int	i;
+
+	if( host.type == HOST_DEDICATED )
+		return;
+
+	// clear out efrags in case the level hasn't been reloaded
+	for( i = 0; i < cl.worldmodel->numleafs; i++ )
+		cl.worldmodel->leafs[i+1].efrags = NULL;
+
+	clgame.numStatics = 0;
+
+	CL_ClearEfrags ();
+}
+
 void R_NewMap( void )
 {
 	texture_t	*tx;
@@ -272,8 +308,17 @@ void R_NewMap( void )
 
 	R_ClearDecals(); // clear all level decals
 
-	GL_BuildLightmaps ();
-	R_SetupSky( cl.refdef.movevars->skyName );
+	// upload detailtextures
+	if( r_detailtextures->integer )
+	{
+		string	mapname, filepath;
+
+		Q_strncpy( mapname, cl.worldmodel->name, sizeof( mapname ));
+		FS_StripExtension( mapname );
+		Q_sprintf( filepath, "%s_detail.txt", mapname );
+
+		R_ParseDetailTextures( filepath );
+	}
 
 	// clear out efrags in case the level hasn't been reloaded
 	for( i = 0; i < cl.worldmodel->numleafs; i++ )
@@ -296,15 +341,7 @@ void R_NewMap( void )
  		tx->texturechain = NULL;
 	}
 
-	// upload detailtextures
-	if( r_detailtextures->integer )
-	{
-		string	mapname, filepath;
+	R_SetupSky( cl.refdef.movevars->skyName );
 
-		Q_strncpy( mapname, cl.worldmodel->name, sizeof( mapname ));
-		FS_StripExtension( mapname );
-		Q_sprintf( filepath, "%s_detail.txt", mapname );
-
-		R_ParseDetailTextures( filepath );
-	}
+	GL_BuildLightmaps ();
 }

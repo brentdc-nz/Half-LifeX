@@ -31,8 +31,6 @@ typedef struct moveclip_s
 	int		flags;		// trace flags
 } moveclip_t;
 
-static int		sv_lastofs;	// lightstyles code use this
-
 /*
 ===============================================================================
 
@@ -184,7 +182,7 @@ hull_t *SV_HullForBsp( edict_t *ent, const vec3_t mins, const vec3_t maxs, float
 	model = Mod_Handle( ent->v.modelindex );
 
 	if( !model || model->type != mod_brush )
-		Host_Error( "Entity %i SOLID_BSP with a non bsp model %i\n", NUM_FOR_EDICT( ent ), model->type );
+		Host_Error( "Entity %i SOLID_BSP with a non bsp model %i\n", NUM_FOR_EDICT( ent ), (model) ? model->type : mod_bad );
 
 	VectorSubtract( maxs, mins, size );
 
@@ -195,7 +193,7 @@ hull_t *SV_HullForBsp( edict_t *ent, const vec3_t mins, const vec3_t maxs, float
 	if( sv_quakehulls->integer == 1 )
 	{
 		// Using quake-style hull select for my Quake remake
-		if( size[0] < 3.0f || model->flags & MODEL_LIQUID )
+		if( size[0] < 3.0f || ( model->flags & MODEL_LIQUID && ent->v.solid != SOLID_TRIGGER ))
 			hull = &model->hulls[0];
 		else if( size[0] <= 32.0f )
 			hull = &model->hulls[1];
@@ -210,7 +208,7 @@ hull_t *SV_HullForBsp( edict_t *ent, const vec3_t mins, const vec3_t maxs, float
 	}
 	else
 	{
-		if( size[0] <= 8.0f || model->flags & MODEL_LIQUID )
+		if( size[0] <= 8.0f || ( model->flags & MODEL_LIQUID && ent->v.solid != SOLID_TRIGGER ))
 		{
 			hull = &model->hulls[0];
 			VectorCopy( hull->clip_mins, offset ); 
@@ -278,6 +276,7 @@ hull_t *SV_HullForStudioModel( edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t of
 {
 	int		isPointTrace;
 	float		scale = 0.5f;
+	hull_t		*hull = NULL;
 	vec3_t		size;
 	model_t		*mod;
 
@@ -335,11 +334,15 @@ hull_t *SV_HullForStudioModel( edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t of
 			blending[0] = (byte)iBlend;
 			blending[1] = 0;
 
-			return Mod_HullForStudio( mod, ent->v.frame, ent->v.sequence, angles, ent->v.origin, size, controller, blending, numhitboxes, ent );
+			hull = Mod_HullForStudio( mod, ent->v.frame, ent->v.sequence, angles, ent->v.origin, size, controller, blending, numhitboxes, ent );
 		}
-
-		return Mod_HullForStudio( mod, ent->v.frame, ent->v.sequence, ent->v.angles, ent->v.origin, size, ent->v.controller, ent->v.blending, numhitboxes, ent );
+		else
+		{
+			hull = Mod_HullForStudio( mod, ent->v.frame, ent->v.sequence, ent->v.angles, ent->v.origin, size, ent->v.controller, ent->v.blending, numhitboxes, ent );
+		}
 	}
+
+	if( hull ) return hull;
 
 	*numhitboxes = 1;
 	return SV_HullForEntity( ent, mins, maxs, offset );
@@ -352,6 +355,7 @@ ENTITY AREA CHECKING
 
 ===============================================================================
 */
+static int	iTouchLinkSemaphore = 0;	// prevent recursion when SV_TouchLinks is active
 areanode_t	sv_areanodes[AREA_NODES];
 static int	sv_numareanodes;
 
@@ -414,10 +418,13 @@ void SV_ClearWorld( void )
 
 	// clear lightstyles
 	for( i = 0; i < MAX_LIGHTSTYLES; i++ )
+	{
 		sv.lightstyles[i].value = 256.0f;
-	sv_lastofs = -1;
+		sv.lightstyles[i].time = 0.0f;
+	}
 
 	Q_memset( sv_areanodes, 0, sizeof( sv_areanodes ));
+	iTouchLinkSemaphore = 0;
 	sv_numareanodes = 0;
 
 	SV_CreateAreaNode( 0, sv.worldmodel->mins, sv.worldmodel->maxs );
@@ -605,7 +612,6 @@ SV_LinkEdict
 void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
 {
 	areanode_t	*node;
-	static int	iTouchLinkSemaphore = 0;	// prevent recursion when SV_TouchLinks is active
 	int		headnode;
 
 	if( ent->area.prev ) SV_UnlinkEdict( ent );	// unlink from old position
@@ -1347,15 +1353,14 @@ trace_t SV_MoveNoEnts( const vec3_t start, vec3_t mins, vec3_t maxs, const vec3_
 
 /*
 ==================
-SV_TraceTexture
+SV_TraceSurface
 
 find the face where the traceline hit
 assume pTextureEntity is valid
 ==================
 */
-const char *SV_TraceTexture( edict_t *ent, const vec3_t start, const vec3_t end )
+msurface_t *SV_TraceSurface( edict_t *ent, const vec3_t start, const vec3_t end )
 {
-	msurface_t	*surf;
 	matrix4x4		matrix;
 	model_t		*bmodel;
 	hull_t		*hull;
@@ -1379,7 +1384,20 @@ const char *SV_TraceTexture( edict_t *ent, const vec3_t start, const vec3_t end 
 		Matrix4x4_VectorITransform( matrix, end, end_l );
 	}
 
-	surf = PM_RecursiveSurfCheck( bmodel, &bmodel->nodes[hull->firstclipnode], start_l, end_l );
+	return PM_RecursiveSurfCheck( bmodel, &bmodel->nodes[hull->firstclipnode], start_l, end_l );
+}
+
+/*
+==================
+SV_TraceTexture
+
+find the face where the traceline hit
+assume pTextureEntity is valid
+==================
+*/
+const char *SV_TraceTexture( edict_t *ent, const vec3_t start, const vec3_t end )
+{
+	msurface_t	*surf = SV_TraceSurface( ent, start, end );
 
 	if( !surf || !surf->texinfo || !surf->texinfo->texture )
 		return NULL;
@@ -1535,18 +1553,19 @@ void SV_RunLightStyles( void )
 {
 	int		i, ofs;
 	lightstyle_t	*ls;
+	float		scale;
+
+	scale = sv_lighting_modulate->value;
 
 	// run lightstyles animation
-	ofs = (sv.time * 10);
-
-	if( ofs == sv_lastofs ) return;
-	sv_lastofs = ofs;
-
 	for( i = 0, ls = sv.lightstyles; i < MAX_LIGHTSTYLES; i++, ls++ )
 	{
-		if( ls->length == 0 ) ls->value = 256.0f * sv_lighting_modulate->value; // disable this light
-		else if( ls->length == 1 ) ls->value = ls->map[0] * 22.0f * sv_lighting_modulate->value;
-		else ls->value = ls->map[ofs%ls->length] * 22.0f * sv_lighting_modulate->value;
+		ls->time += host.frametime;
+		ofs = (ls->time * 10);
+
+		if( ls->length == 0 ) ls->value = scale; // disable this light
+		else if( ls->length == 1 ) ls->value = ( ls->map[0] / 12.0f ) * scale;
+		else ls->value = ( ls->map[ofs % ls->length] / 12.0f ) * scale;
 	}
 }
 
@@ -1557,11 +1576,12 @@ SV_SetLightStyle
 needs to get correct working SV_LightPoint
 ==================
 */
-void SV_SetLightStyle( int style, const char* s )
+void SV_SetLightStyle( int style, const char* s, float f )
 {
 	int	j, k;
 
 	Q_strncpy( sv.lightstyles[style].pattern, s, sizeof( sv.lightstyles[0].pattern ));
+	sv.lightstyles[style].time = f;
 
 	j = Q_strlen( s );
 	sv.lightstyles[style].length = j;
@@ -1575,6 +1595,7 @@ void SV_SetLightStyle( int style, const char* s )
 	BF_WriteByte( &sv.reliable_datagram, svc_lightstyle );
 	BF_WriteByte( &sv.reliable_datagram, style );
 	BF_WriteString( &sv.reliable_datagram, sv.lightstyles[style].pattern );
+	BF_WriteFloat( &sv.reliable_datagram, sv.lightstyles[style].time );
 }
 
 /*

@@ -18,9 +18,6 @@ GNU General Public License for more details.
 #include "const.h"
 #include "vgui_draw.h"
 #include "vgui_main.h"
-#ifndef _XBOX //MARTY
-#include <tlhelp32.h>
-#endif
 
 #ifdef _VGUI //MARTY FIXME WIP - VGUI is not used for the normal Half-Life single player, we dont need this atm.
 

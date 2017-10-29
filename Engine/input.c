@@ -463,7 +463,7 @@ IN_WndProc
 main window procedure
 ====================
 */
-  // MARTY FIXME WIP
+  // MARTY:
   // Used to send keyboard and mouse events.
   // Not required as I'm doing this in the client lib.
 #ifndef _XBOX //MARTY

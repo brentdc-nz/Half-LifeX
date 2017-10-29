@@ -47,11 +47,6 @@ void R_AnimateLight( void )
 
 	// light animations
 	// 'm' is normal light, 'a' is no light, 'z' is double bright
-	flight = (int)floor( cl.time * 10 );
-	clight = (int)ceil( cl.time * 10 );
-	lerpfrac = ( cl.time * 10 ) - flight;
-	backlerp = 1.0f - lerpfrac;
-
 	for( i = 0, ls = cl.lightstyles; i < MAX_LIGHTSTYLES; i++, ls++ )
 	{
 		if( r_fullbright->integer || !cl.worldmodel->lightdata )
@@ -60,6 +55,14 @@ void R_AnimateLight( void )
 			RI.lightcache[i] = 3.0f;
 			continue;
 		}
+
+		if( !RI.refdef.paused && RI.refdef.frametime <= 0.1f )
+			ls->time += RI.refdef.frametime; // evaluate local time
+
+		flight = (int)floor( ls->time * 10 );
+		clight = (int)ceil( ls->time * 10 );
+		lerpfrac = ( ls->time * 10 ) - flight;
+		backlerp = 1.0f - lerpfrac;
 
 		if( !ls->length )
 		{

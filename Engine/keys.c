@@ -613,6 +613,9 @@ void Key_Event( int key, qboolean down )
 	{
 		kb = keys[key].binding;
 
+		if( cls.key_dest == key_game && ( key != K_ESCAPE  ))
+			clgame.dllFuncs.pfnKey_Event( down, key, kb );
+
 		Key_AddKeyUpCommands( key, kb );
 		return;
 	}
@@ -629,50 +632,50 @@ void Key_Event( int key, qboolean down )
 
 		// send the bound action
 		kb = keys[key].binding;
-		if( !kb )
-		{
-			if( key >= 200 )
-				Msg( "%s is unbound, use controls menu to set.\n", Key_KeynumToString( key ));
-		}
-		else if( !clgame.dllFuncs.pfnKey_Event( down, key, keys[key].binding ))
+
+		if( !clgame.dllFuncs.pfnKey_Event( down, key, keys[key].binding ))
 		{
 			// handled in client.dll
 		}
-		else if( kb[0] == '+' )
-		{	
-			int	i;
-			char	button[1024], *buttonPtr;
-
-			for( i = 0, buttonPtr = button; ; i++ )
-			{
-				if( kb[i] == ';' || !kb[i] )
-				{
-					*buttonPtr = '\0';
-					if( button[0] == '+' )
-					{
-						Q_sprintf( cmd, "%s %i\n", button, key );
-						Cbuf_AddText( cmd );
-					}
-					else
-					{
-						// down-only command
-						Cbuf_AddText( button );
-						Cbuf_AddText( "\n" );
-					}
-
-					buttonPtr = button;
-					while (( kb[i] <= ' ' || kb[i] == ';' ) && kb[i] != 0 )
-						i++;
-				}
-				*buttonPtr++ = kb[i];
-				if( !kb[i] ) break;
-			}
-		}
-		else
+		else if( kb != NULL )
 		{
-			// down-only command
-			Cbuf_AddText( kb );
-			Cbuf_AddText( "\n" );
+			if( kb[0] == '+' )
+			{	
+				int	i;
+				char	button[1024], *buttonPtr;
+
+				for( i = 0, buttonPtr = button; ; i++ )
+				{
+					if( kb[i] == ';' || !kb[i] )
+					{
+						*buttonPtr = '\0';
+						if( button[0] == '+' )
+						{
+							Q_sprintf( cmd, "%s %i\n", button, key );
+							Cbuf_AddText( cmd );
+						}
+						else
+						{
+							// down-only command
+							Cbuf_AddText( button );
+							Cbuf_AddText( "\n" );
+						}
+
+						buttonPtr = button;
+						while (( kb[i] <= ' ' || kb[i] == ';' ) && kb[i] != 0 )
+							i++;
+					}
+
+					*buttonPtr++ = kb[i];
+					if( !kb[i] ) break;
+				}
+			}
+			else
+			{
+				// down-only command
+				Cbuf_AddText( kb );
+				Cbuf_AddText( "\n" );
+			}
 		}
 	}
 	else if( cls.key_dest == key_console )

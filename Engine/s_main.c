@@ -21,7 +21,7 @@ GNU General Public License for more details.
 #include "pm_local.h"
 
 #define MAX_DUPLICATED_CHANNELS	4		// threshold for identical static channels (probably error)
-#define SND_CLIP_DISTANCE		1000.0f
+#define SND_CLIP_DISTANCE		(float)(GI->soundclip_dist)
 
 dma_t		dma;
 byte		*sndpool;
@@ -1213,14 +1213,17 @@ void S_AmbientSound( const vec3_t pos, int ent, sound_t handle, float fvol, floa
 S_StartLocalSound
 ==================
 */
-void S_StartLocalSound(  const char *name )
+void S_StartLocalSound(  const char *name, float volume, qboolean reliable )
 {
 	sound_t	sfxHandle;
 	int	flags = (SND_LOCALSOUND|SND_STOP_LOOPING);
+	int	channel = CHAN_AUTO;
+
+	if( reliable ) channel = CHAN_STATIC;
 
 	if( !dma.initialized ) return;	
 	sfxHandle = S_RegisterSound( name );
-	S_StartSound( NULL, s_listener.entnum, CHAN_AUTO, sfxHandle, VOL_NORM, ATTN_NONE, PITCH_NORM, flags );
+	S_StartSound( NULL, s_listener.entnum, channel, sfxHandle, volume, ATTN_NONE, PITCH_NORM, flags );
 }
 
 /*
@@ -1631,7 +1634,40 @@ void S_Play_f( void )
 		return;
 	}
 
-	S_StartLocalSound( Cmd_Argv( 1 ));
+	S_StartLocalSound( Cmd_Argv( 1 ), VOL_NORM, false );
+}
+
+void S_PlayVol_f( void )
+{
+	if( Cmd_Argc() == 1 )
+	{
+		Msg( "Usage: playvol <soundfile volume>\n" );
+		return;
+	}
+
+	S_StartLocalSound( Cmd_Argv( 1 ), Q_atof( Cmd_Argv( 2 )), false );
+}
+
+void S_Say_f( void )
+{
+	if( Cmd_Argc() == 1 )
+	{
+		Msg( "Usage: speak <soundfile\n" );
+		return;
+	}
+
+	S_StartLocalSound( Cmd_Argv( 1 ), 1.0f, false );
+}
+
+void S_SayReliable_f( void )
+{
+	if( Cmd_Argc() == 1 )
+	{
+		Msg( "Usage: spk <soundfile>\n" );
+		return;
+	}
+
+	S_StartLocalSound( Cmd_Argv( 1 ), 1.0f, true );
 }
 
 /*
@@ -1661,16 +1697,18 @@ void S_Music_f( void )
 
 		for( i = 0; i < 2; i++ )
 		{
-			if( FS_FileExists( va( "media\\%s.%s", intro, ext[i] ), false ) //MARTY - Fixed slashes
-				&& FS_FileExists( va( "media\\%s.%s", main, ext[i] ), false )) //MARTY - Fixed slashes
+			const char *intro_path = va( "media\\%s.%s", intro, ext[i] );
+			const char *main_path = va( "media\\%s.%s", main, ext[i] );
+
+			if( FS_FileExists( intro_path, false ) && FS_FileExists( main_path, false ))
 			{
 				// combined track with introduction and main loop theme
 				S_StartBackgroundTrack( intro, main, 0 );
 				break;
 			}
-			else if( FS_FileExists( va( "media\\%s.%s", track, ext[i] ), false )) //MARTY - Fixed slashes
+			else if( FS_FileExists( va( "media\\%s.%s", track, ext[i] ), false ))
 			{
-				// single looped theme
+				// single non-looped theme
 				S_StartBackgroundTrack( track, NULL, 0 );
 				break;
 			}
@@ -1732,7 +1770,7 @@ qboolean S_Init( void )
 
 	s_volume = Cvar_Get( "volume", "0.7", CVAR_ARCHIVE, "sound volume" );
 	s_musicvolume = Cvar_Get( "musicvolume", "1.0", CVAR_ARCHIVE, "background music volume" );
-	s_mixahead = Cvar_Get( "_snd_mixahead", "0.1", 0, "how much sound to mix ahead of time" );
+	s_mixahead = Cvar_Get( "_snd_mixahead", "0.12", 0, "how much sound to mix ahead of time" );
 	s_show = Cvar_Get( "s_show", "0", CVAR_ARCHIVE, "show playing sounds" );
 	s_lerping = Cvar_Get( "s_lerping", "0", CVAR_ARCHIVE, "apply interpolation to sound output" );
 	dsp_off = Cvar_Get( "dsp_off", "0", CVAR_ARCHIVE, "set to 1 to disable all dsp processing" );
@@ -1750,10 +1788,15 @@ qboolean S_Init( void )
 	s_phs = Cvar_Get( "s_phs", "0", CVAR_ARCHIVE, "cull sounds by PHS" );
 
 	Cmd_AddCommand( "play", S_Play_f, "playing a specified sound file" );
+	Cmd_AddCommand( "playvol", S_PlayVol_f, "playing a specified sound file with specified volume" );
 	Cmd_AddCommand( "stopsound", S_StopSound_f, "stop all sounds" );
 	Cmd_AddCommand( "music", S_Music_f, "starting a background track" );
 	Cmd_AddCommand( "soundlist", S_SoundList_f, "display loaded sounds" );
 	Cmd_AddCommand( "s_info", S_SoundInfo_f, "print sound system information" );
+	Cmd_AddCommand( "+voicerecord", Cmd_Null_f, "start voice recording (non-implemented)" );
+	Cmd_AddCommand( "-voicerecord", Cmd_Null_f, "stop voice recording (non-implemented)" );
+	Cmd_AddCommand( "spk", S_SayReliable_f, "reliable play a specified sententce" );
+	Cmd_AddCommand( "speak", S_Say_f, "playing a specified sententce" );
 
 	if( !SNDDMA_Init( /*host.hWnd*/ )) //MARTY
 	{

@@ -16,8 +16,7 @@ GNU General Public License for more details.
 #ifndef VOX_H
 #define VOX_H
 
-#define CVOXWORDMAX			32
-#define CVOXSENTENCEMAX		24
+#define CVOXWORDMAX			64
 #define CVOXZEROSCANMAX		255	// scan up to this many samples for next zero crossing
 #define MAX_SENTENCES		2048
 #define SENTENCE_INDEX		-99999	// unique sentence index

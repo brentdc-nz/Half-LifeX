@@ -180,7 +180,7 @@ sfx_t *S_FindName( const char *pname, int *pfInCache )
 	}
 
 	Q_strncpy( name, pname, sizeof( name ));
-//	COM_FixSlashes( name ); //MARTY FIXME WIP
+	COM_FixSlashes( name );
 
 	// see if already loaded
 	hash = Com_HashKey( name, MAX_SFX_HASH );

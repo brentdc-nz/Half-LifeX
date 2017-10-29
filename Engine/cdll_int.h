@@ -28,6 +28,14 @@ extern "C" {
 
 #include "const.h"
 
+#define MAX_ALIAS_NAME	32
+
+typedef struct cmdalias_s
+{
+	struct cmdalias_s	*next;
+	char		name[MAX_ALIAS_NAME];
+	char		*value;
+} cmdalias_t;
 
 // this file is included by both the engine and the client-dll,
 // so make sure engine declarations aren't done twice
@@ -97,6 +105,8 @@ typedef struct hud_player_info_s
 	char		*model;
 	short		topcolor;
 	short		bottomcolor;
+
+	unsigned __int64	m_nSteamID;
 } hud_player_info_t;
 
 typedef struct cl_enginefuncs_s

@@ -16,7 +16,7 @@ GNU General Public License for more details.
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
-#define PROTOCOL_VERSION		47
+#define PROTOCOL_VERSION		48
 
 // server to client
 #define svc_bad			0	// immediately crash client when received
@@ -31,7 +31,7 @@ GNU General Public License for more details.
 #define svc_stufftext		9	// [string] stuffed into client's console buffer
 #define svc_setangle		10	// [angle angle angle] set the view angle to this absolute value
 #define svc_serverdata		11	// [long] protocol ...
-#define svc_lightstyle		12	// [index][pattern]
+#define svc_lightstyle		12	// [index][pattern][float]
 #define svc_updateuserinfo		13	// [byte] playernum, [string] userinfo
 #define svc_deltatable		14	// [table header][...]
 #define svc_clientdata		15	// [...]
@@ -131,10 +131,11 @@ GNU General Public License for more details.
 #define FDECAL_PERMANENT		0x01	// This decal should not be removed in favor of any new decals
 #define FDECAL_USE_LANDMARK		0x02	// This is a decal applied on a bmodel without origin-brush so we done in absoulute pos
 #define FDECAL_DONTSAVE		0x04	// Decal was loaded from adjacent level, don't save it for this level
-#define FDECAL_CLIPTEST		0x08	// Decal needs to be clip-tested
-#define FDECAL_NOCLIP		0x10	// Decal is not clipped by containing polygon
+// reserved			0x08
+// reserved			0x10
 #define FDECAL_USESAXIS		0x20	// Uses the s axis field to determine orientation (footprints)
 #define FDECAL_STUDIO		0x40	// Indicates a studio decal
+#define FDECAL_LOCAL_SPACE		0x80	// decal is in local space (any decal after serialization)
 
 // Max number of history commands to send ( 2 by default ) in case of dropped packets
 #define NUM_BACKUP_COMMAND_BITS	4

@@ -133,7 +133,7 @@ qboolean Image_LoadMDL( const char *name, const byte *buffer, size_t filesize )
 	byte		*fin;
 	size_t		pixels;
 	mstudiotexture_t	*pin;
-	int		i, flags;
+	int		flags;
 
 	pin = (mstudiotexture_t *)buffer;
 	flags = pin->flags;
@@ -145,7 +145,7 @@ qboolean Image_LoadMDL( const char *name, const byte *buffer, size_t filesize )
 
 	if( !Image_ValidSize( name )) return false;
 
-	if( image.hint != IL_HINT_Q1 && !( flags & STUDIO_NF_QUAKESKIN ))
+	if( image.hint == IL_HINT_HL )
 	{
 		if( filesize < ( sizeof( *pin ) + pixels + 768 ))
 			return false;
@@ -162,30 +162,12 @@ qboolean Image_LoadMDL( const char *name, const byte *buffer, size_t filesize )
 		}
 		else Image_GetPaletteLMP( fin + pixels, LUMP_NORMAL );
 	}
-	else if( image.hint != IL_HINT_HL && flags & STUDIO_NF_QUAKESKIN )
-	{
-		if( filesize < ( sizeof( *pin ) + pixels ))
-			return false;
-
-		// alias models setup
-		Image_GetPaletteQ1();
-
-		// check for luma pixels
-		for( i = 0; i < pixels; i++ )
-		{
-			if( fin[i] > 224 )
-			{
-				image.flags |= IMAGE_HAS_LUMA;
-				break;
-			}
-		}
-	}
 	else
 	{
 		if( image.hint == IL_HINT_NO )
 			MsgDev( D_ERROR, "Image_LoadMDL: lump (%s) is corrupted\n", name );
 		return false; // unknown or unsupported mode rejected
-	} 
+	}
 
 	image.type = PF_INDEXED_32;	// 32-bit palete
 

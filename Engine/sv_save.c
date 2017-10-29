@@ -30,7 +30,7 @@ half-life implementation of saverestore system
 #define SAVEFILE_HEADER		(('V'<<24)+('L'<<16)+('A'<<8)+'V')	// little-endian "VALV"
 #define SAVEGAME_HEADER		(('V'<<24)+('A'<<16)+('S'<<8)+'J')	// little-endian "JSAV"
 #define SAVEGAME_VERSION		0x0065				// Version 0.65
-#define CLIENT_SAVEGAME_VERSION	0x0067				// Version 0.67
+#define CLIENT_SAVEGAME_VERSION	0x0068				// Version 0.68
 
 #define SAVE_AGED_COUNT		1
 #define SAVENAME_LENGTH		128				// matches with MAX_OSPATH
@@ -98,7 +98,8 @@ typedef struct
 typedef struct
 {
 	int	index;
-	char	style[64];
+	char	style[256];
+	float	time;
 } SAVE_LIGHTSTYLE;
 
 static TYPEDESCRIPTION gGameHeader[] =
@@ -144,7 +145,8 @@ static TYPEDESCRIPTION gAdjacency[] =
 static TYPEDESCRIPTION gLightStyle[] =
 {
 	DEFINE_FIELD( SAVE_LIGHTSTYLE, index, FIELD_INTEGER ),
-	DEFINE_ARRAY( SAVE_LIGHTSTYLE, style, FIELD_CHARACTER, 64 ),
+	DEFINE_ARRAY( SAVE_LIGHTSTYLE, style, FIELD_CHARACTER, 256 ),
+	DEFINE_FIELD( SAVE_LIGHTSTYLE, time, FIELD_FLOAT ),
 };
 
 static TYPEDESCRIPTION gEntityTable[] =
@@ -440,19 +442,21 @@ void ReapplyDecal( SAVERESTOREDATA *pSaveData, decallist_t *entry, qboolean adja
 	if( adjacent && ( flags & FDECAL_PERMANENT ))
 		return;
 
-	// NOTE: at this point all decal indexes is valid
-	decalIndex = pfnDecalIndex( entry->name );
-
 	// restore entity and model index
 	pEdict = pSaveData->pTable[entry->entityIndex].pent;
 	if( SV_IsValidEdict( pEdict )) modelIndex = pEdict->v.modelindex;
 	if( SV_IsValidEdict( pEdict )) entityIndex = NUM_FOR_EDICT( pEdict );
 
+	if( SV_RestoreCustomDecal( entry, pEdict, adjacent ))
+		return; // decal was sucessfully restored at the game-side
+
+	// NOTE: at this point all decal indexes is valid
+	decalIndex = pfnDecalIndex( entry->name );
+
 	if( flags & FDECAL_STUDIO )
 	{
 		// NOTE: studio decal trace start saved into impactPlaneNormal
-		SV_CreateStudioDecal( entry->position, entry->impactPlaneNormal, decalIndex, entityIndex, modelIndex, flags, &entry->studio_state );
-		return;
+		SV_CreateStudioDecal( &sv.signon, entry->position, entry->impactPlaneNormal, decalIndex, entityIndex, modelIndex, flags, &entry->studio_state );
 	}
 	else if( adjacent && entityIndex != 0 && !SV_IsValidEdict( pEdict ))
 	{
@@ -483,7 +487,7 @@ void ReapplyDecal( SAVERESTOREDATA *pSaveData, decallist_t *entry, qboolean adja
 			{
 				entityIndex = pfnIndexOfEdict( tr.ent );
 				if( entityIndex > 0 ) modelIndex = tr.ent->v.modelindex;
-				SV_CreateDecal( tr.endpos, decalIndex, entityIndex, modelIndex, flags );
+				SV_CreateDecal( &sv.signon, tr.endpos, decalIndex, entityIndex, modelIndex, flags, entry->scale );
 			}
 		}
 	}
@@ -491,7 +495,7 @@ void ReapplyDecal( SAVERESTOREDATA *pSaveData, decallist_t *entry, qboolean adja
 	{
 		// global entity is exist on new level so we can apply decal in local space
 		// NOTE: this case also used for transition world decals
-		SV_CreateDecal( entry->position, decalIndex, entityIndex, modelIndex, flags );
+		SV_CreateDecal( &sv.signon, entry->position, decalIndex, entityIndex, modelIndex, flags, entry->scale );
 	}
 }
 
@@ -846,6 +850,7 @@ void SV_SaveGameStateGlobals( SAVERESTOREDATA *pSaveData )
 		if( sv.lightstyles[i].pattern[0] )
 		{
 			light.index = i;
+			light.time = sv.lightstyles[i].time;
 			Q_strncpy( light.style, sv.lightstyles[i].pattern, sizeof( light.style ));
 			svgame.dllFuncs.pfnSaveWriteFields( pSaveData, "LIGHTSTYLE", &light, gLightStyle, ARRAYSIZE( gLightStyle ));
 		}
@@ -975,7 +980,7 @@ void SV_ParseSaveTables( SAVERESTOREDATA *pSaveData, SAVE_HEADER *pHeader, int s
 	for( i = 0; i < pHeader->lightStyleCount; i++ )
 	{
 		svgame.dllFuncs.pfnSaveReadFields( pSaveData, "LIGHTSTYLE", &light, gLightStyle, ARRAYSIZE( gLightStyle ));
-		if( setupLightstyles ) SV_SetLightStyle( light.index, light.style );
+		if( setupLightstyles ) SV_SetLightStyle( light.index, light.style, light.time );
 	}
 }
 
@@ -1098,6 +1103,7 @@ void SV_SaveClientState( SAVERESTOREDATA *pSaveData, const char *level )
 	{
 		vec3_t		localPos;
 		decallist_t	*entry;
+		word		decalScale;
 		byte		nameSize;
 
 		entry = &decalList[i];
@@ -1107,12 +1113,14 @@ void SV_SaveClientState( SAVERESTOREDATA *pSaveData, const char *level )
 		else VectorCopy( entry->position, localPos );
 
 		nameSize = Q_strlen( entry->name ) + 1;
+		decalScale = (entry->scale * 4096);
 
 		FS_Write( pFile, localPos, sizeof( localPos ));
 		FS_Write( pFile, &nameSize, sizeof( nameSize ));
 		FS_Write( pFile, entry->name, nameSize ); 
 		FS_Write( pFile, &entry->entityIndex, sizeof( entry->entityIndex ));
 		FS_Write( pFile, &entry->flags, sizeof( entry->flags ));
+		FS_Write( pFile, &decalScale, sizeof( decalScale ));
 		FS_Write( pFile, entry->impactPlaneNormal, sizeof( entry->impactPlaneNormal ));
 
 		if( entry->flags & FDECAL_STUDIO )
@@ -1271,8 +1279,9 @@ void SV_LoadClientState( SAVERESTOREDATA *pSaveData, const char *level, qboolean
 		// we can't use SaveRestore system here...
 		for( i = 0; i < decalCount; i++ )
 		{
-			vec3_t		localPos;
 			decallist_t	*entry;
+			vec3_t		localPos;
+			word		decalScale;
 			byte		nameSize;
 
 			entry = &decalList[i];
@@ -1282,11 +1291,14 @@ void SV_LoadClientState( SAVERESTOREDATA *pSaveData, const char *level, qboolean
 			FS_Read( pFile, entry->name, nameSize ); 
 			FS_Read( pFile, &entry->entityIndex, sizeof( entry->entityIndex ));
 			FS_Read( pFile, &entry->flags, sizeof( entry->flags ));
+			FS_Read( pFile, &decalScale, sizeof( decalScale ));
 			FS_Read( pFile, entry->impactPlaneNormal, sizeof( entry->impactPlaneNormal ));
 
 			if( pSaveData->fUseLandmark && ( entry->flags & FDECAL_USE_LANDMARK ))
 				VectorAdd( localPos, pSaveData->vecLandmarkOffset, entry->position );
 			else VectorCopy( localPos, entry->position );
+
+			entry->scale = ((float)decalScale / 4096.0f);
 
 			if( entry->flags & FDECAL_STUDIO )
 			{
@@ -1343,7 +1355,7 @@ void SV_LoadClientState( SAVERESTOREDATA *pSaveData, const char *level, qboolean
 				FS_Read( pFile, &entry->renderfx, sizeof( entry->renderfx ));
 			}
 
-			SV_CreateStaticEntity( entry );
+			SV_CreateStaticEntity( &sv.signon, entry );
 		}
 	}
 
@@ -1907,6 +1919,8 @@ void SV_ChangeLevel( qboolean loadfromsavedgame, const char *mapname, const char
 		startspot = _startspot;
 	}
 
+	// init network stuff
+	NET_Config(( sv_maxclients->integer > 1 ));
 	Q_strncpy( level, mapname, MAX_STRING );
 	Q_strncpy( oldlevel, sv.name, MAX_STRING );
 	sv.background = false;
@@ -2107,13 +2121,16 @@ qboolean SV_LoadGame( const char *pName )
 
 	Q_snprintf( name, sizeof( name ), "save\\%s.sav", pName ); //MARTY - Fixed Slashes
 
-	if( sv.background )
-		SV_Shutdown( true );
-	sv.background = false;
-
 	// silently ignore if missed
 	if( !FS_FileExists( name, true ))
 		return false;
+
+	// init network stuff
+	NET_Config ( false ); // close network sockets
+
+	if( sv.background || sv_maxclients->integer > 1 )
+		SV_Shutdown( true );
+	sv.background = false;
 
 	SCR_BeginLoadingPlaque ( false );
 
@@ -2146,6 +2163,7 @@ qboolean SV_LoadGame( const char *pName )
 	Cvar_FullSet( "coop", "0", CVAR_LATCH );
 	Cvar_FullSet( "teamplay", "0", CVAR_LATCH );
 	Cvar_FullSet( "deathmatch", "0", CVAR_LATCH );
+	Cvar_FullSet( "maxplayers", "1", CVAR_LATCH );
 
 	return Host_NewGame( gameHeader.mapName, true );
 }

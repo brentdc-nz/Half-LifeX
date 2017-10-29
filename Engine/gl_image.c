@@ -24,9 +24,9 @@ static int	r_textureMagFilter = GL_LINEAR;
 static gltexture_t	r_textures[MAX_TEXTURES];
 static gltexture_t	*r_texturesHashTable[TEXTURES_HASH_SIZE];
 static int	r_numTextures;
-static byte	*scaledImage = NULL;	// pointer to a scaled image
-static byte	data2D[512*512*4];		// intermediate texbuffer
-static rgbdata_t	r_image;			// generic pixelbuffer used for internal textures
+static byte	*scaledImage = NULL;			// pointer to a scaled image
+static byte	data2D[BLOCK_SIZE_MAX*BLOCK_SIZE_MAX*4];	// intermediate texbuffer
+static rgbdata_t	r_image;					// generic pixelbuffer used for internal textures
 
 // internal tables
 static vec3_t	r_luminanceTable[256];	// RGB to luminance
@@ -63,7 +63,7 @@ const char *GL_Target( GLenum target )
 GL_Bind
 =================
 */
-void GL_Bind( GLenum tmu, GLenum texnum )
+void GL_Bind( GLint tmu, GLenum texnum )
 {
 	gltexture_t	*texture;
 
@@ -86,8 +86,8 @@ void GL_Bind( GLenum tmu, GLenum texnum )
 	if( glState.currentTextures[tmu] == texture->texnum )
 		return;
 
-	glState.currentTextures[tmu] = texture->texnum;
 	/*p*/glBindTexture( texture->target, texture->texnum );
+	glState.currentTextures[tmu] = texture->texnum;
 }
 
 /*
@@ -181,6 +181,7 @@ void GL_TexFilter( gltexture_t *tex, qboolean update )
 			/*p*/glTexParameteri( tex->target, GL_TEXTURE_MIN_FILTER, r_textureMinFilter );
 			/*p*/glTexParameteri( tex->target, GL_TEXTURE_MAG_FILTER, r_textureMagFilter );
 		}
+
 		// set texture anisotropy if available
 		if( /*GL_Support( GL_ANISOTROPY_EXT )*/FGL_GL_ANISOTROPY_EXT) //MARTY FIXME WIP - Hard coded due to FakeGL limitations!
 			/*p*/glTexParameterf( tex->target, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_texture_anisotropy->value );
@@ -720,7 +721,7 @@ byte *GL_ResampleTexture( const byte *source, int inWidth, int inHeight, int out
 
 /*
 =================
-GL_ResampleTexture
+GL_ApplyGamma
 
 Assume input buffer is RGBA
 =================
@@ -1767,9 +1768,9 @@ void R_ShutdownImages( void )
 
 	if( !glw_state.initialized ) return;
 
-	for( i = MAX_TEXTURE_UNITS - 1; i >= 0; i-- )
+	for( i = ( MAX_TEXTURE_UNITS - 1); i >= 0; i-- )
 	{
-		if( i >= glConfig.max_texture_units )
+		if( i >= GL_MaxTextureUnits( ))
 			continue;
 
 		GL_SelectTexture( i );

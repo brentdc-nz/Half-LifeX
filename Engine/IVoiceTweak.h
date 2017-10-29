@@ -15,7 +15,7 @@
 
 #ifndef IVOICETWEAK_H
 #define IVOICETWEAK_H
-
+ 
 // These provide access to the voice controls.
 typedef enum
 {

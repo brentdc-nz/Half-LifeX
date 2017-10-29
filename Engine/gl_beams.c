@@ -382,7 +382,7 @@ static void CL_DrawSegs( int modelIndex, float frame, int rendermode, const vec3
 			/*p*/glVertex3fv( vPoint2 );
 		}
 
-		vLast += vStep;	// Advance texture scroll (v axis only)
+		vLast += vStep; // Advance texture scroll (v axis only)
 		noiseIndex += noiseStep;
 	}
 
@@ -1568,10 +1568,10 @@ void CL_DrawBeams( int fTrans )
 	{
 		RI.currentbeam = cl_custombeams[i];
 
-		if( fTrans && RI.currentbeam->curstate.renderfx & FBEAM_SOLID )
+		if( fTrans && ((RI.currentbeam->curstate.rendermode & 0xF0) & FBEAM_SOLID ))
 			continue;
 
-		if( !fTrans && !( RI.currentbeam->curstate.renderfx & FBEAM_SOLID ))
+		if( !fTrans && !((RI.currentbeam->curstate.rendermode & 0xF0) & FBEAM_SOLID ))
 			continue;
 
 		CL_DrawCustomBeam( RI.currentbeam );
@@ -2186,7 +2186,8 @@ void CL_ReadLineFile_f( void )
 		
 		if( !CL_BeamPoints( p1, p2, modelIndex, 99999, 2, 0, 255, 0, 0, 0, 255.0f, 0.0f, 0.0f ))
 		{
-			if( !modelIndex ) MsgDev( D_ERROR, "CL_ReadLineFile: no beam sprite!\n" );
+			if( Mod_GetType( modelIndex ) != mod_sprite )
+				MsgDev( D_ERROR, "CL_ReadLineFile: failed to load sprites/laserbeam.spr!\n" );
 			else MsgDev( D_ERROR, "CL_ReadLineFile: not enough free beams!\n" );
 			break;
 		}

@@ -57,6 +57,8 @@ extern "C" {
 #define IsColorString( p )	( p && *( p ) == '^' && *(( p ) + 1) && *(( p ) + 1) >= '0' && *(( p ) + 1 ) <= '9' )
 #define ColorIndex( c )	((( c ) - '0' ) & 7 )
 
+#define Mod_AllowMaterials()	( mod_allow_materials != NULL && mod_allow_materials->integer && !( host.features & ENGINE_DISABLE_HDTEXTURES ))
+
 typedef unsigned long	dword;
 typedef unsigned int	uint;
 typedef char		string[MAX_STRING];
@@ -92,14 +94,14 @@ typedef enum
 #include "com_model.h"
 #include "crtlib.h"
 
-#define XASH_VERSION	0.95f		// engine current version
+#define XASH_VERSION	0.97f		// engine current version
 
 // PERFORMANCE INFO
 #define MIN_FPS         	15.0		// host minimum fps value for maxfps.
 #define MAX_FPS         	500.0		// upper limit for maxfps.
 
 #define MAX_FRAMETIME	0.1
-#define MIN_FRAMETIME	0.001
+#define MIN_FRAMETIME	0.000001
 
 #define MAX_CMD_TOKENS	80		// cmd tokens
 #define MAX_ENTNUMBER	99999		// for server and client parsing
@@ -199,6 +201,7 @@ typedef struct gameinfo_s
 	float		client_maxs[MAX_MAP_HULLS][3];	// 4 hulls allowed
 
 	char		ambientsound[NUM_AMBIENTS][64];	// quake ambient sounds
+	int		soundclip_dist;			// custom distance to clip sound
 
 	int		max_edicts;	// min edicts is 600, max edicts is 4096
 	int		max_tents;	// min temp ents is 300, max is 2048
@@ -604,6 +607,7 @@ qboolean Host_NewGame( const char *mapName, qboolean loadGame );
 void Host_EndGame( const char *message, ... );
 void Host_AbortCurrentFrame( void );
 void Host_RestartAmbientSounds( void );
+void Host_RestartDecals( void );
 qboolean CL_ChangeGame( const char *gamefolder, qboolean bReset );
 void Host_WriteServerConfig( const char *name );
 void Host_WriteOpenGLConfig( void );
@@ -653,6 +657,7 @@ void *Cache_Check( byte *mempool, struct cache_user_s *c );
 edict_t* pfnPEntityOfEntIndex( int iEntIndex );
 void pfnGetModelBounds( model_t *mod, float *mins, float *maxs );
 void pfnGetGameDir( char *szGetGameDir );
+int pfnDecalIndex( const char *m );
 int pfnGetModelType( model_t *mod );
 int pfnIsMapValid( char *filename );
 void Con_DPrintf( char *fmt, ... );
@@ -737,6 +742,7 @@ qboolean AVI_GetAudioInfo( movie_state_t *Avi, wavdata_t *snd_info );
 fs_offset_t AVI_GetAudioChunk( movie_state_t *Avi, char *audiodata, long offset, long length );
 void AVI_OpenVideo( movie_state_t *Avi, const char *filename, qboolean load_audio, qboolean ignore_hwgamma, int quiet );
 movie_state_t *AVI_LoadVideo( const char *filename, qboolean load_audio, qboolean ignore_hwgamma );
+movie_state_t *AVI_LoadVideoNoSound( const char *filename, qboolean ignore_hwgamma );
 void AVI_CloseVideo( movie_state_t *Avi );
 qboolean AVI_IsActive( movie_state_t *Avi );
 void AVI_FreeVideo( movie_state_t *Avi );
@@ -753,6 +759,7 @@ qboolean CL_IsIntermission( void );
 float CL_GetServerTime( void );
 float CL_GetLerpFrac( void );
 void CL_CharEvent( int key );
+qboolean CL_DisableVisibility( void );
 int CL_PointContents( const vec3_t point );
 char *COM_ParseFile( char *data, char *token );
 byte *COM_LoadFile( const char *filename, int usehunk, int *pLength );
@@ -763,7 +770,14 @@ int COM_ExpandFilename( const char *fileName, char *nameOutBuffer, int nameOutBu
 struct pmtrace_s *PM_TraceLine( float *start, float *end, int flags, int usehull, int ignore_pe );
 void SV_StartSound( edict_t *ent, int chan, const char *sample, float vol, float attn, int flags, int pitch );
 void SV_StartMusic( const char *curtrack, const char *looptrack, fs_offset_t position );
+void SV_CreateDecal( struct sizebuf_s *msg, const float *origin, int decalIndex, int entityIndex, int modelIndex, int flags, float scale );
+void SV_CreateStudioDecal( struct sizebuf_s *msg, const float *origin, const float *start, int decalIndex, int entityIndex, int modelIndex,
+int flags, struct modelstate_s *state );
+struct sizebuf_s *SV_GetReliableDatagram( void );
+qboolean SV_RestoreCustomDecal( struct decallist_s *entry, edict_t *pEdict, qboolean adjacent );
 int R_CreateDecalList( struct decallist_s *pList, qboolean changelevel );
+void R_ClearAllDecals( void );
+void R_ClearStaticEntities( void );
 qboolean S_StreamGetCurrentState( char *currentTrack, char *loopTrack, int *position );
 struct cl_entity_s *CL_GetEntityByIndex( int index );
 struct cl_entity_s *CL_GetLocalPlayer( void );
@@ -774,6 +788,8 @@ qboolean UI_CreditsActive( void );
 void CL_ExtraUpdate( void );
 int CL_GetMaxClients( void );
 qboolean CL_IsPlaybackDemo( void );
+qboolean CL_IsBackgroundDemo( void );
+qboolean CL_IsBackgroundMap( void );
 qboolean CL_LoadProgs( const char *name );
 qboolean SV_GetComment( const char *savename, char *comment );
 qboolean SV_NewGame( const char *mapName, qboolean loadGame );
@@ -820,10 +836,12 @@ void TrimSpace( const char *source, char *dest );
 void GL_FreeImage( const char *name );
 void VID_RestoreGamma( void );
 void UI_SetActiveMenu( qboolean fActive );
-struct cmd_s *Cmd_GetList( void );
+struct cmd_s *Cmd_GetFirstFunctionHandle( void );
+
 char *Cmd_GetName( struct cmd_s *cmd );
 cvar_t *Cvar_GetList( void );
 char *Cvar_GetName( cvar_t *cvar );
+void Cmd_Null_f( void );
 
 typedef struct autocomplete_list_s
 {
@@ -832,6 +850,7 @@ typedef struct autocomplete_list_s
 } autocomplete_list_t;
 
 extern autocomplete_list_t cmd_list[];
+extern const char *svc_strings[256];
 
 // soundlib shared exports
 qboolean S_Init( void );

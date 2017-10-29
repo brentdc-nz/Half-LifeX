@@ -124,6 +124,11 @@ typedef struct
 
 typedef struct
 {
+	float		percent;
+} musicfade_t;
+
+typedef struct
+{
 	int		samples;		// mono samples in buffer
 	int		samplepos;	// in mono samples
 	byte		*buffer;
@@ -248,6 +253,7 @@ extern portable_samplepair_t		s_rawsamples[MAX_RAW_SAMPLES];
 void S_InitScaletable( void );
 wavdata_t *S_LoadSound( sfx_t *sfx );
 float S_GetMasterVolume( void );
+float S_GetMusicVolume( void );
 void S_PrintDeviceName( void );
 
 //
@@ -309,6 +315,7 @@ void S_StreamSoundTrack( void );
 void S_StreamBackgroundTrack( void );
 qboolean S_StreamGetCurrentState( char *currentTrack, char *loopTrack, int *position );
 void S_PrintBackgroundTrackState( void );
+void S_FadeMusicVolume( float fadePercent );
 
 //
 // s_utils.c

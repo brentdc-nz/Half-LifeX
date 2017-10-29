@@ -794,7 +794,7 @@ void SV_SendClientMessages( void )
 		}
 		else
 		{
-			// jsut update reliable
+			// just update reliable
 			Netchan_Transmit( &cl->netchan, 0, NULL );
 		}
 	}

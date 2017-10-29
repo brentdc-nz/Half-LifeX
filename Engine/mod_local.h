@@ -47,6 +47,12 @@ GNU General Public License for more details.
 #define MODEL_HAS_ORIGIN		BIT( 1 )
 #define MODEL_LIQUID		BIT( 2 )	// model has only point hull
 
+typedef struct wadlist_s
+{
+	char		wadnames[256][32];
+	int		count;
+} wadlist_t;
+
 typedef struct leaflist_s
 {
 	int		count;
@@ -68,6 +74,7 @@ typedef struct
 	int		max_surfaces;	// max surfaces per submodel (for all models)
 	size_t		visdatasize;	// actual size of the visdata
 	size_t		litdatasize;	// actual size of the lightdata
+	size_t		vecdatasize;	// actual size of the deluxdata
 	size_t		entdatasize;	// actual size of the entity string
 	size_t		texdatasize;	// actual size of the textures lump
 	qboolean		loading;		// true if worldmodel is loading
@@ -75,6 +82,8 @@ typedef struct
 	qboolean		has_mirrors;	// one or more brush models contain reflective textures
 	int		lm_sample_size;	// defaulting to 16 (BSP31 uses 8)
 	int		block_size;	// lightmap blocksize
+	color24		*deluxedata;	// deluxemap data pointer
+	char		message[2048];	// just for debug
 
 	vec3_t		mins;		// real accuracy world bounds
 	vec3_t		maxs;
@@ -85,13 +94,15 @@ extern world_static_t	world;
 extern byte		*com_studiocache;
 extern model_t		*loadmodel;
 extern convar_t		*mod_studiocache;
+extern int		bmodel_version;	// only actual during loading
 
 //
 // model.c
 //
 void Mod_Init( void );
-void Mod_ClearAll( void );
+void Mod_ClearAll( qboolean keep_playermodel );
 void Mod_Shutdown( void );
+void Mod_ClearUserData( void );
 void Mod_PrintBSPFileSizes( void );
 void Mod_SetupHulls( vec3_t mins[MAX_MAP_HULLS], vec3_t maxs[MAX_MAP_HULLS] );
 void Mod_GetBounds( int handle, vec3_t mins, vec3_t maxs );
@@ -110,13 +121,16 @@ int Mod_PointLeafnum( const vec3_t p );
 byte *Mod_LeafPVS( mleaf_t *leaf, model_t *model );
 byte *Mod_LeafPHS( mleaf_t *leaf, model_t *model );
 mleaf_t *Mod_PointInLeaf( const vec3_t p, mnode_t *node );
+void Mod_TesselatePolygon( msurface_t *surf, model_t *mod, float tessSize );
 int Mod_BoxLeafnums( const vec3_t mins, const vec3_t maxs, short *list, int listsize, int *lastleaf );
 qboolean Mod_BoxVisible( const vec3_t mins, const vec3_t maxs, const byte *visbits );
+void Mod_BuildSurfacePolygons( msurface_t *surf, mextrasurf_t *info );
 void Mod_AmbientLevels( const vec3_t p, byte *pvolumes );
 byte *Mod_CompressVis( const byte *in, size_t *size );
 byte *Mod_DecompressVis( const byte *in );
 modtype_t Mod_GetType( int handle );
 model_t *Mod_Handle( int handle );
+struct wadlist_s *Mod_WadList( void );
 
 //
 // mod_studio.c

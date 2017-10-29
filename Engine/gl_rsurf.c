@@ -655,7 +655,7 @@ Combine and scale multiple lightmaps into the floating
 format in r_blocklights
 =================
 */
-static void R_BuildLightMap( msurface_t *surf, byte *dest, int stride )
+static void R_BuildLightMap( msurface_t *surf, byte *dest, int stride, qboolean dynamic )
 {
 	int	smax, tmax;
 	uint	*bl, scale;
@@ -684,7 +684,7 @@ static void R_BuildLightMap( msurface_t *surf, byte *dest, int stride )
 	}
 
 	// add all the dynamic lights
-	if( surf->dlightframe == tr.framecount )
+	if( surf->dlightframe == tr.framecount && dynamic )
 		R_AddDynamicLights( surf );
 
 	// Put into texture format
@@ -893,7 +893,7 @@ void R_BlendLightmaps( void )
 				base = gl_lms.lightmap_buffer;
 				base += ( info->dlight_t * BLOCK_SIZE + info->dlight_s ) * 4;
 
-				R_BuildLightMap( surf, base, BLOCK_SIZE * 4 );
+				R_BuildLightMap( surf, base, BLOCK_SIZE * 4, true );
 			}
 			else
 			{
@@ -929,7 +929,7 @@ void R_BlendLightmaps( void )
 				base = gl_lms.lightmap_buffer;
 				base += ( info->dlight_t * BLOCK_SIZE + info->dlight_s ) * 4;
 
-				R_BuildLightMap( surf, base, BLOCK_SIZE * 4 );
+				R_BuildLightMap( surf, base, BLOCK_SIZE * 4, true );
 			}
 		}
 
@@ -1207,7 +1207,7 @@ dynamic:
 			smax = ( fa->extents[0] / LM_SAMPLE_SIZE ) + 1;
 			tmax = ( fa->extents[1] / LM_SAMPLE_SIZE ) + 1;
 
-			R_BuildLightMap( fa, temp, smax * 4 );
+			R_BuildLightMap( fa, temp, smax * 4, true );
 			R_SetCacheState( fa );
                               
 			GL_Bind( GL_TEXTURE0, tr.lightmapTextures[fa->lightmaptexturenum] );
@@ -1388,6 +1388,8 @@ void R_DrawBrushModel( cl_entity_t *e )
 	model_t		*clmodel;
 	qboolean		rotated;
 	dlight_t		*l;
+
+	if( !RI.drawWorld ) return;
 
 	clmodel = e->model;
 	RI.currentWaveHeight = RI.currententity->curstate.scale * 32.0f;
@@ -1657,7 +1659,7 @@ void R_RecursiveWorldNode( mnode_t *node, uint clipflags )
 
 		// deal with model fragments in this leaf
 		if( pleaf->efrags )
-			R_StoreEfrags( &pleaf->efrags );
+			R_StoreEfrags( &pleaf->efrags, tr.framecount );
 
 		r_stats.c_world_leafs++;
 		return;
@@ -1750,7 +1752,7 @@ static void R_DrawTopViewLeaf( mleaf_t *pleaf, uint clipflags )
 
 	// deal with model fragments in this leaf
 	if( pleaf->efrags )
-		R_StoreEfrags( &pleaf->efrags );
+		R_StoreEfrags( &pleaf->efrags, tr.framecount );
 
 	r_stats.c_world_leafs++;
 }
@@ -2042,7 +2044,11 @@ void GL_CreateSurfaceLightmap( msurface_t *surf )
 	base += ( surf->light_t * BLOCK_SIZE + surf->light_s ) * 4;
 
 	R_SetCacheState( surf );
-	R_BuildLightMap( surf, base, BLOCK_SIZE * 4 );
+	R_BuildLightMap( surf, base, BLOCK_SIZE * 4, false );
+
+	// moved here in case we need valid lightmap coords
+	if( host.features & ENGINE_BUILD_SURFMESHES )
+		Mod_BuildSurfacePolygons( surf, SURF_INFO( surf, loadmodel ));
 }
 
 /*
@@ -2083,6 +2089,8 @@ void GL_RebuildLightmaps( void )
 
 		if( m->name[0] == '*' || m->type != mod_brush )
 			continue;
+
+		loadmodel = m;
 
 		for( j = 0; j < m->numsurfaces; j++ )
 			GL_CreateSurfaceLightmap( m->surfaces + j );
@@ -2154,6 +2162,7 @@ void GL_BuildLightmaps( void )
 			// clearing all decal chains
 			m->surfaces[j].pdecals = NULL;
 			m->surfaces[j].visframe = 0;
+			loadmodel = m;
 
 			GL_CreateSurfaceLightmap( m->surfaces + j );
 

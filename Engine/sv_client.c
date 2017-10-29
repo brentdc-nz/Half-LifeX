@@ -117,8 +117,7 @@ void SV_DirectConnect( netadr_t from )
 
 	qport = Q_atoi( Cmd_Argv( 2 ));
 	challenge = Q_atoi( Cmd_Argv( 3 ));
-	Q_strncpy( userinfo, Cmd_Argv( 4 ), sizeof( userinfo ) - 1 );
-	userinfo[sizeof(userinfo) - 1] = 0;
+	Q_strncpy( userinfo, Cmd_Argv( 4 ), sizeof( userinfo ));
 
 	// quick reject
 	for( i = 0, cl = svs.clients; i < sv_maxclients->integer; i++, cl++ )
@@ -1438,6 +1437,7 @@ void SV_WriteLightstyles_f( sv_client_t *cl )
 			BF_WriteByte( &cl->netchan.message, svc_lightstyle );
 			BF_WriteByte( &cl->netchan.message, start );
 			BF_WriteString( &cl->netchan.message, sv.lightstyles[start].pattern );
+			BF_WriteFloat( &cl->netchan.message, sv.lightstyles[start].time );
 		}
 		start++;
 	}
@@ -1788,7 +1788,7 @@ void SV_UserinfoChanged( sv_client_t *cl, const char *userinfo )
 		const char *model = Info_ValueForKey( cl->userinfo, "model" );
 
 		// apply custom playermodel
-		if( !GI->nomodels && Q_strlen( model ) && Q_stricmp( model, "player" ))
+		if( Q_strlen( model ) && Q_stricmp( model, "player" ))
 		{
 			const char *path = va( "models/player/%s/%s.mdl", model, model );
 			if( FS_FileExists( path, false ))
@@ -1962,6 +1962,10 @@ void SV_ExecuteClientCommand( sv_client_t *cl, char *s )
 		{
 			// resend the ambient sounds for demo recording
 			Host_RestartAmbientSounds();
+			// resend all the decals for demo recording
+			Host_RestartDecals();
+			// resend all the static ents for demo recording
+			SV_RestartStaticEnts();
 		}
 	}
 }

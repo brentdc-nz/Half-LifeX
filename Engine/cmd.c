@@ -19,14 +19,6 @@ GNU General Public License for more details.
 
 #define MAX_CMD_BUFFER	16384
 #define MAX_CMD_LINE	1024
-#define MAX_ALIAS_NAME	32
-
-typedef struct cmdalias_s
-{
-	struct cmdalias_s	*next;
-	char		name[MAX_ALIAS_NAME];
-	char		*value;
-} cmdalias_t;
 
 typedef struct
 {
@@ -431,13 +423,34 @@ char *Cmd_Args( void )
 
 /*
 ============
+Cmd_AliasGetList
+============
+*/
+struct cmdalias_s *Cmd_AliasGetList( void )
+{
+	return cmd_alias;
+}
+
+/*
+============
 Cmd_GetList
 ============
 */
-cmd_t *Cmd_GetList( void )
+struct cmd_s *Cmd_GetFirstFunctionHandle( void )
 {
 	return cmd_functions;
 }
+
+/*
+============
+Cmd_GetNext
+============
+*/
+struct cmd_s *Cmd_GetNextFunctionHandle( struct cmd_s *cmd )
+{
+	return (cmd) ? cmd->next : NULL;
+}
+
 
 /*
 ============
@@ -851,6 +864,17 @@ void Cmd_Unlink( int group )
 		Mem_Free( cmd );
 		count++;
 	}
+}
+
+/*
+============
+Cmd_Null_f
+
+null function for some cmd stubs
+============
+*/
+void Cmd_Null_f( void )
+{
 }
 
 /*

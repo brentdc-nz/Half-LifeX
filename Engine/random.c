@@ -28,7 +28,7 @@ static long idum = 0;
 #define EPS		1.2e-7
 #define RNMX		(1.0 - EPS)
 
-void SeedRandomNumberGenerator( long lSeed )
+void COM_SetRandomSeed( long lSeed )
 {
 	if( lSeed ) idum = lSeed;
 	else idum = -time( NULL );
@@ -85,7 +85,7 @@ float Com_RandomFloat( float flLow, float flHigh )
 {
 	float	fl;
 
-	if( idum == 0 ) SeedRandomNumberGenerator(0);
+	if( idum == 0 ) COM_SetRandomSeed(0);
 
 	fl = fran1(); // float in [0, 1)
 	return (fl * (flHigh - flLow)) + flLow; // float in [low, high)
@@ -96,7 +96,7 @@ long Com_RandomLong( long lLow, long lHigh )
 	dword	maxAcceptable;
 	dword	n, x = lHigh-lLow + 1; 	
 
-	if( idum == 0 ) SeedRandomNumberGenerator(0);
+	if( idum == 0 ) COM_SetRandomSeed(0);
 
 	if( x <= 0 || MAX_RANDOM_RANGE < x-1 )
 		return lLow;

@@ -51,8 +51,10 @@ void SCR_DrawFPS( void )
 	static double	nexttime = 0, lasttime = 0;
 	static double	framerate = 0;
 	static int	framecount = 0;
+	static int	minfps = 9999;
+	static int	maxfps = 0;
 	double		newtime;
-	char		fpsstring[32];
+	char		fpsstring[64];
 	int		offset;
 
 	if( cls.state != ca_active ) return; 
@@ -81,17 +83,24 @@ void SCR_DrawFPS( void )
 
 	if( calc < 1.0f )
 	{
-		Q_snprintf( fpsstring, sizeof( fpsstring ), "%4i spf", (int)(1.0f / calc + 0.5));
+		Q_snprintf( fpsstring, sizeof( fpsstring ), "%4i spf", (int)(1.0f / calc + 0.5f));
 		MakeRGBA( color, 255, 0, 0, 255 );
 	}
 	else
 	{
-		Q_snprintf( fpsstring, sizeof( fpsstring ), "%4i fps", (int)(calc + 0.5));
+		int	curfps = (int)(calc + 0.5f);
+
+		if( curfps < minfps ) minfps = curfps;
+		if( curfps > maxfps ) maxfps = curfps;
+
+		if( cl_showfps->integer == 2 )
+			Q_snprintf( fpsstring, sizeof( fpsstring ), "fps: ^1%4i min, ^3%4i cur, ^2%4i max", minfps, curfps, maxfps );
+		else Q_snprintf( fpsstring, sizeof( fpsstring ), "%4i fps", curfps );
 		MakeRGBA( color, 255, 255, 255, 255 );
-	}
+          }
 
 	Con_DrawStringLen( fpsstring, &offset, NULL );
-	Con_DrawString( scr_width->integer - offset - 2, 4, fpsstring, color );
+	Con_DrawString( scr_width->integer - offset - 3, 4, fpsstring, color );
 }
 
 /*
@@ -177,7 +186,7 @@ void SCR_RSpeeds( void )
 		char	*p, *start, *end;
 		rgba_t	color;
 
-		x = scr_width->integer - 320;
+		x = scr_width->integer - 340;
 		y = 64;
 
 		Con_DrawStringLen( NULL, NULL, &height );
@@ -210,6 +219,11 @@ void SCR_MakeLevelShot( void )
 void SCR_MakeScreenShot( void ) //MARTY FIXME WIP
 {
 	qboolean	iRet = false;
+	int	viewsize;
+
+	if( cls.envshot_viewsize > 0 )
+		viewsize = cls.envshot_viewsize;
+	else viewsize = cl_envshot_size->integer;
 
 	switch( cls.scrshot_action )
 	{
@@ -227,10 +241,10 @@ void SCR_MakeScreenShot( void ) //MARTY FIXME WIP
 		iRet = VID_ScreenShot( cls.shotname, VID_MINISHOT );
 		break;
 	case scrshot_envshot:
-		iRet = VID_CubemapShot( cls.shotname, cl_envshot_size->integer, cls.envshot_vieworg, false );
+		iRet = VID_CubemapShot( cls.shotname, viewsize, cls.envshot_vieworg, false );
 		break;
 	case scrshot_skyshot:
-		iRet = VID_CubemapShot( cls.shotname, cl_envshot_size->integer, cls.envshot_vieworg, true );
+		iRet = VID_CubemapShot( cls.shotname, viewsize, cls.envshot_vieworg, true );
 		break;
 	case scrshot_mapshot:
 		iRet = VID_ScreenShot( cls.shotname, VID_MAPSHOT );
@@ -251,6 +265,8 @@ void SCR_MakeScreenShot( void ) //MARTY FIXME WIP
 
 	cls.envshot_vieworg = NULL;
 	cls.scrshot_action = scrshot_inactive;
+	cls.envshot_disable_vis = false;
+	cls.envshot_viewsize = 0;
 	cls.shotname[0] = '\0';
 }
 
@@ -258,13 +274,12 @@ void SCR_DrawPlaque( void )
 {
 	int	levelshot;
 
-	if(( cl_allow_levelshots->integer && !cls.changelevel ) || Cvar_VariableInteger( "sv_background" ))
+	if(( cl_allow_levelshots->integer && !cls.changelevel ) || cl.background )
 	{
 		levelshot = GL_LoadTexture( cl_levelshot_name->string, NULL, 0, TF_IMAGE );
 		GL_SetRenderMode( kRenderNormal );
 		R_DrawStretchPic( 0, 0, scr_width->integer, scr_height->integer, 0, 0, 1, 1, levelshot );
-
-		CL_DrawHUD( CL_LOADING );
+		if( !cl.background ) CL_DrawHUD( CL_LOADING );
 	}
 }
 
@@ -282,7 +297,7 @@ void SCR_BeginLoadingPlaque( qboolean is_background )
 	if( cls.state == ca_disconnected ) return;	// if at console, don't bring up the plaque
 	if( cls.key_dest == key_console ) return;
 
-	cls.draw_changelevel = true;
+	cls.draw_changelevel = is_background ? false : true;
 	SCR_UpdateScreen();
 	cls.disable_screen = host.realtime;
 	cls.disable_servercount = cl.servercount;
@@ -296,7 +311,7 @@ SCR_EndLoadingPlaque
 */
 void SCR_EndLoadingPlaque( void )
 {
-	cls.disable_screen = 0;
+	cls.disable_screen = 0.0f;
 	Con_ClearNotify();
 }
 
@@ -638,7 +653,6 @@ void SCR_Shutdown( void )
 	Cmd_RemoveCommand( "skyname" );
 	Cmd_RemoveCommand( "viewpos" );
 	UI_SetActiveMenu( false );
-	SCR_FreeCinematic();
 
 	if( host.state != HOST_RESTART )
 		UI_UnloadProgs();

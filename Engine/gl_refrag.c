@@ -186,7 +186,7 @@ R_StoreEfrags
 
 ================
 */
-void R_StoreEfrags( efrag_t **ppefrag )
+void R_StoreEfrags( efrag_t **ppefrag, int framecount )
 {
 	cl_entity_t	*pent;
 	model_t		*clmodel;
@@ -205,12 +205,12 @@ void R_StoreEfrags( efrag_t **ppefrag )
 		case mod_sprite:
 			pent = pefrag->entity;
 
-			if( pent->visframe != tr.framecount )
+			if( pent->visframe != framecount )
 			{
 				if( CL_AddVisibleEntity( pent, ET_FRAGMENTED ))
 				{
 					// mark that we've recorded this entity for this frame
-					pent->visframe = tr.framecount;
+					pent->visframe = framecount;
 				}
 			}
 

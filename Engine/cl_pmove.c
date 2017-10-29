@@ -168,7 +168,7 @@ void CL_AddLinksToPmove( void )
 
 		solid = check->curstate.solid;
 
-		if( solid == SOLID_BSP || solid == SOLID_BBOX || solid == SOLID_SLIDEBOX )
+		if( solid == SOLID_BSP || solid == SOLID_BBOX || solid == SOLID_SLIDEBOX || solid == SOLID_CUSTOM )
 		{
 			// reserve slots for all the clients
 			if( clgame.pmove->numphysent < ( MAX_PHYSENTS - cl.maxclients ))
@@ -594,6 +594,17 @@ static pmtrace_t *pfnTraceLineEx( float *start, float *end, int flags, int usehu
 	return &tr;
 }
 
+static struct msurface_s *pfnTraceSurface( int ground, float *vstart, float *vend )
+{
+	physent_t *pe;
+
+	if( ground < 0 || ground >= clgame.pmove->numphysent )
+		return NULL; // bad ground
+
+	pe = &clgame.pmove->physents[ground];
+	return PM_TraceSurface( pe, vstart, vend );
+}
+
 /*
 ===============
 CL_InitClientMove
@@ -654,6 +665,7 @@ void CL_InitClientMove( void )
 	clgame.pmove->PM_PlayerTraceEx = pfnPlayerTraceEx;
 	clgame.pmove->PM_TestPlayerPositionEx = pfnTestPlayerPositionEx;
 	clgame.pmove->PM_TraceLineEx = pfnTraceLineEx;
+	clgame.pmove->PM_TraceSurface = pfnTraceSurface;
 
 	// initalize pmove
 	clgame.dllFuncs.pfnPlayerMoveInit( clgame.pmove );
@@ -785,17 +797,18 @@ void CL_PredictMovement( void )
 	clientdata_t	*cd;
 
 	if( cls.state != ca_active ) return;
-	if( cl.refdef.paused || cls.key_dest == key_menu ) return;
-
-	player = CL_GetLocalPlayer ();
-	viewent = CL_GetEntityByIndex( cl.refdef.viewentity );
-	cd = &cl.frame.local.client;
 
 	if( cls.demoplayback && cl.refdef.cmd != NULL )
 	{
 		// restore viewangles from cmd.angles
 		VectorCopy( cl.refdef.cmd->viewangles, cl.refdef.cl_viewangles );
 	}
+
+	if( cl.refdef.paused || cls.key_dest == key_menu ) return;
+
+	player = CL_GetLocalPlayer ();
+	viewent = CL_GetEntityByIndex( cl.refdef.viewentity );
+	cd = &cl.frame.local.client;
 
 	// unpredicted pure angled values converted into axis
 	AngleVectors( cl.refdef.cl_viewangles, cl.refdef.forward, cl.refdef.right, cl.refdef.up );

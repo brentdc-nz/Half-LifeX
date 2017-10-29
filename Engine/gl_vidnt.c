@@ -39,6 +39,7 @@ convar_t	*gl_luminance_textures;
 convar_t	*gl_keeptjunctions;
 convar_t	*gl_texture_lodbias;
 convar_t	*gl_showtextures;
+convar_t	*gl_detailscale;
 convar_t	*gl_swapInterval;
 convar_t	*gl_check_errors;
 convar_t	*gl_allow_static;
@@ -197,7 +198,7 @@ static dllfunc_t opengl_110funcs[] =
 { "glPointSize"          , (void**)&pglPointSize },
 { "glMatrixMode"         , (void **)&pglMatrixMode },
 { "glOrtho"              , (void **)&pglOrtho },
-{ "glRasterPos2f"        , (void **) &pglRasterPos2f },
+{ "glRasterPos2f"        , (void **)&pglRasterPos2f },
 { "glFrustum"            , (void **)&pglFrustum },
 { "glViewport"           , (void **)&pglViewport },
 { "glPushMatrix"         , (void **)&pglPushMatrix },
@@ -488,7 +489,22 @@ qboolean GL_Support( int r_ext )
 	if( r_ext >= 0 && r_ext < GL_EXTCOUNT )
 		return glConfig.extension[r_ext] ? true : false;
 	MsgDev( D_ERROR, "GL_Support: invalid extension %d\n", r_ext );
+
 	return false;		
+}
+
+/*
+=================
+GL_MaxTextureUnits
+=================
+*/
+int GL_MaxTextureUnits( void )
+{
+#ifndef _XBOX //MARTY FIXME WIP
+	if( GL_Support( GL_SHADER_GLSL100_EXT ))
+		return min( max( glConfig.max_texture_coords, glConfig.max_teximage_units ), MAX_TEXTURE_UNITS );
+#endif //_XBOX
+	return glConfig.max_texture_units;
 }
 
 /*
@@ -1218,8 +1234,6 @@ rserr_t R_ChangeDisplaySettings( int vid_mode, qboolean fullscreen )
 			dm.dmPelsWidth = width * 2;
 			dm.dmPelsHeight = height;
 			dm.dmFields = DM_PELSWIDTH|DM_PELSHEIGHT;
-			dm.dmBitsPerPel = 24;
-			dm.dmFields |= DM_BITSPERPEL;
 
 			// our first CDS failed, so maybe we're running on some weird dual monitor system 
 			if( ChangeDisplaySettings( &dm, CDS_FULLSCREEN ) != DISP_CHANGE_SUCCESSFUL )
@@ -1246,6 +1260,7 @@ rserr_t R_ChangeDisplaySettings( int vid_mode, qboolean fullscreen )
 		if( !VID_CreateWindow( width, height, false ))
 			return rserr_invalid_mode;
 	}*/
+
 	return rserr_ok;
 }
 
@@ -1258,8 +1273,8 @@ Set the described video mode
 */
 qboolean VID_SetMode( void )
 {
-	rserr_t	err;
 	qboolean	fullscreen;
+	rserr_t	err;
 
 	fullscreen = TRUE;//vid_fullscreen->integer; //MARTY
 
@@ -1437,7 +1452,10 @@ void R_RenderInfo_f( void )
 	Msg( "GL_VENDOR: %s\n", glConfig.vendor_string );
 	Msg( "GL_RENDERER: %s\n", glConfig.renderer_string );
 	Msg( "GL_VERSION: %s\n", glConfig.version_string );
-	Msg( "GL_EXTENSIONS: %s\n", glConfig.extensions_string );
+
+	// don't spam about extensions
+	if( host.developer >= 4 )
+		Msg( "GL_EXTENSIONS: %s\n", glConfig.extensions_string );
 
 	Msg( "GL_MAX_TEXTURE_SIZE: %i\n", glConfig.max_2d_texture_size );
 	
@@ -1478,7 +1496,7 @@ void GL_InitCommands( void )
 	r_norefresh = Cvar_Get( "r_norefresh", "0", 0, "disable 3D rendering (use with caution)" );
 	r_lighting_extended = Cvar_Get( "r_lighting_extended", "1", CVAR_ARCHIVE, "allow to get lighting from world and bmodels" );
 	r_lighting_modulate = Cvar_Get( "r_lighting_modulate", "0.6", CVAR_ARCHIVE, "lightstyles modulate scale" );
-	r_lighting_ambient = Cvar_Get( "r_lighting_ambient", "0.3", 0, "map ambient lighting scale" );
+	r_lighting_ambient = Cvar_Get( "r_lighting_ambient", "0.3", CVAR_ARCHIVE, "map ambient lighting scale" );
 	r_adjust_fov = Cvar_Get( "r_adjust_fov", "1", CVAR_ARCHIVE, "making FOV adjustment for wide-screens" );
 	r_novis = Cvar_Get( "r_novis", "0", 0, "ignore vis information (perfomance test)" );
 	r_nocull = Cvar_Get( "r_nocull", "0", 0, "ignore frustrum culling (perfomance test)" );
@@ -1646,6 +1664,7 @@ void GL_InitExtensions( void ) //MARTY FIXME WIP
 	GL_CheckExtension( "GL_EXT_blend_subtract", blendequationfuncs, "gl_ext_customblend", GL_BLEND_SUBTRACT_EXT );
 
 	GL_CheckExtension( "glStencilOpSeparate", gl2separatestencilfuncs, "gl_separate_stencil", GL_SEPARATESTENCIL_EXT );
+
 	if( !GL_Support( GL_SEPARATESTENCIL_EXT ))
 		GL_CheckExtension("GL_ATI_separate_stencil", atiseparatestencilfuncs, "gl_separate_stencil", GL_SEPARATESTENCIL_EXT );
 

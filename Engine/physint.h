@@ -57,6 +57,13 @@ typedef struct server_physics_api_s
 	void		( *Con_NXPrintf )( struct con_nprint_s *info, char *fmt, ... );
 	const char	*( *pfnGetLightStyle )( int style ); // read custom appreance for selected lightstyle
 	void		( *pfnUpdateFogSettings )( unsigned int packed_fog );
+	char		**(*pfnGetFilesList)( const char *pattern, int *numFiles, int gamedironly );
+	struct msurface_s	*(*pfnTraceSurface)( edict_t *pTextureEntity, const float *v1, const float *v2 );
+	const byte	*(*pfnGetTextureData)( unsigned int texnum );
+
+	// static allocations
+	void		*(*pfnMemAlloc)( size_t cb, const char *filename, const int fileline );
+	void		(*pfnMemFree)( void *mem, const char *filename, const int fileline );
 } server_physics_api_t;
 
 // physic callbacks
@@ -100,6 +107,8 @@ typedef struct physics_interface_s
 	string_t		(*pfnMakeString)( const char *szValue );
 	// read custom string (e.g. using user implementation of stringtable, not engine strings)
 	const char*	(*pfnGetString)( string_t iString );
+	// helper for restore custom decals that have custom message (e.g. Paranoia)
+	int		(*pfnRestoreDecal)( struct decallist_s *entry, edict_t *pEdict, qboolean adjacent );
 } physics_interface_t;
 
 #endif//PHYSINT_H

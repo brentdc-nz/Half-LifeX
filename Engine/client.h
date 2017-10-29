@@ -73,6 +73,8 @@ typedef struct frame_s
 #define CL_UPDATE_MASK	(CL_UPDATE_BACKUP - 1)
 extern int CL_UPDATE_BACKUP;
 
+#define INVALID_HANDLE	0xFFFF		// for XashXT cache system
+
 // the client_t structure is wiped completely at every
 // server map change
 typedef struct
@@ -499,6 +501,8 @@ typedef struct
 	scrshot_t		scrshot_request;		// request for screen shot
 	scrshot_t		scrshot_action;		// in-action
 	const float	*envshot_vieworg;		// envshot position
+	int		envshot_viewsize;		// override cvar
+	qboolean		envshot_disable_vis;	// disable VIS on server while makes an envshots
 	string		shotname;
 
 	// download info
@@ -507,6 +511,7 @@ typedef struct
 
 	// demo loop control
 	int		demonum;			// -1 = don't play demos
+	int		olddemonum;		// restore playing
 	string		demos[MAX_DEMOS];		// when not playing
 
 	// movie playlist
@@ -519,6 +524,7 @@ typedef struct
 	qboolean		demowaiting;		// don't record until a non-delta message is received
 	qboolean		timedemo;
 	string		demoname;			// for demo looping
+	double		demotime;			// recording time
 
 	file_t		*demofile;
 	file_t		*demoheader;		// contain demo startup info in case we record a demo on this level
@@ -566,7 +572,7 @@ extern convar_t	*hltv;
 
 //=============================================================================
 
-void CL_SetLightstyle( int style, const char* s );
+void CL_SetLightstyle( int style, const char* s, float f );
 void CL_RunLightStyles( void );
 
 void CL_AddEntities( void );
@@ -681,7 +687,6 @@ _inline cl_entity_t *CL_EDICT_NUM( int n )
 //
 // cl_parse.c
 //
-extern const char *svc_strings[256];
 void CL_ParseServerMessage( sizebuf_t *msg );
 void CL_ParseTempEntity( sizebuf_t *msg );
 qboolean CL_DispatchUserMessage( const char *pszName, int iSize, void *pbuf );
@@ -766,8 +771,10 @@ void CL_ClearAllRemaps( void );
 int CL_AddEntity( int entityType, cl_entity_t *pEnt );
 void CL_WeaponAnim( int iAnim, int body );
 void CL_ClearEffects( void );
+void CL_ClearEfrags( void );
 void CL_TestLights( void );
 void CL_DrawParticlesExternal( const float *vieworg, const float *fwd, const float *rt, const float *up, uint clipFlags );
+void CL_FireCustomDecal( int textureIndex, int entityIndex, int modelIndex, float *pos, int flags, float scale );
 void CL_DecalShoot( int textureIndex, int entityIndex, int modelIndex, float *pos, int flags );
 void CL_PlayerDecal( int textureIndex, int entityIndex, float *pos );
 void CL_InitParticles( void );
@@ -831,7 +838,8 @@ void S_RestoreSound( const vec3_t pos, int ent, int chan, sound_t handle, float 
 void S_StartSound( const vec3_t pos, int ent, int chan, sound_t sfx, float vol, float attn, int pitch, int flags );
 void S_AmbientSound( const vec3_t pos, int ent, sound_t handle, float fvol, float attn, int pitch, int flags );
 void S_FadeClientVolume( float fadePercent, float fadeOutSeconds, float holdTime, float fadeInSeconds );
-void S_StartLocalSound( const char *name );
+void S_FadeMusicVolume( float fadePercent );
+void S_StartLocalSound( const char *name, float volume, qboolean reliable );
 void S_RenderFrame( struct ref_params_s *fd );
 void S_ExtraUpdate( void );
 
@@ -865,6 +873,7 @@ void SCR_InitCinematic( void );
 void SCR_FreeCinematic( void );/*
 qboolean SCR_PlayCinematic( const char *name );
 qboolean SCR_DrawCinematic( void );*/
+qboolean SCR_NextMovie( void );
 void SCR_RunCinematic( void );
 void SCR_StopCinematic( void );
 void CL_PlayVideo_f( void );

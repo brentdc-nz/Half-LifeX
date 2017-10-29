@@ -269,7 +269,7 @@ void GL_TexGen( GLenum coord, GLenum mode )
 
 	if( mode )
 	{
-		if(!( glState.genSTEnabled[tmu] & bit ))
+		if( !( glState.genSTEnabled[tmu] & bit ))
 		{
 			pglEnable( gen );
 			glState.genSTEnabled[tmu] |= bit;
@@ -318,32 +318,30 @@ void GL_FrontFace( GLenum front )
 
 void GL_SetRenderMode( int mode )
 {
+	/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+
 	switch( mode )
 	{
 	case kRenderNormal:
 	default:
 		/*p*/glDisable( GL_BLEND );
 		/*p*/glDisable( GL_ALPHA_TEST );
-		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
 		break;
 	case kRenderTransColor:
 	case kRenderTransTexture:
 		/*p*/glEnable( GL_BLEND );
 		/*p*/glDisable( GL_ALPHA_TEST );
 		/*p*/glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 		break;
 	case kRenderTransAlpha:
 		/*p*/glDisable( GL_BLEND );
 		/*p*/glEnable( GL_ALPHA_TEST );
-		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 		break;
 	case kRenderGlow:
 	case kRenderTransAdd:
 		/*p*/glEnable( GL_BLEND );
 		/*p*/glDisable( GL_ALPHA_TEST );
 		/*p*/glBlendFunc( GL_SRC_ALPHA, GL_ONE );
-		/*p*/glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 		break;
 	}
 }

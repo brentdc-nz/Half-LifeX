@@ -557,9 +557,6 @@ void SV_SetModel( edict_t *ent, const char *name );
 void SV_CopyTraceToGlobal( trace_t *trace );
 void SV_SetMinMaxSize( edict_t *e, const float *min, const float *max );
 edict_t* SV_FindEntityByString( edict_t *pStartEdict, const char *pszField, const char *pszValue );
-void SV_CreateDecal( const float *origin, int decalIndex, int entityIndex, int modelIndex, int flags );
-void SV_CreateStudioDecal( const float *origin, const float *start, int decalIndex, int entityIndex, int modelIndex,
-int flags, struct modelstate_s *state );
 void SV_PlaybackEventFull( int flags, const edict_t *pInvoker, word eventindex, float delay, float *origin,
 	float *angles, float fparam1, float fparam2, int iparam1, int iparam2, int bparam1, int bparam2 );
 void SV_PlaybackReliableEvent( sizebuf_t *msg, word eventindex, float delay, event_args_t *args );
@@ -576,15 +573,15 @@ sv_client_t *SV_ClientFromEdict( const edict_t *pEdict, qboolean spawned_only );
 void SV_SetClientMaxspeed( sv_client_t *cl, float fNewMaxspeed );
 int SV_MapIsValid( const char *filename, const char *spawn_entity, const char *landmark_name );
 void SV_StartSound( edict_t *ent, int chan, const char *sample, float vol, float attn, int flags, int pitch );
-void SV_CreateStaticEntity( sv_static_entity_t *ent );
+void SV_CreateStaticEntity( struct sizebuf_s *msg, sv_static_entity_t *ent );
 edict_t* pfnPEntityOfEntIndex( int iEntIndex );
 int pfnIndexOfEdict( const edict_t *pEdict );
 void SV_UpdateBaseVelocity( edict_t *ent );
 byte *pfnSetFatPVS( const float *org );
 byte *pfnSetFatPAS( const float *org );
 int pfnPrecacheModel( const char *s );
-int pfnDecalIndex( const char *m );
 int pfnNumberOfEntities( void );
+void SV_RestartStaticEnts( void );
 
 _inline edict_t *SV_EDICT_NUM( int n, const char * file, const int line )
 {
@@ -624,13 +621,14 @@ trace_t SV_TraceHull( edict_t *ent, int hullNum, const vec3_t start, vec3_t mins
 trace_t SV_Move( const vec3_t start, vec3_t mins, vec3_t maxs, const vec3_t end, int type, edict_t *e );
 trace_t SV_MoveNoEnts( const vec3_t start, vec3_t mins, vec3_t maxs, const vec3_t end, int type, edict_t *e );
 const char *SV_TraceTexture( edict_t *ent, const vec3_t start, const vec3_t end );
+msurface_t *SV_TraceSurface( edict_t *ent, const vec3_t start, const vec3_t end );
 trace_t SV_MoveToss( edict_t *tossent, edict_t *ignore );
 void SV_LinkEdict( edict_t *ent, qboolean touch_triggers );
 void SV_TouchLinks( edict_t *ent, areanode_t *node );
 int SV_TruePointContents( const vec3_t p );
 int SV_PointContents( const vec3_t p );
 void SV_RunLightStyles( void );
-void SV_SetLightStyle( int style, const char* s );
+void SV_SetLightStyle( int style, const char* s, float f );
 const char *SV_GetLightStyle( int style );
 int SV_LightForEntity( edict_t *pEdict );
 void SV_ClearPhysEnts( void );

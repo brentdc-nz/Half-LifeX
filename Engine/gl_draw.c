@@ -226,7 +226,7 @@ void R_UploadStretchRaw( int texture, int cols, int rows, int width, int height,
 		Host_Error( "R_UploadStretchRaw: size %i exceeds hardware limits\n", rows );
 
 	tex = R_GetTexture( texture );
-	GL_Bind( GL_TEXTURE0, texture );
+	GL_Bind( GL_KEEP_UNIT, texture );
 	tex->width = cols;
 	tex->height = rows;
 
@@ -247,7 +247,6 @@ void R_Set2DMode( qboolean enable )
 			return;
 
 		// set 2D virtual screen size
-		/*p*/glScissor( 0, 0, glState.width, glState.height );
 		/*p*/glViewport( 0, 0, glState.width, glState.height );
 		/*p*/glMatrixMode( GL_PROJECTION );
 		/*p*/glLoadIdentity();

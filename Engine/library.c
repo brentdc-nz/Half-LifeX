@@ -869,7 +869,7 @@ void Com_FreeLibrary( void *hInstance )
 
 dword Com_FunctionFromName( void *hInstance, const char *pName )
 {
-#ifndef _HARDLINKED //MARTY FIXME WIP - Required for moving between levels
+#ifndef _HARDLINKED  //MARTY - Not used, done in the dll for HLx
 	dll_user_t	*hInst = (dll_user_t *)hInstance;
 	int		i, index;
 
@@ -892,7 +892,7 @@ dword Com_FunctionFromName( void *hInstance, const char *pName )
 
 const char *Com_NameForFunction( void *hInstance, dword function )
 {
-#ifndef _HARDLINKED //MARTY FIXME WIP - Required for moving between levels
+#ifndef _HARDLINKED  //MARTY - Not used, done in the dll for HLx
 	dll_user_t	*hInst = (dll_user_t *)hInstance;
 	int		i, index;
 

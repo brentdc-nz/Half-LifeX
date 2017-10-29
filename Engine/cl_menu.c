@@ -547,7 +547,7 @@ pfnPlaySound
 static void pfnPlaySound( const char *szSound )
 {
 	if( !szSound || !*szSound ) return;
-	S_StartLocalSound( szSound );
+	S_StartLocalSound( szSound, VOL_NORM, false );
 }
 
 /*
@@ -871,6 +871,15 @@ pfnStartBackgroundTrack
 static void pfnStartBackgroundTrack( const char *introTrack, const char *mainTrack )
 {
 	S_StartBackgroundTrack( introTrack, mainTrack, 0 );
+
+#ifndef _XBOX //MARTY
+	// HACKHACK to remove glitches from background track while new game is started.
+	if( !introTrack && !mainTrack )
+	{
+		S_Activate( 0, host.hWnd );
+		S_Activate( 1, host.hWnd );
+	}
+#endif //_XBOX
 }
 
 // engine callbacks

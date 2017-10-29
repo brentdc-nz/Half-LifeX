@@ -54,10 +54,10 @@ SCR_NextMovie
 Called when a demo or cinematic finishes
 If the "nextmovie" cvar is set, that command will be issued
 ==================
-*//*
-qboolean SCR_NextMovie( void )  //MARTY FIXME WIP
+*/
+qboolean SCR_NextMovie( void ) //MARTY FIXME WIP
 {
-	string	str;
+/*	string	str;
 
 	S_StopAllSounds();
 	SCR_StopCinematic();
@@ -75,10 +75,11 @@ qboolean SCR_NextMovie( void )  //MARTY FIXME WIP
 
 	Cbuf_InsertText( str );
 	cls.movienum++;
-
+*/
 	return true;
 }
 
+/*
 void SCR_CreateStartupVids( void )  //MARTY FIXME WIP
 {
 	file_t	*f;
@@ -90,7 +91,8 @@ void SCR_CreateStartupVids( void )  //MARTY FIXME WIP
 	FS_Print( f, "media/sierra.avi\n" );
 	FS_Print( f, "media/valve.avi\n" );
 	FS_Close( f );
-}*/
+}
+*/
 
 void SCR_CheckStartupVids( void ) //MARTY FIXME WIP
 {

@@ -631,6 +631,7 @@ static void R_SetupProjectionMatrix( const ref_params_t *fd, matrix4x4 m )
 	{
 		ref_overview_t *ov = &clgame.overView;
 		Matrix4x4_CreateOrtho( m, ov->xLeft, ov->xRight, ov->xTop, ov->xBottom, ov->zNear, ov->zFar );
+		RI.clipFlags = 0;
 		return;
 	}
 
@@ -810,8 +811,11 @@ static void R_SetupFrame( void )
 	// setup viewplane dist
 	RI.viewplanedist = DotProduct( RI.vieworg, RI.vforward );
 
+	VectorCopy( RI.vieworg, RI.pvsorigin );
+
 	if( !r_lockcull->integer )
 	{
+		VectorCopy( RI.vieworg, RI.cullorigin );
 		VectorCopy( RI.vforward, RI.cull_vforward );
 		VectorCopy( RI.vright, RI.cull_vright );
 		VectorCopy( RI.vup, RI.cull_vup );
@@ -861,8 +865,23 @@ static void R_SetupGL( void )
 
 	Matrix4x4_Concat( RI.worldviewProjectionMatrix, RI.projectionMatrix, RI.worldviewMatrix );
 
-	/*p*/glScissor( RI.scissor[0], RI.scissor[1], RI.scissor[2], RI.scissor[3] );
-	/*p*/glViewport( RI.viewport[0], RI.viewport[1], RI.viewport[2], RI.viewport[3] );
+	if( RP_NORMALPASS( ))
+	{
+		int	x, x2, y, y2;
+
+		// set up viewport (main, playersetup)
+		x = floor( RI.viewport[0] * glState.width / glState.width );
+		x2 = ceil(( RI.viewport[0] + RI.viewport[2] ) * glState.width / glState.width );
+		y = floor( glState.height - RI.viewport[1] * glState.height / glState.height );
+		y2 = ceil( glState.height - ( RI.viewport[1] + RI.viewport[3] ) * glState.height / glState.height );
+
+		/*p*/glViewport( x, y2, x2 - x, y - y2 );
+	}
+	else
+	{
+		// envpass, mirrorpass
+		/*p*/glViewport( RI.viewport[0], RI.viewport[1], RI.viewport[2], RI.viewport[3] );
+	}
 
 	/*p*/glMatrixMode( GL_PROJECTION );
 	GL_LoadMatrix( RI.projectionMatrix );
@@ -1296,23 +1315,17 @@ void R_RenderFrame( const ref_params_t *fd, qboolean drawWorld )
 	RI.clipFlags = 15;
 	RI.drawWorld = drawWorld;
 	RI.thirdPerson = cl.thirdperson;
-	RI.drawOrtho = gl_overview->integer;
+	RI.drawOrtho = (RI.drawWorld) ? gl_overview->integer : 0;
 
 	GL_BackendStartFrame();
 
 	if( !r_lockcull->integer )
 		VectorCopy( fd->vieworg, RI.cullorigin );
 	VectorCopy( fd->vieworg, RI.pvsorigin );
-		
-	// setup scissor
-	RI.scissor[0] = fd->viewport[0];
-	RI.scissor[1] = glState.height - fd->viewport[3] - fd->viewport[1];
-	RI.scissor[2] = fd->viewport[2];
-	RI.scissor[3] = fd->viewport[3];
 
 	// setup viewport
 	RI.viewport[0] = fd->viewport[0];
-	RI.viewport[1] = glState.height - fd->viewport[3] - fd->viewport[1];
+	RI.viewport[1] = fd->viewport[1];
 	RI.viewport[2] = fd->viewport[2];
 	RI.viewport[3] = fd->viewport[3];
 
@@ -1363,7 +1376,8 @@ void R_DrawCubemapView( const vec3_t origin, const vec3_t angles, int size )
 	fd = &RI.refdef;
 	*fd = r_lastRefdef;
 	fd->time = 0;
-	fd->viewport[0] = RI.refdef.viewport[1] = 0;
+	fd->viewport[0] = 0;
+	fd->viewport[1] = 0;
 	fd->viewport[2] = size;
 	fd->viewport[3] = size;
 	fd->fov_x = 90;
@@ -1372,15 +1386,9 @@ void R_DrawCubemapView( const vec3_t origin, const vec3_t angles, int size )
 	VectorCopy( angles, fd->viewangles );
 	VectorCopy( fd->vieworg, RI.pvsorigin );
 		
-	// setup scissor
-	RI.scissor[0] = fd->viewport[0];
-	RI.scissor[1] = glState.height - fd->viewport[3] - fd->viewport[1];
-	RI.scissor[2] = fd->viewport[2];
-	RI.scissor[3] = fd->viewport[3];
-
 	// setup viewport
 	RI.viewport[0] = fd->viewport[0];
-	RI.viewport[1] = glState.height - fd->viewport[3] - fd->viewport[1];
+	RI.viewport[1] = fd->viewport[1];
 	RI.viewport[2] = fd->viewport[2];
 	RI.viewport[3] = fd->viewport[3];
 
@@ -1407,6 +1415,9 @@ static int GL_RenderGetParm( int parm, int arg )
 	case PARM_TEX_SRC_HEIGHT:
 		glt = R_GetTexture( arg );
 		return glt->srcHeight;
+	case PARM_TEX_GLFORMAT:
+		glt = R_GetTexture( arg );
+		return glt->format;
 	case PARM_TEX_SKYBOX:
 		ASSERT( arg >= 0 && arg < 6 );
 		return tr.skyboxTextures[arg];
@@ -1418,6 +1429,8 @@ static int GL_RenderGetParm( int parm, int arg )
 	case PARM_SKY_SPHERE:
 		return world.sky_sphere;
 	case PARM_WORLD_VERSION:
+		if( cls.state != ca_active )
+			return bmodel_version;
 		return world.version;
 	case PARM_WIDESCREEN:
 		return glState.wideScreen;
@@ -1472,7 +1485,7 @@ R_EnvShot
 
 =================
 */
-static void R_EnvShot( const float *vieworg, const char *name, int skyshot )
+static void R_EnvShot( const float *vieworg, const char *name, int skyshot, int shotsize )
 {
 	static vec3_t viewPoint;
 
@@ -1497,11 +1510,15 @@ static void R_EnvShot( const float *vieworg, const char *name, int skyshot )
 		// make sure what viewpoint don't temporare
 		VectorCopy( vieworg, viewPoint );
 		cls.envshot_vieworg = viewPoint;
+		cls.envshot_disable_vis = true;
 	}
 
 	// make request for envshot
 	if( skyshot ) cls.scrshot_action = scrshot_skyshot;
 	else cls.scrshot_action = scrshot_envshot;
+
+	// catch negative values
+	cls.envshot_viewsize = max( 0, shotsize );
 }
 
 static void R_SetCurrentEntity( cl_entity_t *ent )
