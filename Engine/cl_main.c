@@ -38,6 +38,7 @@ convar_t	*cl_showfps;
 convar_t	*cl_nodelta;
 convar_t	*cl_crosshair;
 convar_t	*cl_cmdbackup;
+convar_t	*cl_showerror;
 convar_t	*cl_draw_particles;
 convar_t	*cl_lightstyle_lerping;
 convar_t	*cl_idealpitchscale;
@@ -243,18 +244,37 @@ void CL_ComputePacketLoss( void )
 	cls.packet_loss_recalc_time = host.realtime + 1.0;
 
 	// compuate packet loss
-	for( i = cls.netchan.incoming_sequence - CL_UPDATE_BACKUP+1; i <= cls.netchan.incoming_sequence; i++ )
+	for( i = cls.netchan.incoming_sequence - CL_UPDATE_BACKUP + 1; i <= cls.netchan.incoming_sequence; i++ )
 	{
 		frm = i;
 		frame = &cl.frames[frm & CL_UPDATE_MASK];
 
-		if( frame->receivedtime == -1 )
+		if( frame->receivedtime == -1.0 )
 			lost++;
 		count++;
 	}
 
 	if( count <= 0 ) cls.packet_loss = 0.0f;
 	else cls.packet_loss = ( 100.0f * (float)lost ) / (float)count;
+}
+
+/*
+=================
+CL_UpdateFrameLerp
+
+=================
+*/
+void CL_UpdateFrameLerp( void )
+{
+	// not in server yet, no entities to redraw
+	if( cls.state != ca_active ) return;
+
+	// we haven't received our first valid update from the server.
+	if( !cl.frame.valid || !cl.validsequence )
+		return;
+
+	// compute last interpolation amount
+	cl.commands[( cls.netchan.outgoing_sequence - 1 ) & CL_UPDATE_MASK].frame_lerp = cl.lerpFrac;
 }
 
 /*
@@ -272,10 +292,11 @@ CL_CreateCmd
 void CL_CreateCmd( void )
 {
 	usercmd_t		cmd;
+	runcmd_t		*pcmd;
 	color24		color;
 	vec3_t		angles;
 	qboolean		active;
-	int		ms;
+	int		i, ms;
 
 	ms = host.frametime * 1000;
 	if( ms > 250 ) ms = 100;	// time was unreasonable
@@ -285,19 +306,20 @@ void CL_CreateCmd( void )
 
 	// build list of all solid entities per next frame (exclude clients)
 	CL_SetSolidEntities ();
+	CL_SetSolidPlayers ( cl.playernum );
 
 	VectorCopy( cl.refdef.cl_viewangles, angles );
-	VectorCopy( cl.frame.local.client.origin, cl.data.origin );
+	VectorCopy( cl.frame.client.origin, cl.data.origin );
 	VectorCopy( cl.refdef.cl_viewangles, cl.data.viewangles );
-	cl.data.iWeaponBits = cl.frame.local.client.weapons;
-	cl.data.fov = cl.frame.local.client.fov;
+	cl.data.iWeaponBits = cl.frame.client.weapons;
+	cl.data.fov = cl.frame.client.fov;
 
 	clgame.dllFuncs.pfnUpdateClientData( &cl.data, cl.time );
 
 	// grab changes
 	VectorCopy( cl.data.viewangles, cl.refdef.cl_viewangles );
-	cl.frame.local.client.weapons = cl.data.iWeaponBits;
-	cl.frame.local.client.fov = cl.data.fov;
+	cl.frame.client.weapons = cl.data.iWeaponBits;
+	cl.frame.client.fov = cl.data.fov;
 
 	// allways dump the first ten messages,
 	// because it may contain leftover inputs
@@ -306,41 +328,49 @@ void CL_CreateCmd( void )
 	{
 		if( !cls.demoplayback )
 		{
-			cl.refdef.cmd = &cl.cmds[cls.netchan.outgoing_sequence & CL_UPDATE_MASK];
+			cl.refdef.cmd = &cl.commands[cls.netchan.outgoing_sequence & CL_UPDATE_MASK].cmd;
 			*cl.refdef.cmd = cmd;
 		}
 		return;
 	}
 
-	active = ( cls.state == ca_active && !cl.refdef.paused && !cls.demoplayback );
-	clgame.dllFuncs.CL_CreateMove( cl.time - cl.oldtime, &cmd, active );
+	// message we are constructing.
+	i = cls.netchan.outgoing_sequence & CL_UPDATE_MASK;   
 
-	R_LightForPoint( cl.frame.local.client.origin, &color, false, false, 128.0f );
-	cmd.lightlevel = (color.r + color.g + color.b) / 3;
+	pcmd = &cl.commands[i];
+
+	pcmd->senttime = cls.demoplayback ? 0.0 : host.realtime;      
+	memset( &pcmd->cmd, 0, sizeof( pcmd->cmd ));
+	pcmd->receivedtime = -1.0;
+	pcmd->processedfuncs = false;
+	pcmd->heldback = false;
+	pcmd->sendsize = 0;
+
+	active = ( cls.state == ca_active && !cl.refdef.paused && !cls.demoplayback );
+	clgame.dllFuncs.CL_CreateMove( cl.time - cl.oldtime, &pcmd->cmd, active );
+
+	R_LightForPoint( cl.frame.client.origin, &color, false, false, 128.0f );
+	pcmd->cmd.lightlevel = (color.r + color.g + color.b) / 3;
 
 	// never let client.dll calc frametime for player
 	// because is potential backdoor for cheating
-	cmd.msec = ms;
-	cmd.lerp_msec = cl_interp->value * 1000;
-	cmd.lerp_msec = bound( 0, cmd.lerp_msec, 250 ); 
+	pcmd->cmd.msec = ms;
+	pcmd->cmd.lerp_msec = cl_interp->value * 1000;
+	pcmd->cmd.lerp_msec = bound( 0, cmd.lerp_msec, 250 ); 
 
-	V_ProcessOverviewCmds( &cmd );
-	V_ProcessShowTexturesCmds( &cmd );
+	V_ProcessOverviewCmds( &pcmd->cmd );
+	V_ProcessShowTexturesCmds( &pcmd->cmd );
 
 	if(( cl.background && !cls.demoplayback ) || gl_overview->integer || cls.changelevel )
 	{
 		VectorCopy( angles, cl.refdef.cl_viewangles );
-		VectorCopy( angles, cmd.viewangles );
-		cmd.msec = 0;
+		VectorCopy( angles, pcmd->cmd.viewangles );
+		pcmd->cmd.msec = 0;
 	}
 
 	// demo always have commands
 	// so don't overwrite them
-	if( !cls.demoplayback )
-	{
-		cl.refdef.cmd = &cl.cmds[cls.netchan.outgoing_sequence & CL_UPDATE_MASK];
-		*cl.refdef.cmd = cmd;
-	}
+	if( !cls.demoplayback ) cl.refdef.cmd = &pcmd->cmd;
 }
 
 void CL_WriteUsercmd( sizebuf_t *msg, int from, int to )
@@ -358,10 +388,10 @@ void CL_WriteUsercmd( sizebuf_t *msg, int from, int to )
 	}
 	else
 	{
-		f = &cl.cmds[from];
+		f = &cl.commands[from].cmd;
 	}
 
-	t = &cl.cmds[to];
+	t = &cl.commands[to].cmd;
 
 	// write it into the buffer
 	MSG_WriteDeltaUsercmd( msg, f, t );
@@ -486,6 +516,7 @@ void CL_WritePacket( void )
 		for( i = numcmds - 1; i >= 0; i-- )
 		{
 			cmdnumber = ( cls.netchan.outgoing_sequence - i ) & CL_UPDATE_MASK;
+			if( i == 0 ) cl.commands[cmdnumber].processedfuncs = true; // only last cmd allow to run funcs
 
 			to = cmdnumber;
 			CL_WriteUsercmd( &buf, from, to );
@@ -524,6 +555,9 @@ void CL_WritePacket( void )
 		// remember outgoing command that we are sending
 		cls.lastoutgoingcommand = cls.netchan.outgoing_sequence;
 
+		// update size counter for netgraph
+		cl.commands[cls.netchan.outgoing_sequence & CL_UPDATE_MASK].sendsize = BF_GetNumBytesWritten( &buf );
+
 		// composite the rest of the datagram..
 		if( BF_GetNumBitsWritten( &cls.datagram ) <= BF_GetNumBitsLeft( &buf ))
 			BF_WriteBits( &buf, BF_GetData( &cls.datagram ), BF_GetNumBitsWritten( &cls.datagram ));
@@ -534,6 +568,9 @@ void CL_WritePacket( void )
 	}
 	else
 	{
+		// mark command as held back so we'll send it next time
+		cl.commands[cls.netchan.outgoing_sequence & CL_UPDATE_MASK].heldback = true;
+
 		// increment sequence number so we can detect that we've held back packets.
 		cls.netchan.outgoing_sequence++;
 	}
@@ -670,14 +707,16 @@ CL_Connect_f
 */
 void CL_Connect_f( void )
 {
-	char	*server;
+	string	server;
 
 	if( Cmd_Argc() != 2 )
 	{
 		Msg( "Usage: connect <server>\n" );
 		return;	
 	}
-	
+
+	Q_strncpy( server, Cmd_Argv( 1 ), sizeof( cls.servername ));
+
 	if( Host_ServerState())
 	{	
 		// if running a local server, kill it and reissue
@@ -685,9 +724,8 @@ void CL_Connect_f( void )
 		SV_Shutdown( false );
 	}
 
-	server = Cmd_Argv( 1 );
 	NET_Config( true ); // allow remote
-	
+
 	Msg( "server %s\n", server );
 	CL_Disconnect();
 
@@ -904,9 +942,7 @@ CL_InternetServers_f
 void CL_InternetServers_f( void )
 {
 	netadr_t	adr;
-	char	part1query[12];
-	char	part2query[128];
-	string	fullquery;
+	char	fullquery[512] = "\x31\xFF" "0.0.0.0:0\0" "\\gamedir\\";
 
 	MsgDev( D_INFO, "Scanning for servers on the internet area...\n" );
 	NET_Config( true ); // allow remote
@@ -914,13 +950,9 @@ void CL_InternetServers_f( void )
 	if( !NET_StringToAdr( MASTERSERVER_ADR, &adr ) )
 		MsgDev( D_INFO, "Can't resolve adr: %s\n", MASTERSERVER_ADR );
 
-	Q_snprintf( part1query, sizeof( part1query ), "%c%c0.0.0.0:0", 0x31, 0xFF );
-	Q_snprintf( part2query, sizeof( part2query ), "\\gamedir\\%s_xash\\nap\\%d", GI->gamedir, 70 );
+	Q_strcpy( &fullquery[21], GI->gamedir );
 
-	Q_memcpy( fullquery, part1query, sizeof( part1query ));
-	Q_memcpy( fullquery + sizeof( part1query ), part2query, Q_strlen( part2query ));
-
-	NET_SendPacket( NS_CLIENT, sizeof( part1query ) + Q_strlen( part2query ) + 1, fullquery, adr );
+	NET_SendPacket( NS_CLIENT, Q_strlen( GI->gamedir ) + 22, fullquery, adr );
 }
 
 /*
@@ -1004,6 +1036,7 @@ void CL_Reconnect_f( void )
 		cl.delta_sequence = -1;		// we'll request a full delta from the baseline
 		cls.lastoutgoingcommand = -1;		// we don't have a backed up cmd history yet
 		cls.nextcmdtime = host.realtime;	// we can send a cmd right away
+		cl.last_command_ack = -1;
 
 		CL_StartupDemoHeader ();
 		return;
@@ -1156,7 +1189,7 @@ void CL_PrepVideo( void )
 
 	// let the render dll load the map
 	Q_strncpy( mapname, cl.model_precache[1], MAX_STRING ); 
-	Mod_LoadWorld( mapname, &map_checksum, false );
+	Mod_LoadWorld( mapname, &map_checksum, cl.maxclients > 1 );
 	cl.worldmodel = Mod_Handle( 1 ); // get world pointer
 	Cvar_SetFloat( "scr_loading", 25.0f );
 
@@ -1295,6 +1328,7 @@ void CL_ConnectionlessPacket( netadr_t from, sizebuf_t *msg )
 		cl.delta_sequence = -1;		// we'll request a full delta from the baseline
 		cls.lastoutgoingcommand = -1;		// we don't have a backed up cmd history yet
 		cls.nextcmdtime = host.realtime;	// we can send a cmd right away
+		cl.last_command_ack = -1;
 
 		CL_StartupDemoHeader ();
 
@@ -1330,8 +1364,7 @@ void CL_ConnectionlessPacket( netadr_t from, sizebuf_t *msg )
 	else if( !Q_strcmp( c, "print" ))
 	{
 		// print command from somewhere
-		args = BF_ReadString( msg );
-		Msg( args );
+		Msg( "remote: %s\n", BF_ReadString( msg ));
 	}
 	else if( !Q_strcmp( c, "ping" ))
 	{
@@ -1356,11 +1389,6 @@ void CL_ConnectionlessPacket( netadr_t from, sizebuf_t *msg )
 		// dropped the connection but it is still getting packets from us
 		CL_Disconnect();
 	}
-	else if( clgame.dllFuncs.pfnConnectionlessPacket( &from, args, buf, &len ))
-	{
-		// user out of band message (must be handled in CL_ConnectionlessPacket)
-		if( len > 0 ) Netchan_OutOfBand( NS_SERVER, from, len, buf );
-	}
 	else if( msg->pData[0] == 0xFF && msg->pData[1] == 0xFF && msg->pData[2] == 0xFF && msg->pData[3] == 0xFF && msg->pData[4] == 0x66 && msg->pData[5] == 0x0A )
 	{
 		dataoffset = 6;
@@ -1368,11 +1396,7 @@ void CL_ConnectionlessPacket( netadr_t from, sizebuf_t *msg )
 		while( 1 )
 		{
 			servadr.type = NA_IP;
-			servadr.ip[0] = msg->pData[dataoffset + 0];
-			servadr.ip[1] = msg->pData[dataoffset + 1];
-			servadr.ip[2] = msg->pData[dataoffset + 2];
-			servadr.ip[3] = msg->pData[dataoffset + 3];
-
+			Q_memcpy( servadr.ip, &msg->pData[dataoffset], sizeof(servadr.ip));
 			servadr.port = *(word *)&msg->pData[dataoffset + 4];
 
 			if( !servadr.port )
@@ -1386,6 +1410,11 @@ void CL_ConnectionlessPacket( netadr_t from, sizebuf_t *msg )
 
 			dataoffset += 6;
 		}
+	}
+	else if( clgame.dllFuncs.pfnConnectionlessPacket( &from, args, buf, &len ))
+	{
+		// user out of band message (must be handled in CL_ConnectionlessPacket)
+		if( len > 0 ) Netchan_OutOfBand( NS_SERVER, from, len, buf );
 	}
 	else MsgDev( D_ERROR, "bad connectionless packet from %s:\n%s\n", NET_AdrToString( from ), args );
 }
@@ -1480,12 +1509,16 @@ void CL_ReadPackets( void )
 	CL_ReadNetMessage();
 
 	cl.lerpFrac = CL_LerpPoint();
+	cl.lerpBack = 1.0f - cl.lerpFrac;
+
 	cl.thirdperson = clgame.dllFuncs.CL_IsThirdPerson();
 #if 0
 	// keep cheat cvars are unchanged
 	if( cl.maxclients > 1 && cls.state == ca_active && host.developer <= 1 )
 		Cvar_SetCheatState();
 #endif
+	CL_UpdateFrameLerp ();
+
 	// singleplayer never has connection timeout
 	if( NET_IsLocalAddress( cls.netchan.remote_address ))
 		return;
@@ -1515,16 +1548,21 @@ A file has been received via the fragmentation/reassembly layer, put it in the r
  see if we have finished downloading files.
 ====================
 */
-void CL_ProcessFile( BOOL successfully_received, const char *filename )
+void CL_ProcessFile( qboolean successfully_received, const char *filename )
 {
-	MsgDev( D_INFO, "Received %s, but file processing is not hooked up!!!\n", filename );
+	if( successfully_received )
+		MsgDev( D_INFO, "received %s\n", filename );
+	else MsgDev( D_WARN, "failed to download %s", filename );
 
 	if( cls.downloadfileid == cls.downloadcount - 1 )
 	{
-		MsgDev( D_INFO, "All Files downloaded\n" );
-
+		MsgDev( D_INFO, "Download completed, resuming connection\n" );
+		FS_Rescan();
 		BF_WriteByte( &cls.netchan.message, clc_stringcmd );
 		BF_WriteString( &cls.netchan.message, "continueloading" );
+		cls.downloadfileid = 0;
+		cls.downloadcount = 0;
+		return;
 	}
 
 	cls.downloadfileid++;
@@ -1551,8 +1589,8 @@ CL_Physinfo_f
 void CL_Physinfo_f( void )
 {
 	Msg( "Phys info settings:\n" );
-	Info_Print( cl.frame.local.client.physinfo );
-	Msg( "Total %i symbols\n", Q_strlen( cl.frame.local.client.physinfo ));
+	Info_Print( cl.frame.client.physinfo );
+	Msg( "Total %i symbols\n", Q_strlen( cl.frame.client.physinfo ));
 }
 
 /*
@@ -1606,7 +1644,7 @@ void CL_InitLocal( void )
 	cls.state = ca_disconnected;
 
 	// register our variables
-	cl_predict = Cvar_Get( "cl_predict", "0", CVAR_ARCHIVE, "disables client movement prediction" );
+	cl_predict = Cvar_Get( "cl_predict", "0", CVAR_ARCHIVE, "enable client movement prediction" );
 	cl_crosshair = Cvar_Get( "crosshair", "1", CVAR_ARCHIVE, "show weapon chrosshair" );
 	cl_nodelta = Cvar_Get ("cl_nodelta", "0", 0, "disable delta-compression for usercommnds" );
 	cl_idealpitchscale = Cvar_Get( "cl_idealpitchscale", "0.8", 0, "how much to look up/down slopes and stairs when not using freelook" );
@@ -1619,8 +1657,8 @@ void CL_InitLocal( void )
 
 	// userinfo
 	Cvar_Get( "password", "", CVAR_USERINFO, "player password" );
+	model = Cvar_Get( "model", "player", CVAR_USERINFO|CVAR_ARCHIVE, "player model ('player' is a singleplayer model)" );
 	name = Cvar_Get( "name", Sys_GetCurrentUser(), CVAR_USERINFO|CVAR_ARCHIVE|CVAR_PRINTABLEONLY, "player name" );
-	model = Cvar_Get( "model", "player", CVAR_USERINFO|CVAR_ARCHIVE, "player model ('player' it's a single player model)" );
 	topcolor = Cvar_Get( "topcolor", "0", CVAR_USERINFO|CVAR_ARCHIVE, "player top color" );
 	bottomcolor = Cvar_Get( "bottomcolor", "0", CVAR_USERINFO|CVAR_ARCHIVE, "player bottom color" );
 	rate = Cvar_Get( "rate", "25000", CVAR_USERINFO|CVAR_ARCHIVE, "player network rate" );
@@ -1632,6 +1670,7 @@ void CL_InitLocal( void )
 	cl_draw_particles = Cvar_Get( "cl_draw_particles", "1", CVAR_ARCHIVE, "Disable any particle effects" );
 	cl_draw_beams = Cvar_Get( "cl_draw_beams", "1", CVAR_ARCHIVE, "Disable view beams" );
 	cl_lightstyle_lerping = Cvar_Get( "cl_lightstyle_lerping", "0", CVAR_ARCHIVE, "enables animated light lerping (perfomance option)" );
+	cl_showerror = Cvar_Get( "cl_showerror", "0", CVAR_ARCHIVE, "show prediction error" );
 
 	Cvar_Get( "hud_scale", "0", CVAR_ARCHIVE|CVAR_LATCH, "scale hud at current resolution" );
 	Cvar_Get( "skin", "", CVAR_USERINFO, "player skin" ); // XDM 3.3 want this cvar
@@ -1667,11 +1706,11 @@ void CL_InitLocal( void )
 	Cmd_AddCommand ("physinfo", CL_Physinfo_f, "print current client physinfo" );
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "disconnect from server" );
 	Cmd_AddCommand ("record", CL_Record_f, "record a demo" );
-	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "playing a demo" );
+	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "play a demo" );
 	Cmd_AddCommand ("killdemo", CL_DeleteDemo_f, "delete a specified demo file and demoshot" );
 	Cmd_AddCommand ("startdemos", CL_StartDemos_f, "start playing back the selected demos sequentially" );
 	Cmd_AddCommand ("demos", CL_Demos_f, "restart looping demos defined by the last startdemos command" );
-	Cmd_AddCommand ("movie", CL_PlayVideo_f, "playing a movie" );
+	Cmd_AddCommand ("movie", CL_PlayVideo_f, "play a movie" );
 	Cmd_AddCommand ("stop", CL_Stop_f, "stop playing or recording a demo" );
 	Cmd_AddCommand ("info", NULL, "collect info about local servers with specified protocol" );
 	Cmd_AddCommand ("escape", CL_Escape_f, "escape from game to menu" );

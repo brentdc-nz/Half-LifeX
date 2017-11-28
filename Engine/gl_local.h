@@ -56,6 +56,7 @@ extern byte	*r_temppool;
 #define RP_FLIPFRONTFACE	BIT( 4 )	// e.g. for mirrors drawing
 
 #define RP_NONVIEWERREF	(RP_MIRRORVIEW|RP_ENVVIEW)
+#define R_StudioOpaque( e )	( e->curstate.rendermode == kRenderNormal || e->curstate.rendermode == kRenderTransAlpha )
 #define RP_LOCALCLIENT( e )	(CL_GetLocalPlayer() && ((e)->index == CL_GetLocalPlayer()->index && e->curstate.entityType == ET_PLAYER ))
 #define RP_NORMALPASS()	((RI.params & RP_NONVIEWERREF) == 0 )
 

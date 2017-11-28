@@ -1104,7 +1104,7 @@ void R_DrawSpriteModel( cl_entity_t *e )
 	if( psprite->facecull == SPR_CULL_NONE )
 		GL_Cull( GL_FRONT );
 
-	if( e->curstate.rendermode == kRenderGlow )
+	if( e->curstate.rendermode == kRenderGlow || e->curstate.rendermode == kRenderWorldGlow )
 		/*p*/glEnable( GL_DEPTH_TEST );
 
 	if( psprite->texFormat == SPR_ALPHTEST && e->curstate.rendermode != kRenderTransAdd )

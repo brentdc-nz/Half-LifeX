@@ -21,6 +21,7 @@ GNU General Public License for more details.
 
 #define VID_DEFAULTMODE	"1"
 #define num_vidmodes	((int)(sizeof(vidmode) / sizeof(vidmode[0])) - 1)
+
 #ifndef _XBOX //MARTY
 #define WINDOW_STYLE	(WS_OVERLAPPED|WS_BORDER|WS_SYSMENU|WS_CAPTION|WS_VISIBLE)
 #define WINDOW_EX_STYLE	(0)

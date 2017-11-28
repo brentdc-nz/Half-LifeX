@@ -336,7 +336,7 @@ void R_TextureList_f( void )
 	int		i, texCount, bytes = 0;
 
 	Msg( "\n" );
-	Msg("      -w-- -h-- -size- -fmt- type -filter -wrap-- -name--------\n" );
+	Msg("      -w-- -h-- -size- -fmt- type -data-- -encode-- -wrap-- -name--------\n" );
 
 	for( i = texCount = 0, image = r_textures; i < r_numTextures; i++, image++ )
 	{
@@ -370,8 +370,10 @@ void R_TextureList_f( void )
 			Msg( "CI    " );
 			break;
 		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+			Msg( "DXT1c " );
+			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
-			Msg( "DXT1  " );
+			Msg( "DXT1a " );
 			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
 			Msg( "DXT3  " );
@@ -900,6 +902,7 @@ static void GL_UploadTexture( rgbdata_t *pic, gltexture_t *tex, qboolean subImag
 	tex->fogParams[2] = pic->fogParams[2];
 	tex->fogParams[3] = pic->fogParams[3];
 
+	// NOTE: normalmaps must be power of two or software mip generator will stop working
 	GL_RoundImageDimensions( &tex->width, &tex->height, tex->flags, false );
 
 	if( s&3 )
@@ -1013,7 +1016,7 @@ static void GL_UploadTexture( rgbdata_t *pic, gltexture_t *tex, qboolean subImag
 	// uploading texture into video memory
 	for( i = 0; i < numSides; i++ )
 	{
-		if( buf >= bufend )
+		if( buf != NULL && buf >= bufend )
 			Host_Error( "GL_UploadTexture: %s image buffer overflow\n", tex->name );
 
 		// copy or resample the texture

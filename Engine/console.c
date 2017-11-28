@@ -311,13 +311,9 @@ void Con_CheckResize( void )
 	int	charWidth = 8;
 
 	if( con.curFont && con.curFont->hFontTexture )
-		charWidth = con.curFont->charWidths['M'];
+		charWidth = con.curFont->charWidths['M'] - 1;
 
-	width = ( scr_width->integer / charWidth ) - 2;
-
-	// NOTE: Con_CheckResize is totally wrong :-(
-	// g-cont. i've just used fixed width on all resolutions
-	width = 90;
+	width = ( scr_width->integer / charWidth );
 
 	if( width == con.linewidth )
 		return;
@@ -759,10 +755,12 @@ void Con_Print( const char *txt )
 			if( txt[l] <= ' ')
 				break;
 		}
-
+#if 0
+		// g-cont. experiment from SDLash3D
 		// word wrap
 		if( l != con.linewidth && ( con.x + l >= con.linewidth ))
 			Con_Linefeed();
+#endif
 		txt++;
 
 		switch( c )
@@ -1007,6 +1005,7 @@ void Con_CompleteCommand( field_t *field )
 {
 	field_t		temp;
 	string		filename;
+	qboolean		nextcmd;
 	autocomplete_list_t	*list;
 	int		i;
 
@@ -1015,6 +1014,8 @@ void Con_CompleteCommand( field_t *field )
 
 	// only look at the first token for completion purposes
 	Cmd_TokenizeString( con.completionField->buffer );
+
+	nextcmd = ( con.completionField->buffer[Q_strlen( con.completionField->buffer ) - 1] == ' ' ) ? true : false;
 
 	con.completionString = Cmd_Argv( 0 );
 
@@ -1046,7 +1047,7 @@ void Con_CompleteCommand( field_t *field )
 
 	Q_memcpy( &temp, con.completionField, sizeof( field_t ));
 
-	if( Cmd_Argc() == 2 )
+	if(( Cmd_Argc() == 2 ) || (( Cmd_Argc() == 1 ) && nextcmd ))
 	{
 		qboolean	result = false;
 

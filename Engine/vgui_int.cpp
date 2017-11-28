@@ -143,11 +143,10 @@ void VGui_ViewportPaintBackground( int extents[4] )
 }
 
 void *VGui_GetPanel( void )
-{	
+{
 #ifdef _VGUI //MARTY
 	return (void *)rootpanel;
 #else
 	return NULL;
 #endif
 }
-

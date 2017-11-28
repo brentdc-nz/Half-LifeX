@@ -195,11 +195,11 @@ void IN_ToggleClientMouse( int newstate, int oldstate )
 		// reset mouse pos, so cancel effect in game
 #ifndef _XBOX //MARTY
 		SetCursorPos( host.window_center_x, host.window_center_y );	
-#endif			
+#endif
 		clgame.dllFuncs.IN_ActivateMouse();
 	}
 
-	if( newstate == key_menu && !cl.background )
+	if( newstate == key_menu && ( !CL_IsBackgroundMap() || CL_IsBackgroundDemo()))
 	{
 		in_mouseactive = false;
 #ifndef _XBOX //MARTY

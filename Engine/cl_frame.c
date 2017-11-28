@@ -35,10 +35,10 @@ qboolean CL_IsPlayerIndex( int idx )
 
 qboolean CL_IsPredicted( void )
 {
-	if( !cl_predict->integer || !cl.frame.valid )
+	if( !cl_predict->integer || !cl.frame.valid || cl.background )
 		return false;
 
-	if(( cls.netchan.outgoing_sequence - cls.netchan.incoming_sequence ) >= ( CL_UPDATE_BACKUP - 1 ))
+	if(( cls.netchan.outgoing_sequence - cls.netchan.incoming_acknowledged ) >= ( CL_UPDATE_BACKUP - 1 ))
 		return false;
 
 	return true;
@@ -64,6 +64,135 @@ FRAME PARSING
 
 =========================================================================
 */
+/*
+==================
+CL_UpdatePositions
+
+Store another position into interpolation circular buffer
+==================
+*/
+void CL_UpdatePositions( cl_entity_t *ent )
+{
+	position_history_t	*ph;
+
+	ent->current_position = (ent->current_position + 1) & HISTORY_MASK;
+
+	ph = &ent->ph[ent->current_position];
+
+	VectorCopy( ent->curstate.origin, ph->origin );
+	VectorCopy( ent->curstate.angles, ph->angles );
+	ph->animtime = cl.mtime[0];
+}
+
+qboolean CL_FindInterpolationUpdates( cl_entity_t *ent, float targettime, position_history_t **ph0, position_history_t **ph1, int *ph0Index )
+{
+	qboolean	extrapolate;
+	int	i, i0, i1, imod;
+	float	at;
+
+	imod = ent->current_position - 1;
+	i0 = (imod + 1) & HISTORY_MASK;
+	i1 = imod & HISTORY_MASK;
+
+	extrapolate = true;
+
+	if( ent->ph[i0].animtime >= targettime )
+	{
+		for( i = 0; i < HISTORY_MAX - 2; i++ )
+		{
+			at = ent->ph[imod & HISTORY_MASK].animtime;
+			if( at == 0.0f ) break;
+
+			if( at < targettime )
+			{
+				i0 = (imod + 1) & HISTORY_MASK;
+				i1 = imod & HISTORY_MASK;
+				extrapolate = false;
+				break;
+			}
+			imod--;
+		}
+	}
+
+	if( ph0 != NULL ) *ph0 = &ent->ph[i0];
+	if( ph1 != NULL ) *ph1 = &ent->ph[i1];
+	if( ph0Index != NULL ) *ph0Index = i0;
+
+	return extrapolate;
+}
+
+int CL_InterpolateModel( cl_entity_t *e )
+{
+	position_history_t	*ph0, *ph1;
+	vec3_t		origin, angles, delta;
+	float		t, t1, t2, frac;
+	int		i;
+
+	VectorCopy( e->curstate.origin, e->origin );
+	VectorCopy( e->curstate.angles, e->angles );
+
+	if( e->model == NULL || cl.maxclients <= 1 )
+		return 1;
+
+	t = cl.time - cl_interp->value;
+
+	if( !CL_FindInterpolationUpdates( e, t, &ph0, &ph1, NULL ))
+		return 0;
+
+	if( ph0 == NULL || ph1 == NULL )
+		return 0;
+
+	t1 = ph0->animtime;
+	t2 = ph1->animtime;
+
+	if( t - t2 < 0.0f )
+		return 0;
+
+	if( t2 == 0.0f || VectorIsNull( ph1->origin ) && !VectorIsNull( ph0->origin ))
+	{
+		VectorCopy( ph0->origin, e->origin );
+		VectorCopy( ph0->angles, e->angles );
+		return 0;
+	}
+
+	if( t2 == t1 )
+	{
+		VectorCopy( ph0->origin, e->origin );
+		VectorCopy( ph0->angles, e->angles );
+		return 1;
+	}
+
+	VectorSubtract( ph0->origin, ph1->origin, delta );
+	frac = (t - t2) / (t1 - t2);
+
+	if( frac < 0.0f )
+		return 0;
+
+	if( frac > 1.0f )
+		frac = 1.0f;
+
+	VectorMA( ph1->origin, frac, delta, origin );
+
+	for( i = 0; i < 3; i++ )
+	{
+		float	d, ang1, ang2;
+
+		ang1 = ph0->angles[i];
+		ang2 = ph1->angles[i];
+		d = ang1 - ang2;
+
+		if( d > 180.0f ) d -= 360.0f;
+		else if( d < -180.0f ) d += 360.0f;
+
+		angles[i] = ang2 + d * frac;
+	}
+
+	VectorCopy( origin, e->origin );
+	VectorCopy( angles, e->angles );
+
+	return 1;
+}
+
 void CL_UpdateEntityFields( cl_entity_t *ent )
 {
 	// parametric rockets code
@@ -80,11 +209,10 @@ void CL_UpdateEntityFields( cl_entity_t *ent )
 		VectorAngles( dir, ent->curstate.angles ); // re-aim projectile		
 	}
 
-	VectorCopy( ent->curstate.origin, ent->origin );
-	VectorCopy( ent->curstate.angles, ent->angles );
-
 	ent->model = Mod_Handle( ent->curstate.modelindex );
 	ent->curstate.msg_time = cl.time;
+
+	CL_InterpolateModel( ent );
 
 	if( ent->player && RP_LOCALCLIENT( ent )) // stupid Half-Life bug
 		ent->angles[PITCH] = -ent->angles[PITCH] / 3.0f;
@@ -385,7 +513,7 @@ void CL_WeaponAnim( int iAnim, int body )
 {
 	cl_entity_t	*view = &clgame.viewent;
 
-	view->curstate.modelindex = cl.frame.local.client.viewmodel;
+	view->curstate.modelindex = cl.frame.client.viewmodel;
 
 	// anim is changed. update latchedvars
 	if( iAnim != view->curstate.sequence )
@@ -466,8 +594,8 @@ void CL_UpdateStudioVars( cl_entity_t *ent, entity_state_t *newstate, qboolean n
 	{
 		// client got new packet, shuffle animtimes
 		ent->latched.prevanimtime = ent->curstate.animtime;
-		VectorCopy( newstate->origin, ent->latched.prevorigin );
-		VectorCopy( newstate->angles, ent->latched.prevangles );
+		VectorCopy( ent->curstate.origin, ent->latched.prevorigin );
+		VectorCopy( ent->curstate.angles, ent->latched.prevangles );
 
 		for( i = 0; i < 4; i++ )
 			ent->latched.prevcontroller[i] = newstate->controller[i];
@@ -483,12 +611,6 @@ void CL_UpdateStudioVars( cl_entity_t *ent, entity_state_t *newstate, qboolean n
 	// copy blends
 	for( i = 0; i < 2; i++ )
 		ent->latched.prevblending[i] = ent->curstate.blending[i];
-
-	if( !VectorCompare( newstate->origin, ent->curstate.origin ))
-		VectorCopy( ent->curstate.origin, ent->latched.prevorigin );
-
-	if( !VectorCompare( newstate->angles, ent->curstate.angles ))
-		VectorCopy( ent->curstate.angles, ent->latched.prevangles );
 }
 
 /*
@@ -593,6 +715,8 @@ void CL_DeltaEntity( sizebuf_t *msg, frame_t *frame, int newnum, entity_state_t 
 
 	// set right current state
 	ent->curstate = *state;
+
+	CL_UpdatePositions( ent );
 }
 
 /*
@@ -636,7 +760,7 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 {
 	frame_t		*newframe, *oldframe;
 	int		oldindex, newnum, oldnum;
-	int		oldpacket, newpacket;
+	int		oldpacket;
 	cl_entity_t	*player;
 	entity_state_t	*oldent;
 	int		i, count;
@@ -648,8 +772,7 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 	// first, allocate packet for new frame
 	count = BF_ReadWord( msg );
 
-	newpacket = cl.parsecountmod;
-	newframe = &cl.frames[newpacket];
+	newframe = &cl.frames[cl.parsecountmod];
 
 	// allocate parse entities
 	newframe->first_entity = cls.next_client_entities;
@@ -788,11 +911,31 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 		}
 	}
 
+	if( newframe->num_entities != count )
+		MsgDev( D_ERROR, "CL_Parse%sPacketEntities: (%i should be %i)\n", delta ? "Delta" : "", newframe->num_entities, count );
+
 	cl.frame = *newframe;
 
 	if( !cl.frame.valid ) return;
 
 	player = CL_GetLocalPlayer();
+
+	if( player != NULL )
+	{
+		// update local player states
+		clgame.dllFuncs.pfnTxferLocalOverrides( &player->curstate, &newframe->client );
+	}
+
+	// update state for all players
+	for( i = 0; i < cl.maxclients; i++ )
+	{
+		cl_entity_t *ent = CL_GetEntityByIndex( i + 1 );
+		if( !ent ) continue;
+		clgame.dllFuncs.pfnProcessPlayerState( &newframe->playerstate[i], &ent->curstate );
+		newframe->playerstate[i].number = ent->index;
+	}
+
+	cl.frame = *newframe;
 		
 	if( cls.state != ca_active )
 	{
@@ -808,37 +951,10 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 		if(( cls.demoplayback || cls.disable_servercount != cl.servercount ) && cl.video_prepped )
 			SCR_EndLoadingPlaque(); // get rid of loading plaque
 	}
-
-	// update local player states
-	if( player != NULL )
+	else
 	{
-		entity_state_t	*ps, *pps;
-		clientdata_t	*pcd, *ppcd;
-		weapon_data_t	*wd, *pwd;
-
-		pps = &player->curstate;
-		ppcd = &newframe->local.client;
-		pwd = newframe->local.weapondata;
-
-		ps = &cl.predict[cl.predictcount & CL_UPDATE_MASK].playerstate;
-		pcd = &cl.predict[cl.predictcount & CL_UPDATE_MASK].client;
-		wd = cl.predict[cl.predictcount & CL_UPDATE_MASK].weapondata;
-		
-		clgame.dllFuncs.pfnTxferPredictionData( ps, pps, pcd, ppcd, wd, pwd ); 
-		clgame.dllFuncs.pfnTxferLocalOverrides( &player->curstate, pcd );
+		CL_CheckPredictionError();
 	}
-
-	// update state for all players
-	for( i = 0; i < cl.maxclients; i++ )
-	{
-		cl_entity_t *ent = CL_GetEntityByIndex( i + 1 );
-		if( !ent ) continue;
-		clgame.dllFuncs.pfnProcessPlayerState( &newframe->playerstate[i], &ent->curstate );
-		newframe->playerstate[i].number = ent->index;
-	}
-
-	cl.frame = *newframe;
-	cl.predict[cl.predictcount & CL_UPDATE_MASK] = cl.frame.local;
 }
 
 /*
@@ -862,17 +978,17 @@ void CL_SetIdealPitch( void )
 	int	step, dir, steps;
 	pmtrace_t	tr;
 
-	if( !( cl.frame.local.client.flags & FL_ONGROUND ))
+	if( !( cl.frame.client.flags & FL_ONGROUND ))
 		return;
 		
-	angleval = cl.frame.local.playerstate.angles[YAW] * M_PI2 / 360.0f;
+	angleval = cl.frame.playerstate[cl.playernum].angles[YAW] * M_PI2 / 360.0f;
 	SinCos( angleval, &sinval, &cosval );
 
 	for( i = 0; i < MAX_FORWARD; i++ )
 	{
-		top[0] = cl.frame.local.client.origin[0] + cosval * (i + 3.0f) * 12.0f;
-		top[1] = cl.frame.local.client.origin[1] + sinval * (i + 3.0f) * 12.0f;
-		top[2] = cl.frame.local.client.origin[2] + cl.frame.local.client.view_ofs[2];
+		top[0] = cl.frame.client.origin[0] + cosval * (i + 3.0f) * 12.0f;
+		top[1] = cl.frame.client.origin[1] + sinval * (i + 3.0f) * 12.0f;
+		top[2] = cl.frame.client.origin[2] + cl.frame.client.view_ofs[2];
 		
 		bottom[0] = top[0];
 		bottom[1] = top[1];
@@ -988,7 +1104,7 @@ qboolean CL_GetEntitySpatialization( int entnum, vec3_t origin, float *pradius )
 
 	if(( entnum - 1 ) == cl.playernum )
 	{
-		VectorCopy( cl.frame.local.client.origin, origin );
+		VectorCopy( cl.frame.client.origin, origin );
 		return true;
 	}
 

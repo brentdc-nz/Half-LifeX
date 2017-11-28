@@ -2133,6 +2133,7 @@ qboolean SV_LoadGame( const char *pName )
 	sv.background = false;
 
 	SCR_BeginLoadingPlaque ( false );
+	S_StopBackgroundTrack();
 
 	MsgDev( D_INFO, "Loading game from %s...\n", name );
 	SV_ClearSaveDir();

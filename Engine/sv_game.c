@@ -1072,6 +1072,12 @@ void SV_FreeEdict( edict_t *pEdict )
 	pEdict->v.takedamage = 0;
 	pEdict->v.modelindex = 0;
 	pEdict->v.nextthink = -1;
+	pEdict->v.colormap = 0;
+	pEdict->v.frame = 0;
+	pEdict->v.scale = 0;
+	pEdict->v.gravity = 0;
+	VectorClear( pEdict->v.angles );
+	VectorClear( pEdict->v.origin );
 	pEdict->free = true;
 }
 
@@ -2538,7 +2544,18 @@ edict_t* pfnFindClientInPVS( edict_t *pEdict )
 
 	mod = Mod_Handle( pEdict->v.modelindex );
 
-	VectorAdd( pEdict->v.origin, pEdict->v.view_ofs, view );
+	// portals & monitors
+	// NOTE: this specific break "radiaton tick" in normal half-life. use only as feature
+	if(( host.features & ENGINE_TRANSFORM_TRACE_AABB ) && mod && mod->type == mod_brush && !( mod->flags & MODEL_HAS_ORIGIN ))
+	{
+		// handle PVS origin for bmodels
+		VectorAverage( pEdict->v.mins, pEdict->v.maxs, view );
+		VectorAdd( view, pEdict->v.origin, view );
+	}
+	else
+	{
+		VectorAdd( pEdict->v.origin, pEdict->v.view_ofs, view );
+	}
 
 	if( pEdict->v.effects & EF_INVLIGHT )
 		view[2] -= 1.0f; // HACKHACK for barnacle
@@ -5782,8 +5799,8 @@ void SV_UnloadProgs( void )
 
 	// must unlink all game cvars,
 	// before pointers on them will be lost...
-//	Cmd_ExecuteString( "@unlink\n", src_command ); //MARTY FIXME WIP
-//	Cmd_Unlink( CMD_EXTDLL ); //MARTY FIXME WIP
+	Cmd_ExecuteString( "@unlink\n", src_command );
+	Cmd_Unlink( CMD_EXTDLL );
 
 	Mod_ResetStudioAPI ();
 

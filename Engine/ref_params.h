@@ -72,4 +72,19 @@ typedef struct ref_params_s
 	float		fov_x, fov_y;	// actual fov can be overrided on nextView
 } ref_params_t;
 
+// same as ref_params but for overview mode
+typedef struct ref_overview_s
+{
+	vec3_t		origin;
+	qboolean		rotated;
+
+	float		xLeft;
+	float		xRight;
+	float		xTop;
+	float		xBottom;
+	float		zFar;
+	float		zNear;
+	float		flZoom;
+} ref_overview_t;
+
 #endif//REF_PARAMS_H

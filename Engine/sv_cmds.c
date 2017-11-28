@@ -109,7 +109,7 @@ qboolean SV_SetPlayer( void )
 	sv_client_t	*cl;
 	int		i, idnum;
 
-	if( !svs.clients )
+	if( !svs.clients || sv.background )
 	{
 		Msg( "^3no server running.\n" );
 		return false;
@@ -418,7 +418,7 @@ void SV_DeleteSave_f( void )
 {
 	if( Cmd_Argc() != 2 )
 	{
-		Msg( "Usage: delsave <name>\n" );
+		Msg( "Usage: killsave <name>\n" );
 		return;
 	}
 
@@ -604,17 +604,17 @@ void SV_Kick_f( void )
 {
 	if( Cmd_Argc() != 2 )
 	{
-		Msg( "Usage: kick <userid>\n" );
-		return;
-	}
-
-	if( !svs.clients || sv.background )
-	{
-		Msg( "^3no server running.\n" );
+		Msg( "Usage: kick <userid> | <name>\n" );
 		return;
 	}
 
 	if( !SV_SetPlayer( )) return;
+
+	if( NET_IsLocalAddress( svs.currentPlayer->netchan.remote_address ))
+	{
+		Msg( "The local player cannot be kicked!\n" );
+		return;
+	}
 
 	SV_BroadcastPrintf( PRINT_HIGH, "%s was kicked\n", svs.currentPlayer->name );
 	SV_ClientPrintf( svs.currentPlayer, PRINT_HIGH, "You were kicked from the game\n" );
@@ -631,8 +631,7 @@ SV_Kill_f
 */
 void SV_Kill_f( void )
 {
-	if( !SV_SetPlayer() || sv.background )
-		return;
+	if( !SV_SetPlayer( )) return;
 
 	if( !svs.currentPlayer || !SV_IsValidEdict( svs.currentPlayer->edict ))
 		return;

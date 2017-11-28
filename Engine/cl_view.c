@@ -36,16 +36,15 @@ void V_SetupRefDef( void )
 	clent = CL_GetLocalPlayer ();
 
 	clgame.entities->curstate.scale = clgame.movevars.waveHeight;
-	VectorCopy( cl.frame.local.client.punchangle, cl.refdef.punchangle );
-	clgame.viewent.curstate.modelindex = cl.frame.local.client.viewmodel;
+	clgame.viewent.curstate.modelindex = cl.frame.client.viewmodel;
 	clgame.viewent.model = Mod_Handle( clgame.viewent.curstate.modelindex );
 	clgame.viewent.curstate.number = cl.playernum + 1;
 	clgame.viewent.curstate.entityType = ET_NORMAL;
 	clgame.viewent.index = cl.playernum + 1;
 
 	cl.refdef.movevars = &clgame.movevars;
-	cl.refdef.onground = ( cl.frame.local.client.flags & FL_ONGROUND ) ? 1 : 0;
-	cl.refdef.health = cl.frame.local.client.health;
+	cl.refdef.onground = ( cl.frame.client.flags & FL_ONGROUND ) ? 1 : 0;
+	cl.refdef.health = cl.frame.client.health;
 	cl.refdef.playernum = cl.playernum;
 	cl.refdef.max_entities = clgame.maxEntities;
 	cl.refdef.maxclients = cl.maxclients;
@@ -54,7 +53,7 @@ void V_SetupRefDef( void )
 	cl.refdef.demoplayback = cls.demoplayback;
 	cl.refdef.smoothing = cl_smooth->integer;
 	cl.refdef.viewsize = scr_viewsize->integer;
-	cl.refdef.waterlevel = cl.frame.local.client.waterlevel;		
+	cl.refdef.waterlevel = cl.frame.client.waterlevel;		
 	cl.refdef.onlyClientDraw = 0;	// reset clientdraw
 	cl.refdef.hardware = true;	// always true
 	cl.refdef.spectator = (clent->curstate.spectator != 0);
@@ -91,16 +90,19 @@ void V_SetupRefDef( void )
 		V_AdjustFov( &cl.refdef.fov_x, &cl.refdef.fov_y, cl.refdef.viewport[2], cl.refdef.viewport[3], false );
 
 	if( CL_IsPredicted( ) && !cl.refdef.demoplayback )
-	{	
+	{
+		VectorMA( cl.predicted_origin, -cl.lerpBack, cl.prediction_error, cl.refdef.simorg );
 		VectorCopy( cl.predicted_origin, cl.refdef.simorg );
 		VectorCopy( cl.predicted_velocity, cl.refdef.simvel );
 		VectorCopy( cl.predicted_viewofs, cl.refdef.viewheight );
+		VectorCopy( cl.predicted_punchangle, cl.refdef.punchangle );
 	}
 	else
 	{
-		VectorCopy( cl.frame.local.client.origin, cl.refdef.simorg );
-		VectorCopy( cl.frame.local.client.view_ofs, cl.refdef.viewheight );
-		VectorCopy( cl.frame.local.client.velocity, cl.refdef.simvel );
+		VectorCopy( cl.frame.client.origin, cl.refdef.simorg );
+		VectorCopy( cl.frame.client.view_ofs, cl.refdef.viewheight );
+		VectorCopy( cl.frame.client.velocity, cl.refdef.simvel );
+		VectorCopy( cl.frame.client.punchangle, cl.refdef.punchangle );
 	}
 }
 

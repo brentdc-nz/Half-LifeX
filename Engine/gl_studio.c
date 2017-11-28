@@ -2017,7 +2017,7 @@ static void R_StudioDrawPoints( void )
 			/*p*/glColor4ub( clr->r, clr->g, clr->b, 255 );
 			alpha = 1.0f;
 		}
-		else if( g_nFaceFlags & STUDIO_NF_TRANSPARENT )
+		else if( g_nFaceFlags & STUDIO_NF_TRANSPARENT && R_StudioOpaque( RI.currententity ))
 		{
 			GL_SetRenderMode( kRenderTransAlpha );
 			/*p*/glAlphaFunc( GL_GREATER, 0.0f );
@@ -2030,7 +2030,7 @@ static void R_StudioDrawPoints( void )
 			/*p*/glBlendFunc( GL_SRC_ALPHA, GL_ONE );
 			/*p*/glDepthMask( GL_FALSE );
 		}
-		else if( g_nFaceFlags & STUDIO_NF_ALPHA )
+		else if( g_nFaceFlags & STUDIO_NF_ALPHA && !( host.features & ENGINE_DISABLE_HDTEXTURES )) // Paranoia2 collision flag
 		{
 			GL_SetRenderMode( kRenderTransTexture );
 			alpha = RI.currententity->curstate.renderamt * (1.0f / 255.0f);
@@ -2107,6 +2107,8 @@ static void R_StudioDrawPoints( void )
 
 				if( g_nFaceFlags & STUDIO_NF_CHROME || ( g_nForceFaceFlags & STUDIO_NF_CHROME ))
 					/*p*/glTexCoord2f( g_chrome[ptricmds[1]][0] * s, g_chrome[ptricmds[1]][1] * t );
+				else if( g_nFaceFlags & STUDIO_NF_UV_COORDS )
+					/*p*/glTexCoord2f( HalfToFloat( ptricmds[2] ), HalfToFloat( ptricmds[3] ));
 				else /*p*/glTexCoord2f( ptricmds[2] * s, ptricmds[3] * t );
 
 				if(!( g_nForceFaceFlags & STUDIO_NF_CHROME ))
@@ -2123,7 +2125,7 @@ static void R_StudioDrawPoints( void )
 					}
 					else if( g_nFaceFlags & STUDIO_NF_FULLBRIGHT )
 					{
-						/*p*/glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+						/*p*/glColor4f( 1.0f, 1.0f, 1.0f, alpha );
 					}
 					else
 					{

@@ -122,7 +122,7 @@ void SV_DirectConnect( netadr_t from )
 	// quick reject
 	for( i = 0, cl = svs.clients; i < sv_maxclients->integer; i++, cl++ )
 	{
-		if( cl->state == cs_free )
+		if( cl->state == cs_free || cl->state == cs_zombie )
 			continue;
 
 		if( NET_CompareBaseAdr( from, cl->netchan.remote_address ) && ( cl->netchan.qport == qport || from.port == cl->netchan.remote_address.port ))
@@ -169,7 +169,7 @@ void SV_DirectConnect( netadr_t from )
 	// if there is already a slot for this ip, reuse it
 	for( i = 0, cl = svs.clients; i < sv_maxclients->integer; i++, cl++ )
 	{
-		if( cl->state == cs_free )
+		if( cl->state == cs_free || cl->state == cs_zombie )
 			continue;
 
 		if( NET_CompareBaseAdr( from, cl->netchan.remote_address ) && ( cl->netchan.qport == qport || from.port == cl->netchan.remote_address.port ))
@@ -241,9 +241,6 @@ gotnewcl:
 		return;
 	}
 
-	// parse some info from the info strings
-	SV_UserinfoChanged( newcl, userinfo );
-
 	// send the connect packet to the client
 	Netchan_OutOfBandPrint( NS_SERVER, from, "client_connect" );
 
@@ -251,8 +248,12 @@ gotnewcl:
 	newcl->cl_updaterate = 0.05;	// 20 fps as default
 	newcl->lastmessage = host.realtime;
 	newcl->lastconnect = host.realtime;
-	newcl->next_messagetime = host.realtime + newcl->cl_updaterate;
 	newcl->delta_sequence = -1;
+
+	// parse some info from the info strings (this can override cl_updaterate)
+	SV_UserinfoChanged( newcl, userinfo );
+
+	newcl->next_messagetime = host.realtime + newcl->cl_updaterate;
 
 	// if this was the first client on the server, or the last client
 	// the server can hold, send a heartbeat to the master.
@@ -289,6 +290,9 @@ void SV_DisconnectClient( edict_t *pClient )
 		Mem_Free( pClient->pvPrivateData );
 		pClient->pvPrivateData = NULL;
 	}
+
+	// invalidate serial number
+	pClient->serialnumber++;
 }
 
 /*
@@ -438,8 +442,16 @@ void SV_DropClient( sv_client_t *drop )
 		Mem_Free( drop->frames );	// fakeclients doesn't have frames
 	drop->frames = NULL;
 
+	if( NET_CompareBaseAdr( drop->netchan.remote_address, host.rd.address ) )
+		SV_EndRedirect();
+
 	// throw away any residual garbage in the channel.
 	Netchan_Clear( &drop->netchan );
+
+	// clean client data on disconnect
+	Q_memset( drop->userinfo, 0, MAX_INFO_STRING );
+	Q_memset( drop->physinfo, 0, MAX_INFO_STRING );
+	drop->edict->v.frags = 0;
 
 	// send notification to all other clients
 	SV_FullClientUpdate( drop, &sv.reliable_datagram );
@@ -502,7 +514,8 @@ void SV_FlushRedirect( netadr_t adr, int dest, char *buf )
 
 void SV_EndRedirect( void )
 {
-	host.rd.flush( host.rd.address, host.rd.target, host.rd.buffer );
+	if( host.rd.flush )
+		host.rd.flush( host.rd.address, host.rd.target, host.rd.buffer );
 
 	host.rd.target = 0;
 	host.rd.buffer = NULL;
@@ -800,28 +813,34 @@ recalc ping on current client
 int SV_CalcPing( sv_client_t *cl )
 {
 	float		ping = 0;
-	int		i, count;
+	int		i, count, back;
 	client_frame_t	*frame;
 
 	// bots don't have a real ping
-	if( cl->fakeclient )
+	if( cl->fakeclient || !cl->frames )
 		return 5;
 
 	count = 0;
 
-	for( i = 0; i < SV_UPDATE_BACKUP; i++ )
+	if( SV_UPDATE_BACKUP <= 31 )
+	{
+		back = SV_UPDATE_BACKUP / 2;
+		if( back <= 0 ) return 0;
+	}
+	else back = 16;
+
+	for( i = 0; i < back; i++ )
 	{
 		frame = &cl->frames[(cl->netchan.incoming_acknowledged - (i + 1)) & SV_UPDATE_MASK];
 
-		if( frame->raw_ping > 0 )
+		if( frame->ping_time > 0 )
 		{
-			ping += frame->raw_ping;
+			ping += frame->ping_time;
 			count++;
 		}
 	}
 
-	if( !count )
-		return 0;
+	if( !count ) return 0;
 
 	return (( ping / count ) * 1000 );
 }
@@ -833,36 +852,85 @@ SV_EstablishTimeBase
 Finangles latency and the like. 
 ===================
 */
-void SV_EstablishTimeBase( sv_client_t *cl, usercmd_t *ucmd, int numdrops, int numbackup, int newcmds )
+void SV_EstablishTimeBase( sv_client_t *cl, usercmd_t *cmds, int dropped, int numbackup, int numcmds )
 {
-	double	start;
-	double	end;
-	int	i;
+	double	runcmd_time = 0.0;
+	int	cmdnum = dropped;
 
-	start = 0;
-	end = sv.time + host.frametime;
-
-	if( numdrops < 24 )
+	if( dropped < 24 )
 	{
-		while( numdrops > numbackup )
+		if( dropped > numbackup )
 		{
-			start += cl->lastcmd.msec / 1000.0;
-			numdrops--;
+			cmdnum = dropped - (dropped - numbackup);
+			runcmd_time = (double)cl->lastcmd.msec * (dropped - numbackup) / 1000.0;
 		}
-
-		while( numdrops > 0 )
-		{
-			start += ucmd[numdrops + newcmds - 1].msec / 1000.0;
-			numdrops--;
-		}
+		
+		for( ; cmdnum > 0; cmdnum-- )
+			runcmd_time += cmds[cmdnum - 1 + numcmds].msec / 1000.0;
 	}
 
-	for( i = newcmds - 1; i >= 0; i-- )
+	for( ; numcmds > 0; numcmds-- )
+		runcmd_time += cmds[numcmds - 1].msec / 1000.0;
+
+	cl->timebase = sv.time + cl->cl_updaterate - runcmd_time;
+}
+
+/*
+===================
+SV_CalcClientTime
+
+compute latency for client
+===================
+*/
+float SV_CalcClientTime( sv_client_t *cl )
+{
+	float	minping, maxping;
+	float	ping = 0.0f;
+	int	i, count = 0;
+	int	backtrack;
+
+	backtrack = (int)sv_unlagsamples->integer;
+	if( backtrack < 1 ) backtrack = 1;
+
+	if( backtrack >= (SV_UPDATE_BACKUP <= 16 ? SV_UPDATE_BACKUP : 16 ))
+		backtrack = ( SV_UPDATE_BACKUP <= 16 ? SV_UPDATE_BACKUP : 16 );
+
+	if( backtrack <= 0 )
+		return 0.0f;
+
+	for( i = 0; i < backtrack; i++ )
 	{
-		start += ucmd[i].msec / 1000.0;
+		client_frame_t	*frame = &cl->frames[SV_UPDATE_MASK & (cl->netchan.incoming_acknowledged - i)];
+		if( frame->ping_time <= 0.0f )
+			continue;
+
+		ping += frame->ping_time;
+		count++;
 	}
 
-	cl->timebase = end - start;
+	if( !count ) return 0.0f;
+
+	minping =  9999.0f;
+	maxping = -9999.0f;
+	ping /= count;
+	
+	for( i = 0; i < ( SV_UPDATE_BACKUP <= 4 ? SV_UPDATE_BACKUP : 4 ); i++ )
+	{
+		client_frame_t	*frame = &cl->frames[SV_UPDATE_MASK & (cl->netchan.incoming_acknowledged - i)];
+		if( frame->ping_time <= 0.0f )
+			continue;
+
+		if( frame->ping_time < minping )
+			minping = frame->ping_time;
+
+		if( frame->ping_time > maxping )
+			maxping = frame->ping_time;
+	}
+
+	if( maxping < minping || fabs( maxping - minping ) <= 0.2f )
+		return ping;
+
+	return 0.0f;
 }
 
 /*
@@ -1752,12 +1820,12 @@ void SV_UserinfoChanged( sv_client_t *cl, const char *userinfo )
 			Q_snprintf( temp2, sizeof( temp2 ), "%s (%u)", temp1, dupc++ );
 			Info_SetValueForKey( cl->userinfo, "name", temp2 );
 			val = Info_ValueForKey( cl->userinfo, "name" );
-			Q_strcpy( cl->name, temp2 );
+			Q_strncpy( cl->name, temp2, sizeof( cl->name ));
 		}
 		else
 		{
 			if( dupc == 1 ) // unchanged
-				Q_strcpy( cl->name, temp1 );
+				Q_strncpy( cl->name, temp1, sizeof( cl->name ));
 			break;
 		}
 	}
@@ -1985,10 +2053,9 @@ void SV_ConnectionlessPacket( netadr_t from, sizebuf_t *msg )
 	char	*args;
 	char	*c, buf[MAX_SYSPATH];
 	int	len = sizeof( buf );
-	dword	challenge;
+	uint	challenge;
 	int	index, count = 0;
-	char	query[512];
-	word	port;
+	char	query[512], ostype = 'w';
 
 	BF_Clear( msg );
 	BF_ReadLong( msg );// skip the -1 marker
@@ -2007,12 +2074,9 @@ void SV_ConnectionlessPacket( netadr_t from, sizebuf_t *msg )
 	else if( !Q_strcmp( c, "connect" )) SV_DirectConnect( from );
 	else if( !Q_strcmp( c, "rcon" )) SV_RemoteCommand( from, msg );
 	else if( !Q_strcmp( c, "netinfo" )) SV_BuildNetAnswer( from );
-	else if( msg->pData[0] == 0xFF && msg->pData[1] == 0xFF && msg->pData[2] == 0xFF && msg->pData[3] == 0xFF && msg->pData[4] == 0x4E && msg->pData[5] == 0x0A )
+	else if( msg->pData[0] == 0xFF && msg->pData[1] == 0xFF && msg->pData[2] == 0xFF && msg->pData[3] == 0xFF && msg->pData[4] == 0x73 && msg->pData[5] == 0x0A )
 	{
-		challenge = *(dword *)&msg->pData[6];
-
-		port = Cvar_Get( "ip_hostport", "0", CVAR_INIT, "network server port" )->integer;
-		if( !port ) port = Cvar_Get( "port", va( "%i", PORT_SERVER ), CVAR_INIT, "network default port" )->integer;
+		Q_memcpy(&challenge, &msg->pData[6], sizeof(int));
 
 		for( index = 0; index < sv_maxclients->integer; index++ )
 		{
@@ -2021,8 +2085,32 @@ void SV_ConnectionlessPacket( netadr_t from, sizebuf_t *msg )
 		}
 
 		Q_snprintf( query, sizeof( query ),
-		"0\n\\protocol\\7\\challenge\\%ld\\players\\%d\\max\\%d\\bots\\0\\gamedir\\%s_xash\\map\\%s\\password\\0\\os\\w\\lan\\0\\region\\255\\gameport\\%d\\specport\\27015\\dedicated\\1\\appid\\70\\type\\d\\secure\\0\\version\\1.1.2.1\\product\\valve\n",
-		challenge, count, sv_maxclients->integer, GI->gamefolder, sv.name, port );
+		"0\n"
+		"\\protocol\\%d"			// protocol version
+		"\\challenge\\%u"			// challenge number that got after FF FF FF FF 73 0A
+		"\\players\\%d"			// current player number
+		"\\max\\%d"			// max_players
+		"\\bots\\0"			// bot number?
+		"\\gamedir\\%s"			// gamedir. _xash appended, because Xash3D is not compatible with GS in multiplayer
+		"\\map\\%s"			// current map
+		"\\type\\d"			// server type
+		"\\password\\0"			// is password set
+		"\\os\\%c"			// server OS?
+		"\\secure\\0"			// server anti-cheat? VAC?
+		"\\lan\\0"			// is LAN server?
+		"\\version\\%f"			// server version
+		"\\region\\255"			// server region
+		"\\product\\%s\n",			// product? Where is the difference with gamedir?
+		PROTOCOL_VERSION,
+		challenge,
+		count,
+		sv_maxclients->integer,
+		GI->gamefolder,
+		sv.name,
+		ostype,
+		XASH_VERSION,
+		GI->gamefolder
+		);
 
 		NET_SendPacket( NS_SERVER, Q_strlen( query ), query, from );
 	}
@@ -2232,22 +2320,23 @@ void SV_ExecuteClientMessage( sv_client_t *cl, sizebuf_t *msg )
 	frame = &cl->frames[cl->netchan.incoming_acknowledged & SV_UPDATE_MASK];
 
 	// raw ping doesn't factor in message interval, either
-	frame->raw_ping = host.realtime - frame->senttime;
+	frame->ping_time = host.realtime - frame->senttime - cl->cl_updaterate;
 
 	// on first frame ( no senttime ) don't skew ping
 	if( frame->senttime == 0.0f )
 	{
 		frame->latency = 0.0f;
-		frame->raw_ping = 0.0f;
+		frame->ping_time = 0.0f;
 	}
 
 	// don't skew ping based on signon stuff either
 	if(( host.realtime - cl->lastconnect ) < 2.0f && ( frame->latency > 0.0 ))
 	{
 		frame->latency = 0.0f;
-		frame->raw_ping = 0.0f;
+		frame->ping_time = 0.0f;
 	}
 
+	cl->latency = SV_CalcClientTime( cl );
 	cl->delta_sequence = -1; // no delta unless requested
 
 	// set the current client

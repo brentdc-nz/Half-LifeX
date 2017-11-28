@@ -64,17 +64,24 @@ qboolean SV_CopyEdictToPhysEnt( physent_t *pe, edict_t *ed )
 	VectorCopy( ed->v.origin, pe->origin );
 	VectorCopy( ed->v.angles, pe->angles );
 
-	if( ed->v.flags & ( FL_CLIENT|FL_FAKECLIENT ))
+	if( ed->v.flags & FL_CLIENT )
 	{
-		// client or bot
-		SV_GetTrueOrigin( svs.currentPlayer, (pe->info - 1), pe->origin );
+		// client
+		if( svs.currentPlayer )
+			SV_GetTrueOrigin( svs.currentPlayer, (pe->info - 1), pe->origin );
 		Q_strncpy( pe->name, "player", sizeof( pe->name ));
+		pe->player = pe->info;
+	}
+	else if( ed->v.flags & FL_FAKECLIENT )
+	{
+		// bot
+		Q_strncpy( pe->name, "bot", sizeof( pe->name ));
 		pe->player = pe->info;
 	}
 	else
 	{
-		// otherwise copy the modelname
-		Q_strncpy( pe->name, mod->name, sizeof( pe->name ));
+		// otherwise copy the classname
+		Q_strncpy( pe->name, STRING( ed->v.classname ), sizeof( pe->name ));
 	}
 
 	pe->model = pe->studiomodel = NULL;
@@ -141,7 +148,7 @@ qboolean SV_CopyEdictToPhysEnt( physent_t *pe, edict_t *ed )
 
 void SV_GetTrueOrigin( sv_client_t *cl, int edictnum, vec3_t origin )
 {
-	if( !cl->local_weapons || !cl->lag_compensation || !sv_unlag->integer )
+	if( !cl->lag_compensation || !sv_unlag->integer )
 		return;
 
 	// don't allow unlag in singleplayer
@@ -158,7 +165,7 @@ void SV_GetTrueOrigin( sv_client_t *cl, int edictnum, vec3_t origin )
 
 void SV_GetTrueMinMax( sv_client_t *cl, int edictnum, vec3_t mins, vec3_t maxs )
 {
-	if( !cl->local_weapons || !cl->lag_compensation || !sv_unlag->integer )
+	if( !cl->lag_compensation || !sv_unlag->integer )
 		return;
 
 	// don't allow unlag in singleplayer
@@ -235,7 +242,8 @@ void SV_AddLinksToPmove( areanode_t *node, const vec3_t pmove_mins, const vec3_t
 		if( check->v.flags & FL_CLIENT )
 		{
 			// trying to get interpolated values
-			SV_GetTrueMinMax( svs.currentPlayer, ( NUM_FOR_EDICT( check ) - 1), mins, maxs );
+			if( svs.currentPlayer )
+				SV_GetTrueMinMax( svs.currentPlayer, ( NUM_FOR_EDICT( check ) - 1), mins, maxs );
 		}
 
 		if( !BoundsIntersect( pmove_mins, pmove_maxs, mins, maxs ))
@@ -800,7 +808,7 @@ void SV_SetupMoveInterpolant( sv_client_t *cl )
 {
 	int		i, j, clientnum;
 	float		finalpush, lerp_msec;
-	float		latency, temp, lerpFrac;
+	float		latency, lerpFrac;
 	client_frame_t	*frame, *frame2;
 	entity_state_t	*state, *lerpstate;
 	vec3_t		curpos, newpos;
@@ -819,7 +827,7 @@ void SV_SetupMoveInterpolant( sv_client_t *cl )
 		return;
 
 	// unlag disabled for current client
-	if( !cl->local_weapons || !cl->lag_compensation )
+	if( !cl->lag_compensation )
 		return;
 
 	has_update = true;
@@ -841,10 +849,14 @@ void SV_SetupMoveInterpolant( sv_client_t *cl )
 		latency = 1.5f;
 	else latency = cl->latency;
 
-	temp = sv_maxunlag->value;
+	if( sv_maxunlag->value != 0.0f )
+	{
+		if (sv_maxunlag->value < 0.0f )
+			Cvar_SetFloat( "sv_maxunlag", 0.0f );
 
-	if( temp > 0 && latency > temp )
-		latency = temp;
+		if( latency >= sv_maxunlag->value )
+			latency = sv_maxunlag->value;
+	}
 
 	lerp_msec = cl->lastcmd.lerp_msec * 0.001f;
 	if( lerp_msec > 0.1f ) lerp_msec = 0.1f;
@@ -852,10 +864,8 @@ void SV_SetupMoveInterpolant( sv_client_t *cl )
 	if( lerp_msec < cl->cl_updaterate )
 		lerp_msec = cl->cl_updaterate;
 
-	finalpush = sv_unlagpush->value + (( host.realtime - latency ) - lerp_msec );
-
-	if( finalpush > host.realtime )
-		finalpush = host.realtime;
+	finalpush = ( host.realtime - latency - lerp_msec ) + sv_unlagpush->value;
+	if( finalpush > host.realtime ) finalpush = host.realtime; // pushed too much ?
 
 	frame = NULL;
 
@@ -976,7 +986,7 @@ void SV_RestoreMoveInterpolant( sv_client_t *cl )
 		return;
 
 	// unlag disabled for current client
-	if( !cl->local_weapons || !cl->lag_compensation )
+	if( !cl->lag_compensation )
 		return;
 
 	for( i = 0, check = svs.clients; i < sv_maxclients->integer; i++, check++ )

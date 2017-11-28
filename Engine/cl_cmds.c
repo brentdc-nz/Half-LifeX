@@ -365,7 +365,7 @@ CL_DemoShot_f
 mini-pic in playdemo menu
 ================== 
 */ 
-void CL_DemoShot_f( void ) //MARTY FIXME WIP
+void CL_DemoShot_f( void )
 {
 	if( Cmd_Argc() < 2 )
 	{

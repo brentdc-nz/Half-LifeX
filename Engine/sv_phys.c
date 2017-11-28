@@ -191,7 +191,7 @@ qboolean SV_RunThink( edict_t *ent )
 {
 	float	thinktime;
 
-	if(!( ent->v.flags & FL_SPECTATOR ))
+	if(!( ent->v.flags & FL_KILLME ))
 	{
 		thinktime = ent->v.nextthink;
 		if( thinktime <= 0.0f || thinktime > sv.time + host.frametime )
@@ -206,7 +206,7 @@ qboolean SV_RunThink( edict_t *ent )
 		svgame.dllFuncs.pfnThink( ent );
 	}
 
-	if( ent->v.flags & FL_SPECTATOR )
+	if( ent->v.flags & FL_KILLME )
 		SV_FreeEdict( ent );
 
 	return !ent->free;
@@ -257,7 +257,7 @@ void SV_Impact( edict_t *e1, edict_t *e2, trace_t *trace )
 {
 	svgame.globals->time = sv.time;
 
-	if(( e1->v.flags|e2->v.flags ) & FL_SPECTATOR )
+	if(( e1->v.flags|e2->v.flags ) & FL_KILLME )
 		return;
 
 	if( e1->v.groupinfo && e2->v.groupinfo )
@@ -1887,6 +1887,40 @@ void SV_UpdateFogSettings( unsigned int packed_fog )
 {
 	svgame.movevars.fog_settings = packed_fog;
 	physinfo->modified = true; // force to transmit
+}
+
+/*
+=========
+pfnGetFilesList
+
+=========
+*/
+static char **pfnGetFilesList( const char *pattern, int *numFiles, int gamedironly )
+{
+	static search_t	*t = NULL;
+
+	if( t ) Mem_Free( t ); // release prev search
+
+	t = FS_Search( pattern, true, gamedironly );
+
+	if( !t )
+	{
+		if( numFiles ) *numFiles = 0;
+		return NULL;
+	}
+
+	if( numFiles ) *numFiles = t->numfilenames;
+	return t->filenames;
+}
+
+static void *pfnMem_Alloc( size_t cb, const char *filename, const int fileline )
+{
+	return _Mem_Alloc( svgame.mempool, cb, filename, fileline );
+}
+
+static void pfnMem_Free( void *mem, const char *filename, const int fileline )
+{
+	_Mem_Free( mem, filename, fileline );
 }
 
 static server_physics_api_t gPhysicsAPI =

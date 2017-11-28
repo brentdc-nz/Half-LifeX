@@ -579,7 +579,9 @@ void Key_Event( int key, qboolean down )
 		{
 		case key_game:
 			if( host.mouse_visible && cls.state != ca_cinematic )
+			{
 				return; // handled in client.dll
+			}
 			break;
 		case key_message:
 			Key_Message( key );
@@ -613,7 +615,7 @@ void Key_Event( int key, qboolean down )
 	{
 		kb = keys[key].binding;
 
-		if( cls.key_dest == key_game && ( key != K_ESCAPE  ))
+		if( cls.key_dest == key_game && ( key != K_ESCAPE ))
 			clgame.dllFuncs.pfnKey_Event( down, key, kb );
 
 		Key_AddKeyUpCommands( key, kb );

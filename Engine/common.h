@@ -45,12 +45,10 @@ extern "C" {
 #endif
 
 #ifdef _HARDLINKED // MARTY
-
 #define anglemod         _HL_XBE_anglemod
 #define AngleVectors     _HL_XBE_AngleVectors
 #define VectorAngles     _HL_XBE_VectorAngles
 #define vec3_origin      _HL_XBE_vec3_origin
-
 #endif // _HARDLINKED
 
 // color strings
@@ -94,7 +92,7 @@ typedef enum
 #include "com_model.h"
 #include "crtlib.h"
 
-#define XASH_VERSION	0.97f		// engine current version
+#define XASH_VERSION	0.98f		// engine current version
 
 // PERFORMANCE INFO
 #define MIN_FPS         	15.0		// host minimum fps value for maxfps.
@@ -368,6 +366,7 @@ extern sysinfo_t	SI;
 //
 void FS_Init( void );
 void FS_Path( void );
+void FS_Rescan( void );
 void FS_Shutdown( void );
 void FS_ClearSearchPath( void );
 void FS_AllowDirectPaths( qboolean enable );
@@ -614,6 +613,7 @@ void Host_WriteOpenGLConfig( void );
 void Host_WriteVideoConfig( void );
 void Host_WriteConfig( void );
 qboolean Host_IsLocalGame( void );
+qboolean Host_IsLocalClient( void );
 void Host_ShutdownServer( void );
 void Host_Print( const char *txt );
 void Host_Error( const char *error, ... );
@@ -696,7 +696,7 @@ void CRC32_ProcessBuffer( dword *pulCRC, const void *pBuffer, int nBuffer );
 void CRC32_ProcessByte( dword *pulCRC, byte ch );
 void CRC32_Final( dword *pulCRC );
 qboolean CRC32_File( dword *crcvalue, const char *filename );
-qboolean CRC32_MapFile( dword *crcvalue, const char *filename );
+qboolean CRC32_MapFile( dword *crcvalue, const char *filename, qboolean multiplayer );
 void MD5Init( MD5Context_t *ctx );
 void MD5Update( MD5Context_t *ctx, const byte *buf, uint len );
 void MD5Final( byte digest[16], MD5Context_t *ctx );
@@ -860,6 +860,7 @@ void S_Activate( qboolean active, void *hInst );
 #endif
 void S_StopSound( int entnum, int channel, const char *soundname );
 int S_GetCurrentStaticSounds( soundlist_t *pout, int size );
+void S_StopBackgroundTrack( void );
 void S_StopAllSounds( void );
 
 // gamma routines

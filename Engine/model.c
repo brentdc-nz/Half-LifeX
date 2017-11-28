@@ -38,7 +38,7 @@ char		modelname[64];		// short model name (without path and ext)
 convar_t		*mod_studiocache;
 convar_t		*mod_allow_materials;
 static wadlist_t	wadlist;
-		
+	
 model_t		*loadmodel;
 model_t		*worldmodel;
 
@@ -535,7 +535,7 @@ void Mod_Init( void )
 {
 	com_studiocache = Mem_AllocPool( "Studio Cache" );
 	mod_studiocache = Cvar_Get( "r_studiocache", "1", CVAR_ARCHIVE, "enables studio cache for speedup tracing hitboxes" );
-
+ 
 	if( host.type == HOST_NORMAL )
 		mod_allow_materials = Cvar_Get( "host_allow_materials", "0", CVAR_LATCH|CVAR_ARCHIVE, "allow HD textures" );
 	else mod_allow_materials = NULL; // no reason to load HD-textures for dedicated server
@@ -783,6 +783,11 @@ static void Mod_LoadTextures( const dlump_t *l )
 		}
 		else 
 		{
+			// texture loading order:
+			// 1. HQ from disk
+			// 2. from wad
+			// 3. internal from map
+
 			if( Mod_AllowMaterials( ))
 			{
 				if( mt->name[0] == '*' ) mt->name[0] = '!'; // replace unexpected symbol
@@ -2629,7 +2634,7 @@ static void Mod_LoadBrushModel( model_t *mod, const void *buffer, qboolean *load
 
 	// will be merged later
 	if( world.loading )
- 	{
+	{
 		world.lm_sample_size = sample_size;
 		world.version = i;
 	}
@@ -2923,7 +2928,7 @@ Mod_LoadWorld
 Loads in the map and all submodels
 ==================
 */
-void Mod_LoadWorld( const char *name, uint *checksum, qboolean force )
+void Mod_LoadWorld( const char *name, uint *checksum, qboolean multiplayer )
 {
 	int	i;
 
@@ -2937,8 +2942,11 @@ void Mod_LoadWorld( const char *name, uint *checksum, qboolean force )
 		world.block_size = BLOCK_SIZE_MAX;
 	else world.block_size = BLOCK_SIZE_DEFAULT;
 
-	if( !Q_stricmp( cm_models[0].name, name ) && !force )
+	if( !Q_stricmp( cm_models[0].name, name ))
 	{
+		// recalc the checksum in force-mode
+		CRC32_MapFile( &world.checksum, worldmodel->name, multiplayer );
+
 		// singleplayer mode: server already loaded map
 		if( checksum ) *checksum = world.checksum;
 
@@ -2964,7 +2972,7 @@ void Mod_LoadWorld( const char *name, uint *checksum, qboolean force )
 	// load the newmap
 	world.loading = true;
 	worldmodel = Mod_ForName( name, true );
-	CRC32_MapFile( &world.checksum, worldmodel->name );
+	CRC32_MapFile( &world.checksum, worldmodel->name, multiplayer );
 	world.loading = false;
 
 	if( checksum ) *checksum = world.checksum;

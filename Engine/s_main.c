@@ -1652,7 +1652,7 @@ void S_Say_f( void )
 {
 	if( Cmd_Argc() == 1 )
 	{
-		Msg( "Usage: speak <soundfile\n" );
+		Msg( "Usage: speak <soundfile>\n" );
 		return;
 	}
 
@@ -1829,10 +1829,15 @@ void S_Shutdown( void )
 	if( !dma.initialized ) return;
 
 	Cmd_RemoveCommand( "play" );
+	Cmd_RemoveCommand( "playvol" );
 	Cmd_RemoveCommand( "stopsound" );
 	Cmd_RemoveCommand( "music" );
 	Cmd_RemoveCommand( "soundlist" );
 	Cmd_RemoveCommand( "s_info" );
+	Cmd_RemoveCommand( "+voicerecord" );
+	Cmd_RemoveCommand( "-voicerecord" );
+	Cmd_RemoveCommand( "spk" );
+	Cmd_RemoveCommand( "speak" );
 
 	S_StopAllSounds ();
 	S_FreeSounds ();

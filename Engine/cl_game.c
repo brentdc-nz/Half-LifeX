@@ -842,6 +842,38 @@ int CL_GetMaxClients( void )
 }
 
 /*
+====================
+CL_SoundFromIndex
+
+return soundname from index
+====================
+*/
+const char *CL_SoundFromIndex( int index )
+{
+	sfx_t	*sfx = NULL;
+	int	hSound;
+
+	// make sure what we in-bounds
+	index = bound( 0, index, MAX_SOUNDS );
+	hSound = cl.sound_index[index];
+
+	if( !hSound )
+	{
+		MsgDev( D_ERROR, "CL_SoundFromIndex: invalid sound index %i\n", index );
+		return NULL;
+	}
+
+	sfx = S_GetSfxByHandle( hSound );
+	if( !sfx )
+	{
+		MsgDev( D_ERROR, "CL_SoundFromIndex: bad sfx for index %i\n", index );
+		return NULL;
+	}
+
+	return sfx->name;
+}
+
+/*
 =========
 SPR_EnableScissor
 
@@ -894,7 +926,7 @@ void CL_DrawCrosshair( void )
 
 	pPlayer = CL_GetLocalPlayer();
 
-	if( cl.frame.local.client.deadflag != DEAD_NO || cl.frame.local.client.flags & FL_FROZEN )
+	if( cl.frame.client.deadflag != DEAD_NO || cl.frame.client.flags & FL_FROZEN )
 		return;
 
 	// any camera on
@@ -1844,7 +1876,7 @@ pfnPhysInfo_ValueForKey
 */
 static const char* pfnPhysInfo_ValueForKey( const char *key )
 {
-	return Info_ValueForKey( cl.frame.local.client.physinfo, key );
+	return Info_ValueForKey( cl.frame.client.physinfo, key );
 }
 
 /*
@@ -1867,7 +1899,7 @@ value that come from server
 */
 static float pfnGetClientMaxspeed( void )
 {
-	return cl.frame.local.client.maxspeed;
+	return cl.frame.client.maxspeed;
 }
 
 /*
@@ -2223,7 +2255,7 @@ pfnLocalPlayerDucking
 */
 int pfnLocalPlayerDucking( void )
 {
-	return cl.frame.local.client.bInDuck;
+	return cl.frame.client.bInDuck;
 }
 
 /*
@@ -2235,7 +2267,11 @@ pfnLocalPlayerViewheight
 void pfnLocalPlayerViewheight( float *view_ofs )
 {
 	// predicted or smoothed
-	if( view_ofs ) VectorCopy( cl.frame.local.client.view_ofs, view_ofs );
+	if( !view_ofs ) return;
+
+	if( CL_IsPredicted( ))
+		VectorCopy( cl.predicted_viewofs, view_ofs );		
+	else VectorCopy( cl.frame.client.view_ofs, view_ofs );
 }
 
 /*
@@ -2289,11 +2325,66 @@ physent_t *pfnGetPhysent( int idx )
 =============
 pfnSetUpPlayerPrediction
 
+FIXME: finalize
 =============
 */
 void pfnSetUpPlayerPrediction( int dopred, int bIncludeLocalClient )
 {
-	// TODO: implement
+#if 0
+	entity_state_t	*playerstate = cl.frames[cl.parsecountmod].playerstate;
+	predicted_player_t	*player = cls.predicted_players;
+	cl_entity_t	*clent;
+	int		j, v12;
+
+	for( j = 0; j < MAX_CLIENTS; j++, player++, playerstate++ )
+	{
+		player->active = false;
+
+		if( playerstate->messagenum != cl.parsecount )
+			continue; // not present this frame
+
+		if( !playerstate->modelindex )
+			continue;
+
+		// special for EF_NODRAW and local client?
+		if(( playerstate->effects & EF_NODRAW ) && !bIncludeLocalClient )
+		{
+			// don't include local player?
+			if( cl.playernum != j )
+			{
+				player->active = true;
+				player->movetype = playerstate->movetype;
+				player->solid = playerstate->solid;
+				player->usehull = playerstate->usehull;
+
+				clent = CL_EDICT_NUM( j + 1 );
+//				CL_ComputePlayerOrigin( v9 );
+				VectorCopy( clent->origin, player->origin );
+				VectorCopy( clent->angles, player->angles );
+			}
+			else continue;
+		}
+		else
+		{
+			if( cl.playernum == j )
+				continue;
+
+			player->active = true;
+			player->movetype = playerstate->movetype;
+			player->solid = playerstate->solid;
+			player->usehull = playerstate->usehull;
+
+			v12 = 17080 * cl.parsecountmod + 340 * j;
+			player->origin[0] = cl.frames[0].playerstate[0].origin[0] + v12;
+			player->origin[1] = cl.frames[0].playerstate[0].origin[1] + v12;
+			player->origin[2] = cl.frames[0].playerstate[0].origin[2] + v12;
+
+			player->angles[0] = cl.frames[0].playerstate[0].angles[0] + v12;
+			player->angles[1] = cl.frames[0].playerstate[0].angles[1] + v12;
+			player->angles[2] = cl.frames[0].playerstate[0].angles[2] + v12;
+		}
+	}
+#endif
 }
 
 /*
@@ -2372,6 +2463,23 @@ static const char *pfnTraceTexture( int ground, float *vstart, float *vend )
 
 	pe = &clgame.pmove->physents[ground];
 	return PM_TraceTexture( pe, vstart, vend );
+}
+
+/*
+=============
+pfnTraceSurface
+
+=============
+*/
+static struct msurface_s *pfnTraceSurface( int ground, float *vstart, float *vend )
+{
+	physent_t *pe;
+
+	if( ground < 0 || ground >= clgame.pmove->numphysent )
+		return NULL; // bad ground
+
+	pe = &clgame.pmove->physents[ground];
+	return PM_TraceSurface( pe, vstart, vend );
 }
 	
 /*
@@ -2771,7 +2879,7 @@ pfnDrawLocalizedHudString
 TODO: implement
 =============
 */
-int pfnDrawLocalizedHudString( int x, int y, const char* str, int r, int g, int b )
+int pfnDrawLocalizedHudString( int x, int y, const char *str, int r, int g, int b )
 {
 	return 0;
 }
@@ -2895,11 +3003,11 @@ void pfnStartDynamicSound2( char *filename, float volume, float pitch )
 
 /*
 =============
-pfnFillRGBA2
+pfnFillRGBABlend
 
 =============
 */
-void pfnFillRGBA2( int x, int y, int width, int height, int r, int g, int b, int a )
+void pfnFillRGBABlend( int x, int y, int width, int height, int r, int g, int b, int a )
 {
 	r = bound( 0, r, 255 );
 	g = bound( 0, g, 255 );
@@ -3229,6 +3337,76 @@ void TriFog( float flFogColor[3], float flStart, float flEnd, int bOn )
 	/*p*/glFogf( GL_FOG_END, RI.fogEnd );
 	/*p*/glFogfv( GL_FOG_COLOR, RI.fogColor );
 	/*p*/glHint( GL_FOG_HINT, GL_NICEST );
+}
+
+/*
+=============
+TriGetMatrix
+
+very strange export
+=============
+*/
+void TriGetMatrix( const int pname, float *matrix )
+{
+	/*p*/glGetFloatv( pname, matrix );
+}
+
+/*
+=============
+TriBoxInPVS
+
+check box in pvs (absmin, absmax)
+=============
+*/
+int TriBoxInPVS( float *mins, float *maxs )
+{
+	return Mod_BoxVisible( mins, maxs, Mod_GetCurrentVis( ));
+}
+
+/*
+=============
+TriLightAtPoint
+
+NOTE: dlights are ignored
+=============
+*/
+void TriLightAtPoint( float *pos, float *value )
+{
+	color24	ambient;
+
+	if( !pos || !value )
+		return;
+
+	R_LightForPoint( pos, &ambient, false, false, 0.0f );
+
+	value[0] = (float)ambient.r * 255.0f;
+	value[1] = (float)ambient.g * 255.0f;
+	value[2] = (float)ambient.b * 255.0f;
+}
+
+/*
+=============
+TriColor4fRendermode
+
+Heavy legacy of Quake...
+=============
+*/
+void TriColor4fRendermode( float r, float g, float b, float a, int rendermode )
+{
+	if( rendermode == kRenderTransAlpha )
+		/*p*/glColor4f( r, g, b, a );
+	else /*p*/glColor4f( r * a, g * a, b * a, 1.0f );
+}
+
+/*
+=============
+TriForParams
+
+=============
+*/
+void TriFogParams( float flDensity, int iFogSkybox )
+{
+	// TODO: implement
 }
 
 /*
@@ -3840,7 +4018,7 @@ static cl_enginefunc_t gEngfuncs =
 	pfnConstructTutorMessageDecayBuffer,
 	pfnResetTutorMessageDecayData,
 	pfnStartDynamicSound2,
-	pfnFillRGBA2,
+	pfnFillRGBABlend,
 };
 
 void CL_UnloadProgs( void )
@@ -3905,10 +4083,14 @@ qboolean CL_LoadProgs( const char *name )
 #ifndef _HARDLINKED //MARTY
 	for( func = cdll_exports; func && func->name != NULL; func++ )
 	{
+		if( *func->func != NULL )
+			continue;	// already get through 'F'
+
 		// functions are cleared before all the extensions are evaluated
 		if(!( *func->func = (void *)Com_GetProcAddress( clgame.hInstance, func->name )))
 		{
-          	MsgDev( D_NOTE, "CL_LoadProgs: failed to get address of %s proc\n", func->name );
+          		MsgDev( D_NOTE, "CL_LoadProgs: failed to get address of %s proc\n", func->name );
+
 			Com_FreeLibrary( clgame.hInstance );
 			clgame.hInstance = NULL;
 			return false;

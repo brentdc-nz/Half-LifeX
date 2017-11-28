@@ -785,24 +785,8 @@ static void R_SetupFrame( void )
 {
 	vec3_t	viewOrg, viewAng;
 
-	if( RP_NORMALPASS() && cl.thirdperson )
-	{
-		vec3_t	cam_ofs, vpn;
-
-		clgame.dllFuncs.CL_CameraOffset( cam_ofs );
-
-		viewAng[PITCH] = cam_ofs[PITCH];
-		viewAng[YAW] = cam_ofs[YAW];
-		viewAng[ROLL] = 0;
-
-		AngleVectors( viewAng, vpn, NULL, NULL );
-		VectorMA( RI.refdef.vieworg, -cam_ofs[ROLL], vpn, viewOrg );
-	}
-	else
-	{
-		VectorCopy( RI.refdef.vieworg, viewOrg );
-		VectorCopy( RI.refdef.viewangles, viewAng );
-	}
+	VectorCopy( RI.refdef.vieworg, viewOrg );
+	VectorCopy( RI.refdef.viewangles, viewAng );
 
 	// build the transformation matrix for the given view angles
 	VectorCopy( viewOrg, RI.vieworg );
@@ -1273,7 +1257,7 @@ void R_BeginFrame( qboolean clearScene )
 
 	// texturemode stuff
 	// update texture parameters
-	if( gl_texturemode->modified || gl_texture_anisotropy->modified || gl_texture_lodbias ->modified )
+	if( gl_texturemode->modified || gl_texture_anisotropy->modified || gl_texture_lodbias->modified )
 		R_SetTextureParameters();
 
 	// swapinterval stuff
