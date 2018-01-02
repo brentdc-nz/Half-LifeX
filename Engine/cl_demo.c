@@ -209,10 +209,10 @@ void CL_WriteDemoUserCmd( int cmdnumber )
 	FS_Write( cls.demofile, &cmdnumber, sizeof( int ));
 
 	// write usercmd_t
-	BF_Init( &buf, "UserCmd", data, sizeof( data ));
+	MSG_Init( &buf, "UserCmd", data, sizeof( data ));
 	CL_WriteUsercmd( &buf, -1, cmdnumber );	// always no delta
 
-	bytes = BF_GetNumBytesWritten( &buf );
+	bytes = MSG_GetNumBytesWritten( &buf );
 
 	FS_Write( cls.demofile, &bytes, sizeof( word ));
 	FS_Write( cls.demofile, data, bytes );
@@ -258,7 +258,7 @@ void CL_WriteDemoMessage( qboolean startup, int start, sizebuf_t *msg )
 	if( !startup && !cls.demorecording )
 		return;
 
-	swlen = BF_GetNumBytesWritten( msg ) - start;
+	swlen = MSG_GetNumBytesWritten( msg ) - start;
 	if( swlen <= 0 ) return;
 
 	if( !startup )
@@ -277,7 +277,7 @@ void CL_WriteDemoMessage( qboolean startup, int start, sizebuf_t *msg )
 	FS_Write( file, &swlen, sizeof( int ));
 
 	// output the buffer. Skip the network packet stuff.
-	FS_Write( file, BF_GetData( msg ) + start, swlen );
+	FS_Write( file, MSG_GetData( msg ) + start, swlen );
 }
 
 /*
@@ -330,7 +330,7 @@ void CL_WriteDemoHeader( const char *name )
 	cls.demorecording = true;
 	cls.demowaiting = true;	// don't start saving messages until a non-delta compressed message is received
 
-	Q_memset( &demo.header, 0, sizeof( demo.header ));
+	memset( &demo.header, 0, sizeof( demo.header ));
 
 	demo.header.id = IDEMOHEADER;
 	demo.header.dem_protocol = DEMO_PROTOCOL;
@@ -420,9 +420,7 @@ void CL_StopRecord( void )
 	FS_Write( cls.demofile, &demo.directory.numentries, sizeof( int ));
 
 	for( i = 0; i < demo.directory.numentries; i++ )
-	{
 		FS_Write( cls.demofile, &demo.directory.entries[i], sizeof( demoentry_t ));
-	}
 
 	Mem_Free( demo.directory.entries );
 	demo.directory.numentries = 0;
@@ -449,10 +447,10 @@ CL_DrawDemoRecording
 */
 void CL_DrawDemoRecording( void )
 {
-	char		string[64];
-	rgba_t		color = { 255, 255, 255, 255 };
+	char	string[64];
+	rgba_t	color = { 255, 255, 255, 255 };
 	fs_offset_t	pos;
-	int		len;
+	int	len;
 
 	if(!( host.developer && cls.demorecording ))
 		return;
@@ -511,11 +509,12 @@ void CL_ReadDemoUserCmd( qboolean discard )
 
 	if( !discard )
 	{
-		usercmd_t	nullcmd;
-		sizebuf_t	buf;
+		usercmd_t		nullcmd;
+		sizebuf_t		buf;
 
-		Q_memset( &nullcmd, 0, sizeof( nullcmd ));
-		BF_Init( &buf, "UserCmd", data, sizeof( data ));
+
+		memset( &nullcmd, 0, sizeof( nullcmd ));
+		MSG_Init( &buf, "UserCmd", data, sizeof( data ));
 
 		pcmd = &cl.commands[cmdnumber & CL_UPDATE_MASK];
 		pcmd->processedfuncs = false;
@@ -690,8 +689,7 @@ qboolean CL_DemoReadMessage( byte *buffer, size_t *length )
 	}
 
 	// HACKHACK: changedemo issues
-	if( !cls.netchan.remote_address.type )
-		cls.netchan.remote_address.type = NA_LOOPBACK;
+	if( !cls.netchan.remote_address.type ) cls.netchan.remote_address.type = NA_LOOPBACK;
 
 	if(( !cl.background && ( cl.refdef.paused || cls.key_dest != key_game )) || cls.key_dest == key_console )
 	{
@@ -711,10 +709,9 @@ qboolean CL_DemoReadMessage( byte *buffer, size_t *length )
 		fElapsedTime = CL_GetDemoPlaybackClock() - demo.starttime;
 		bSkipMessage = (f >= fElapsedTime) ? true : false;
 
-		if( cls.changelevel )
-			demo.framecount = 1;
+		if( cls.changelevel ) demo.framecount = 1;
 
-		// HACKHACK: changelevel issues
+		// changelevel issues
 		if( demo.framecount <= 10 && ( fElapsedTime - f ) > host.frametime )
 			demo.starttime = CL_GetDemoPlaybackClock();
 
@@ -889,8 +886,7 @@ qboolean CL_GetComment( const char *demoname, char *comment )
 ==================
 CL_NextDemo
 
-Called when a demo or cinematic finishes
-If the "nextdemo" cvar is set, that command will be issued
+Called when a demo finishes
 ==================
 */
 qboolean CL_NextDemo( void )
@@ -1086,14 +1082,11 @@ void CL_PlayDemo_f( void )
 
 	if( demo.header.net_protocol != PROTOCOL_VERSION || demo.header.dem_protocol != DEMO_PROTOCOL )
 	{
-		MsgDev( D_ERROR, "demo protocol outdated\n"
-			"Demo file protocols Network(%i), Demo(%i)\n"
-			"Server protocol is at Network(%i), Demo(%i)\n",
-			demo.header.net_protocol, 
-			demo.header.dem_protocol,
-			PROTOCOL_VERSION,
-			DEMO_PROTOCOL
-		);
+		if( demo.header.dem_protocol != DEMO_PROTOCOL )
+			MsgDev( D_ERROR, "playdemo: demo protocol outdated (%i should be %i)\n", demo.header.dem_protocol, DEMO_PROTOCOL );
+
+		if( demo.header.net_protocol != PROTOCOL_VERSION )
+			MsgDev( D_ERROR, "playdemo: net protocol outdated (%i should be %i)\n", demo.header.net_protocol, PROTOCOL_VERSION );
 
 		FS_Close( cls.demofile );
 		cls.demofile = NULL;
@@ -1129,7 +1122,7 @@ void CL_PlayDemo_f( void )
 		CL_Disconnect();
 		Host_ShutdownServer();
 
-		Con_Close();
+		Con_FastClose();
 		UI_SetActiveMenu( false );
 	}
 

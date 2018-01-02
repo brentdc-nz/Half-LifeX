@@ -676,7 +676,7 @@ mstudioanim_t *R_StudioGetAnim( model_t *m_pSubModel, mstudioseqdesc_t *pseqdesc
 		MsgDev( D_INFO, "loading: %s\n", filepath );
 			
 		paSequences[pseqdesc->seqgroup].data = Mem_Alloc( com_studiocache, filesize );
-		Q_memcpy( paSequences[pseqdesc->seqgroup].data, buf, filesize );
+		memcpy( paSequences[pseqdesc->seqgroup].data, buf, filesize );
 		Mem_Free( buf );
 	}
 
@@ -736,7 +736,7 @@ StudioCalcBoneAdj
 void R_StudioCalcBoneAdj( float dadt, float *adj, const byte *pcontroller1, const byte *pcontroller2, byte mouthopen )
 {
 	mstudiobonecontroller_t	*pbonecontroller;
-	float			value;	
+	float			value = 0.0f;	
 	int			i, j;
 
 	pbonecontroller = (mstudiobonecontroller_t *)((byte *)m_pStudioHeader + m_pStudioHeader->bonecontrollerindex);
@@ -2948,7 +2948,7 @@ R_StudioDrawPlayer
 static int R_StudioDrawPlayer( int flags, entity_state_t *pplayer )
 {
 	int	m_nPlayerIndex;
-	float	gaitframe, gaityaw;
+	float	gaitframe = 0.0f, gaityaw = 0.0f;
 	vec3_t	dir, prevgaitorigin;
 	alight_t	lighting;
 
@@ -3043,7 +3043,7 @@ static int R_StudioDrawPlayer( int flags, entity_state_t *pplayer )
 		if( RI.currententity->index > 0 )
 		{
 			cl_entity_t *ent = CL_GetEntityByIndex( RI.currententity->index );
-			Q_memcpy( ent->attachment, RI.currententity->attachment, sizeof( vec3_t ) * 4 );
+			memcpy( ent->attachment, RI.currententity->attachment, sizeof( vec3_t ) * 4 );
 		}
 	}
 
@@ -3186,7 +3186,7 @@ static int R_StudioDrawModel( int flags )
 		if( RI.currententity->index > 0 )
 		{
 			cl_entity_t *ent = CL_GetEntityByIndex( RI.currententity->index );
-			Q_memcpy( ent->attachment, RI.currententity->attachment, sizeof( vec3_t ) * 4 );
+			memcpy( ent->attachment, RI.currententity->attachment, sizeof( vec3_t ) * 4 );
 		}
 	}
 
@@ -3418,7 +3418,7 @@ static void R_StudioLoadTexture( model_t *mod, studiohdr_t *phdr, mstudiotexture
 
 		// the pixels immediately follow the structures
 		pixels = (byte *)phdr + ptexture->index;
-		Q_memcpy( tx+1, pixels, size );
+		memcpy( tx+1, pixels, size );
 
 		ptexture->flags |= STUDIO_NF_COLORMAP;	// yes, this is colormap image
 		flags |= TF_FORCE_COLOR;
@@ -3431,7 +3431,7 @@ static void R_StudioLoadTexture( model_t *mod, studiohdr_t *phdr, mstudiotexture
 	FS_StripExtension( mdlname );
 
 	// NOTE: colormaps must have the palette for properly work. Ignore it.
-	if( Mod_AllowMaterials( ) && !( ptexture->flags & STUDIO_NF_COLORMAP ))
+	if( Mod_AllowMaterials( ) && !FBitSet( ptexture->flags, STUDIO_NF_COLORMAP ))
 	{
 		int	gl_texturenum = 0;
 
@@ -3547,7 +3547,7 @@ void Mod_LoadStudioModel( model_t *mod, const void *buffer, qboolean *loaded )
 			size1 = thdr->numtextures * sizeof( mstudiotexture_t );
 			size2 = thdr->numskinfamilies * thdr->numskinref * sizeof( short );
 			mod->cache.data = Mem_Alloc( loadmodel->mempool, phdr->length + size1 + size2 );
-			Q_memcpy( loadmodel->cache.data, buffer, phdr->length ); // copy main mdl buffer
+			memcpy( loadmodel->cache.data, buffer, phdr->length ); // copy main mdl buffer
 			phdr = (studiohdr_t *)loadmodel->cache.data; // get the new pointer on studiohdr
 			phdr->numskinfamilies = thdr->numskinfamilies;
 			phdr->numtextures = thdr->numtextures;
@@ -3557,7 +3557,7 @@ void Mod_LoadStudioModel( model_t *mod, const void *buffer, qboolean *loaded )
 
 			in = (byte *)thdr + thdr->textureindex;
 			out = (byte *)phdr + phdr->textureindex;
-			Q_memcpy( out, in, size1 + size2 );	// copy textures + skinrefs
+			memcpy( out, in, size1 + size2 );	// copy textures + skinrefs
 			phdr->length += size1 + size2;
 			Mem_Free( buffer2 ); // release T.mdl
 		}
@@ -3566,13 +3566,13 @@ void Mod_LoadStudioModel( model_t *mod, const void *buffer, qboolean *loaded )
 	{
 		// NOTE: we wan't keep raw textures in memory. just cutoff model pointer above texture base
 		loadmodel->cache.data = Mem_Alloc( loadmodel->mempool, phdr->texturedataindex );
-		Q_memcpy( loadmodel->cache.data, buffer, phdr->texturedataindex );
+		memcpy( loadmodel->cache.data, buffer, phdr->texturedataindex );
 		phdr->length = phdr->texturedataindex;	// update model size
 	}
 #else
 	// just copy model into memory
 	loadmodel->cache.data = Mem_Alloc( loadmodel->mempool, phdr->length );
-	Q_memcpy( loadmodel->cache.data, buffer, phdr->length );
+	memcpy( loadmodel->cache.data, buffer, phdr->length );
 #endif
 	// setup bounding box
 	VectorCopy( phdr->bbmin, loadmodel->mins );
@@ -3627,7 +3627,7 @@ void Mod_UnloadStudioModel( model_t *mod )
 	}
 
 	Mem_FreePool( &mod->mempool );
-	Q_memset( mod, 0, sizeof( *mod ));
+	memset( mod, 0, sizeof( *mod ));
 }
 		
 static engine_studio_api_t gStudioAPI =

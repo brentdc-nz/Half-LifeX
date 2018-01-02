@@ -79,7 +79,7 @@ qboolean Cmd_GetMapList( const char *s, char *completedname, int length )
 			dheader_t		*header;
 			dextrahdr_t	*hdrext;
 
-			Q_memset( buf, 0, sizeof( buf ));
+			memset( buf, 0, sizeof( buf ));
 			FS_Read( f, buf, sizeof( buf ));
 			header = (dheader_t *)buf;
 			ver = header->version;
@@ -304,8 +304,8 @@ qboolean Cmd_GetMusicList( const char *s, char *completedname, int length )
 	{
 		const char *ext = FS_FileExtension( t->filenames[i] ); 
 
-		if( !Q_stricmp( ext, "wav" ) || !Q_stricmp( ext, "mp3" ));
-		else continue;
+		if( Q_stricmp( ext, "wav" ) && Q_stricmp( ext, "mp3" ))
+			continue;
 
 		FS_FileBase( t->filenames[i], matchbuf );
 		Msg( "%16s\n", matchbuf );
@@ -618,6 +618,64 @@ qboolean Cmd_GetTexturemodes( const char *s, char *completedname, int length )
 
 /*
 =====================================
+Cmd_GetCDList
+
+Prints or complete CD command name
+=====================================
+*/
+qboolean Cmd_GetCDList( const char *s, char *completedname, int length )
+{
+	int i, numcdcommands;
+	string	cdcommands[8];
+	string	matchbuf;
+
+	const char *cd_command[] =
+	{
+	"info",
+	"loop",
+	"off",
+	"on",
+	"pause",
+	"play",
+	"resume",
+	"stop",
+	};
+
+	// compare CD command list with current keyword
+	for( i = 0, numcdcommands = 0; i < 8; i++ )
+	{
+		if(( *s == '*' ) || !Q_strnicmp( cd_command[i], s, Q_strlen( s )))
+			Q_strcpy( cdcommands[numcdcommands++], cd_command[i] );
+	}
+
+	if( !numcdcommands ) return false;
+	Q_strncpy( matchbuf, cdcommands[0], MAX_STRING );
+	if( completedname && length ) Q_strncpy( completedname, matchbuf, length );
+	if( numcdcommands == 1 ) return true;
+
+	for( i = 0; i < numcdcommands; i++ )
+	{
+		Q_strncpy( matchbuf, cdcommands[i], MAX_STRING );
+		Msg( "%16s\n", matchbuf );
+	}
+
+	Msg( "\n^3 %i commands found.\n", numcdcommands );
+
+	// cut shortestMatch to the amount common with s
+	if( completedname && length )
+	{
+		for( i = 0; matchbuf[i]; i++ )
+		{
+			if( Q_tolower( completedname[i] ) != Q_tolower( matchbuf[i] ))
+				completedname[i] = 0;
+		}
+	}
+	return true;
+}
+
+
+/*
+=====================================
 Cmd_GetGameList
 
 Prints or complete gamedir name
@@ -711,7 +769,7 @@ qboolean Cmd_CheckMapsList_R( qboolean fRefresh, qboolean onlyingamedir )
 			int	num_spawnpoints = 0;
 			dheader_t	*header;
 
-			Q_memset( buf, 0, MAX_SYSPATH );
+			memset( buf, 0, MAX_SYSPATH );
 			FS_Read( f, buf, MAX_SYSPATH );
 			ver = *(uint *)buf;
                               
@@ -832,6 +890,7 @@ autocomplete_list_t cmd_list[] =
 { "load", Cmd_GetSavesList },
 { "play", Cmd_GetSoundList },
 { "map", Cmd_GetMapList },
+{ "cd", Cmd_GetCDList },
 { NULL }, // termiantor
 };
 

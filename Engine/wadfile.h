@@ -20,7 +20,7 @@
 ========================================================================
 .WAD archive format	(WhereAllData - WAD)
 
-List of compressed files, that can be identify only by TYPE_*
+List of compressed files, that can be identify only by TYP_*
 
 <format>
 header:	dwadinfo_t[dwadinfo_t]
@@ -33,7 +33,7 @@ infotable	dlumpinfo_t[dwadinfo_t->numlumps]
 ========================================================================
 */
 
-#define IDWAD3HEADER	(('3'<<24)+('D'<<16)+('A'<<8)+'W')
+#define IDWAD3HEADER	(('3'<<24)+('D'<<16)+('A'<<8)+'W')	// little-endian "WAD3" half-life wads
 
 // dlumpinfo_t->attribs
 #define ATTR_NONE		0	// allow to read-write

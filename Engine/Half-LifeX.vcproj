@@ -1070,9 +1070,6 @@
 							RelativePath=".\net_encode.c">
 						</File>
 						<File
-							RelativePath=".\net_huff.c">
-						</File>
-						<File
 							RelativePath=".\network.c">
 						</File>
 						<File

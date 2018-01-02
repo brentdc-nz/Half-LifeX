@@ -22,6 +22,11 @@ static bg_track_t		s_bgTrack;
 static musicfade_t		musicfade;	// controlled by game dlls
 int			s_rawend;
 
+/*
+=================
+S_PrintBackgroundTrackState
+=================
+*/
 void S_PrintBackgroundTrackState( void )
 {
 	if( s_bgTrack.current[0] && s_bgTrack.loopName[0] )
@@ -68,6 +73,7 @@ float S_GetMusicVolume( void )
 		scale = bound( 0.0f, musicfade.percent / 100.0f, 1.0f );
 		scale = 1.0f - scale;
 	}
+
 	return s_musicvolume->value * scale;
 }
 
@@ -101,7 +107,7 @@ void S_StartBackgroundTrack( const char *introTrack, const char *mainTrack, long
 	// open stream
 	s_bgTrack.stream = FS_OpenStream( va( "media\\%s", introTrack )); //MARTY - Fixed slashes
 	Q_strncpy( s_bgTrack.current, introTrack, sizeof( s_bgTrack.current ));
-	Q_memset( &musicfade, 0, sizeof( musicfade )); // clear any soundfade
+	memset( &musicfade, 0, sizeof( musicfade )); // clear any soundfade
 	s_bgTrack.source = cls.key_dest;
 
 	if( position != 0 )
@@ -109,10 +115,14 @@ void S_StartBackgroundTrack( const char *introTrack, const char *mainTrack, long
 		// restore message, update song position
 		FS_SetStreamPos( s_bgTrack.stream, position );
 	}
-
 	S_CheckLerpingState();
 }
 
+/*
+=================
+S_StopBackgroundTrack
+=================
+*/
 void S_StopBackgroundTrack( void )
 {
 	s_listener.stream_paused = false;
@@ -121,12 +131,17 @@ void S_StopBackgroundTrack( void )
 	if( !s_bgTrack.stream ) return;
 
 	FS_FreeStream( s_bgTrack.stream );
-	Q_memset( &s_bgTrack, 0, sizeof( bg_track_t ));
-	Q_memset( &musicfade, 0, sizeof( musicfade ));
+	memset( &s_bgTrack, 0, sizeof( bg_track_t ));
+	memset( &musicfade, 0, sizeof( musicfade ));
 	s_listener.lerping = false;
 	s_rawend = 0;
 }
 
+/*
+=================
+S_StreamSetPause
+=================
+*/
 void S_StreamSetPause( int pause )
 {
 	s_listener.stream_paused = pause;

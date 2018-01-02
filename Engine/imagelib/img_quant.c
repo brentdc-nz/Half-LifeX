@@ -375,9 +375,8 @@ void learn( void )
 	if( rad <= 1 ) rad = 0;
 
 	for( i = 0; i < rad; i++ ) 
-	{
-		radpower[i] = alpha * (((rad * rad - i * i) * radbias) / (rad * rad));
-	}	
+		radpower[i] = alpha * ((( rad * rad - i * i ) * radbias ) / ( rad * rad ));	
+
 
 	if(( lengthcount % prime1 ) != 0 )
 	{
@@ -427,7 +426,7 @@ void learn( void )
 			if( rad <= 1 ) rad = 0;
 
 			for( j = 0; j < rad; j++ ) 
-				radpower[j] = alpha * (((rad * rad - j * j) * radbias) / (rad * rad));
+				radpower[j] = alpha * ((( rad * rad - j * j ) * radbias ) / ( rad * rad ));
 		}
 	}
 }
@@ -470,7 +469,7 @@ rgbdata_t *Image_Quantize( rgbdata_t *pic )
 	}
 
 	pic->buffer = Mem_Realloc( host.imagepool, pic->buffer, image.size );
-	Q_memcpy( pic->buffer, image.tempbuffer, image.size );
+	memcpy( pic->buffer, image.tempbuffer, image.size );
 	pic->type = PF_INDEXED_24;
 	pic->size = image.size;
 

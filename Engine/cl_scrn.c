@@ -48,17 +48,17 @@ void SCR_DrawFPS( void )
 {
 	float		calc;
 	rgba_t		color;
+	double		newtime;
 	static double	nexttime = 0, lasttime = 0;
 	static double	framerate = 0;
 	static int	framecount = 0;
 	static int	minfps = 9999;
 	static int	maxfps = 0;
-	double		newtime;
 	char		fpsstring[64];
 	int		offset;
 
-	if( cls.state != ca_active ) return; 
-	if( !cl_showfps->integer || cl.background ) return;
+	if( cls.state != ca_active || !cl_showfps->integer || cl.background )
+		return; 
 
 	switch( cls.scrshot_action )
 	{
@@ -74,12 +74,12 @@ void SCR_DrawFPS( void )
 	{
 		framerate = framecount / (newtime - lasttime);
 		lasttime = newtime;
-		nexttime = max( nexttime + 1, lasttime - 1 );
+		nexttime = Q_max( nexttime + 1.0, lasttime - 1.0 );
 		framecount = 0;
 	}
 
-	framecount++;
 	calc = framerate;
+	framecount++;
 
 	if( calc < 1.0f )
 	{
@@ -118,40 +118,16 @@ void SCR_NetSpeeds( void )
 	float		time = cl.mtime[0];
 	rgba_t		color;
 
-	if( !net_speeds->integer ) return;
-	if( cls.state != ca_active ) return; 
+	if( !net_speeds->integer || cls.demoplayback || cls.state != ca_active )
+		return;
 
 	switch( net_speeds->integer )
 	{
-	case 1:
-		if( cls.netchan.compress )
-		{
-			Q_snprintf( msg, sizeof( msg ), "Game Time: %02d:%02d\nTotal received from server:\n Huffman %s\nUncompressed %s\n",
-			(int)(time / 60.0f ), (int)fmod( time, 60.0f ), Q_memprint( cls.netchan.total_received ), Q_memprint( cls.netchan.total_received_uncompressed ));
-		}
-		else
-		{
-			Q_snprintf( msg, sizeof( msg ), "Game Time: %02d:%02d\nTotal received from server:\nUncompressed %s\n",
-			(int)(time / 60.0f ), (int)fmod( time, 60.0f ), Q_memprint( cls.netchan.total_received_uncompressed ));
-		}
-		break;
-	case 2:
-		if( cls.netchan.compress )
-		{
-			Q_snprintf( msg, sizeof( msg ), "Game Time: %02d:%02d\nTotal sended to server:\nHuffman %s\nUncompressed %s\n",
-			(int)(time / 60.0f ), (int)fmod( time, 60.0f ), Q_memprint( cls.netchan.total_sended ), Q_memprint( cls.netchan.total_sended_uncompressed ));
-		}
-		else
-		{
-			Q_snprintf( msg, sizeof( msg ), "Game Time: %02d:%02d\nTotal sended to server:\nUncompressed %s\n",
-			(int)(time / 60.0f ), (int)fmod( time, 60.0f ), Q_memprint( cls.netchan.total_sended_uncompressed ));
-		}
-		break;
 	default: return;
 	}
 
 	x = scr_width->integer - 320;
-	y = 256;
+	y = 384;
 
 	Con_DrawStringLen( NULL, NULL, &height );
 	MakeRGBA( color, 255, 255, 255, 255 );
@@ -216,7 +192,7 @@ void SCR_MakeLevelShot( void )
 	Cbuf_AddText( "levelshot\n" );
 }
 
-void SCR_MakeScreenShot( void ) //MARTY FIXME WIP
+void SCR_MakeScreenShot( void ) //MARTY TODO
 {
 	qboolean	iRet = false;
 	int	viewsize;
@@ -236,11 +212,11 @@ void SCR_MakeScreenShot( void ) //MARTY FIXME WIP
 	case scrshot_plaque:
 		iRet = VID_ScreenShot( cls.shotname, VID_LEVELSHOT );
 		break;
-	case scrshot_savegame:
+*/	case scrshot_savegame:
 	case scrshot_demoshot:
 		iRet = VID_ScreenShot( cls.shotname, VID_MINISHOT );
 		break;
-	case scrshot_envshot:
+/*	case scrshot_envshot:
 		iRet = VID_CubemapShot( cls.shotname, viewsize, cls.envshot_vieworg, false );
 		break;
 	case scrshot_skyshot:
@@ -259,7 +235,7 @@ void SCR_MakeScreenShot( void ) //MARTY FIXME WIP
 	{
 		// snapshots don't writes message about image		
 		if( cls.scrshot_action != scrshot_snapshot )
-			MsgDev( D_AICONSOLE, "Write %s\n", cls.shotname );
+			MsgDev( D_REPORT, "Write %s\n", cls.shotname );
 	}
 	else MsgDev( D_ERROR, "Unable to write %s\n", cls.shotname );
 
@@ -441,7 +417,7 @@ void SCR_UpdateScreen( void )
 		V_RenderView();
 		break;
 	case ca_cinematic:
-//		SCR_DrawCinematic(); //MARTY FIXME WIP 
+		SCR_DrawCinematic();
 		break;
 	default:
 		Host_Error( "SCR_UpdateScreen: bad cls.state\n" );
@@ -572,9 +548,9 @@ SCR_VidInit
 */
 void SCR_VidInit( void )
 {
-	Q_memset( &clgame.ds, 0, sizeof( clgame.ds )); // reset a draw state
-	Q_memset( &menu.ds, 0, sizeof( menu.ds )); // reset a draw state
-	Q_memset( &clgame.centerPrint, 0, sizeof( clgame.centerPrint ));
+	memset( &clgame.ds, 0, sizeof( clgame.ds )); // reset a draw state
+	memset( &menu.ds, 0, sizeof( menu.ds )); // reset a draw state
+	memset( &clgame.centerPrint, 0, sizeof( clgame.centerPrint ));
 
 	// update screen sizes for menu
 	menu.globals->scrWidth = scr_width->integer;
@@ -622,7 +598,7 @@ void SCR_Init( void )
 	Cmd_AddCommand( "sizeup", SCR_SizeUp_f, "screen size up to 10 points" );
 	Cmd_AddCommand( "sizedown", SCR_SizeDown_f, "screen size down to 10 points" );
 
-	if( host.state != HOST_RESTART && !UI_LoadProgs( ))
+	if( !UI_LoadProgs( ))
 	{
 		Msg( "^1Error: ^7can't initialize menu.dll\n" ); // there is non fatal for us
 		if( !host.developer ) host.developer = 1; // we need console, because menu is missing
@@ -634,12 +610,9 @@ void SCR_Init( void )
 	SCR_InitCinematic();
 	SCR_VidInit();
 
-	if( host.state != HOST_RESTART )
-    {
-		if( host.developer && Sys_CheckParm( "-toconsole" ))
-			Cbuf_AddText( "toggleconsole\n" );
-		else UI_SetActiveMenu( true );
-	}
+	if( host.developer && Sys_CheckParm( "-toconsole" ))
+		Cbuf_AddText( "toggleconsole\n" );
+	else UI_SetActiveMenu( true );
 
 	scr_init = true;
 }
@@ -653,9 +626,7 @@ void SCR_Shutdown( void )
 	Cmd_RemoveCommand( "skyname" );
 	Cmd_RemoveCommand( "viewpos" );
 	UI_SetActiveMenu( false );
-
-	if( host.state != HOST_RESTART )
-		UI_UnloadProgs();
+	UI_UnloadProgs();
 
 	scr_init = false;
 }

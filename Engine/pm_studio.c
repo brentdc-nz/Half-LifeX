@@ -465,7 +465,7 @@ static mstudioanim_t *PM_StudioGetAnim( model_t *m_pSubModel, mstudioseqdesc_t *
 		MsgDev( D_INFO, "loading: %s\n", filepath );
 
 		paSequences[pseqdesc->seqgroup].data = Mem_Alloc( com_studiocache, filesize );
-		Q_memcpy( paSequences[pseqdesc->seqgroup].data, buf, filesize );
+		memcpy( paSequences[pseqdesc->seqgroup].data, buf, filesize );
 		Mem_Free( buf );
 	}
 	return (mstudioanim_t *)((byte *)paSequences[pseqdesc->seqgroup].data + pseqdesc->animindex);
@@ -877,7 +877,7 @@ qboolean PM_StudioTrace( playermove_t *pmove, physent_t *pe, const vec3_t start,
 	pfnTrace	StudioTrace = NULL;
 
 	// assume we didn't hit anything
-	Q_memset( ptr, 0, sizeof( pmtrace_t ));
+	memset( ptr, 0, sizeof( pmtrace_t ));
 	VectorCopy( end, ptr->endpos );
 	ptr->fraction = trace_realfraction = 1.0f;
 	ptr->hitgroup = -1;

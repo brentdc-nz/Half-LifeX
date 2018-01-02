@@ -25,7 +25,7 @@ convar_t	*con_notifytime;
 convar_t	*scr_conspeed;
 convar_t	*con_fontsize;
 
-#define CON_TIMES		5	// need for 4 lines
+#define CON_TIMES		4	// notify lines
 #define COLOR_DEFAULT	'7'
 #define CON_HISTORY		64
 #define MAX_DBG_NOTIFY	128
@@ -37,14 +37,14 @@ convar_t	*con_fontsize;
 // console color typeing
 rgba_t g_color_table[8] =
 {
-{  0,   0,   0, 255},	// black
-{255,   0,   0, 255},	// red
-{  0, 255,   0, 255},	// green
-{255, 255,   0, 255},	// yellow
-{  0,   0, 255, 255},	// blue
-{  0, 255, 255, 255},	// cyan
-{255,   0, 255, 255},	// magenta
-{240, 180,  24, 255},	// default color (can be changed by user)
+{   0,   0,   0, 255 },	// black
+{ 255,   0,   0, 255 },	// red
+{   0, 255,   0, 255 },	// green
+{ 255, 255,   0, 255 },	// yellow
+{   0,   0, 255, 255 },	// blue
+{   0, 255, 255, 255 },	// cyan
+{ 255,   0, 255, 255 },	// magenta
+{ 240, 180,  24, 255 },	// default color (can be changed by user)
 };
 
 typedef struct
@@ -85,7 +85,7 @@ typedef struct
 	// console images
 	int		background;	// console background
 
-	// conchars
+	// console fonts
 	cl_font_t		chars[CON_NUMFONTS];// fonts.wad/font1.fnt
 	cl_font_t		*curFont, *lastUsedFont;
 	
@@ -179,7 +179,7 @@ Con_ClearField
 */
 void Con_ClearField( field_t *edit )
 {
-	Q_memset( edit->buffer, 0, MAX_STRING );
+	memset( edit->buffer, 0, MAX_STRING );
 	edit->cursor = 0;
 	edit->scroll = 0;
 }
@@ -272,9 +272,8 @@ Con_ToggleConsole_f
 */
 void Con_ToggleConsole_f( void )
 {
-	if( !host.developer ) return;	// disabled
-
-	if( UI_CreditsActive( )) return; // disabled by final credits
+	if( !host.developer || UI_CreditsActive( ))
+		return; // disabled
 
 	// show console only in game or by special call from menu
 	if( cls.state != ca_active || cls.key_dest == key_menu )
@@ -343,7 +342,7 @@ void Con_CheckResize( void )
 		if( con.linewidth < numchars )
 			numchars = con.linewidth;
 
-		Q_memcpy( tbuf, con.text, CON_TEXTSIZE * sizeof( short ));
+		memcpy( tbuf, con.text, CON_TEXTSIZE * sizeof( short ));
 
 		for( i = 0; i < CON_TEXTSIZE; i++ )
 			con.text[i] = ( ColorIndex( COLOR_DEFAULT ) << 8 ) | ' ';
@@ -436,8 +435,6 @@ static void Con_LoadConsoleFont( int fontNumber, cl_font_t *font )
 {
 	int	fontWidth;
 
-	ASSERT( font != NULL );
-
 	if( font->valid ) return; // already loaded
 
 	// loading conchars
@@ -501,6 +498,13 @@ static void Con_LoadConchars( void )
 	
 }
 
+/*
+====================
+Con_DrawGenericChar
+
+draw console single character
+====================
+*/
 static int Con_DrawGenericChar( int x, int y, int number, rgba_t color )
 {
 	int	width, height;
@@ -536,29 +540,65 @@ static int Con_DrawGenericChar( int x, int y, int number, rgba_t color )
 	return con.curFont->charWidths[number];
 }
 
+/*
+====================
+Con_SetFont
+
+choose font size
+====================
+*/
 void Con_SetFont( int fontNum )
 {
 	fontNum = bound( 0, fontNum, 2 ); 
 	con.curFont = &con.chars[fontNum];
 }
 
+/*
+====================
+Con_RestoreFont
+
+restore auto-selected console font
+(that based on screen resolution)
+====================
+*/
 void Con_RestoreFont( void )
 {
 	con.curFont = con.lastUsedFont;
 }
 
+/*
+====================
+Con_DrawCharacter
+
+client version of routine
+====================
+*/
 int Con_DrawCharacter( int x, int y, int number, rgba_t color )
 {
 	GL_SetRenderMode( kRenderTransTexture );
 	return Con_DrawGenericChar( x, y, number, color );
 }
 
+/*
+====================
+Con_DrawCharacterLen
+
+returns character sizes in screen pixels
+====================
+*/
 void Con_DrawCharacterLen( int number, int *width, int *height )
 {
 	if( width && con.curFont ) *width = con.curFont->charWidths[number];
 	if( height && con.curFont ) *height = con.curFont->charHeight;
 }
 
+/*
+====================
+Con_DrawStringLen
+
+compute string width and height in screen pixels
+====================
+*/
 void Con_DrawStringLen( const char *pText, int *length, int *height )
 {
 	int	curLength = 0;
@@ -613,10 +653,10 @@ int Con_DrawGenericString( int x, int y, const char *string, rgba_t setColor, qb
 	if( !con.curFont ) return 0; // no font set
 
 	// draw the colored text
-	s = string;
 	*(uint *)color = *(uint *)setColor;
+	s = string;
 
-	while ( *s )
+	while( *s )
 	{
 		if( *s == '\n' )
 		{
@@ -630,7 +670,7 @@ int Con_DrawGenericString( int x, int y, const char *string, rgba_t setColor, qb
 		{
 			if( !forceColor )
 			{
-				Q_memcpy( color, g_color_table[ColorIndex(*(s+1))], sizeof( color ));
+				memcpy( color, g_color_table[ColorIndex(*(s+1))], sizeof( color ));
 				color[3] = setColor[3];
 			}
 
@@ -652,6 +692,13 @@ int Con_DrawGenericString( int x, int y, const char *string, rgba_t setColor, qb
 	return drawLen;
 }
 
+/*
+====================
+Con_DrawString
+
+client version of routine
+====================
+*/
 int Con_DrawString( int x, int y, const char *string, rgba_t setColor )
 {
 	return Con_DrawGenericString( x, y, string, setColor, false, -1 );
@@ -669,8 +716,8 @@ void Con_Init( void )
 	// must be init before startup video subsystem
 	scr_width = Cvar_Get( "width", "640", 0, "screen width" );
 	scr_height = Cvar_Get( "height", "480", 0, "screen height" );
-	scr_conspeed = Cvar_Get( "scr_conspeed", "600", 0, "console moving speed" );
-	con_notifytime = Cvar_Get( "con_notifytime", "3", 0, "notify time to live" );
+	scr_conspeed = Cvar_Get( "scr_conspeed", "600", CVAR_ARCHIVE, "console moving speed" );
+	con_notifytime = Cvar_Get( "con_notifytime", "3", CVAR_ARCHIVE, "notify time to live" );
 	con_fontsize = Cvar_Get( "con_fontsize", "1", CVAR_ARCHIVE, "console font number (0, 1 or 2)" );
 
 	Con_CheckResize();
@@ -726,8 +773,8 @@ void Con_Linefeed( void )
 Con_Print
 
 Handles cursor positioning, line wrapping, etc
-All console printing must go through this in order to be logged to disk
-If no console is visible, the text will appear at the top of the game window
+All console printing must go through this in order to be displayed
+If no console is visible, the notify window will pop up.
 ================
 */
 void Con_Print( const char *txt )
@@ -783,6 +830,7 @@ void Con_Print( const char *txt )
 			break;
 		}
 	}
+
 }
 
 /*
@@ -799,7 +847,7 @@ void Con_NPrintf( int idx, char *fmt, ... )
 	if( idx < 0 || idx >= MAX_DBG_NOTIFY )
 		return;
 
-	Q_memset( con.notify[idx].szNotify, 0, MAX_STRING );
+	memset( con.notify[idx].szNotify, 0, MAX_STRING );
 
 	va_start( args, fmt );
 	Q_vsnprintf( con.notify[idx].szNotify, MAX_STRING, fmt, args );
@@ -828,7 +876,7 @@ void Con_NXPrintf( con_nprint_t *info, char *fmt, ... )
 	if( info->index < 0 || info->index >= MAX_DBG_NOTIFY )
 		return;
 
-	Q_memset( con.notify[info->index].szNotify, 0, MAX_STRING );
+	memset( con.notify[info->index].szNotify, 0, MAX_STRING );
 
 	va_start( args, fmt );
 	Q_vsnprintf( con.notify[info->index].szNotify, MAX_STRING, fmt, args );
@@ -855,7 +903,7 @@ void UI_NPrintf( int idx, char *fmt, ... )
 	if( idx < 0 || idx >= MAX_DBG_NOTIFY )
 		return;
 
-	Q_memset( con.notify[idx].szNotify, 0, MAX_STRING );
+	memset( con.notify[idx].szNotify, 0, MAX_STRING );
 
 	va_start( args, fmt );
 	Q_vsnprintf( con.notify[idx].szNotify, MAX_STRING, fmt, args );
@@ -884,7 +932,7 @@ void UI_NXPrintf( con_nprint_t *info, char *fmt, ... )
 	if( info->index < 0 || info->index >= MAX_DBG_NOTIFY )
 		return;
 
-	Q_memset( con.notify[info->index].szNotify, 0, MAX_STRING );
+	memset( con.notify[info->index].szNotify, 0, MAX_STRING );
 
 	va_start( args, fmt );
 	Q_vsnprintf( con.notify[info->index].szNotify, MAX_STRING, fmt, args );
@@ -949,7 +997,7 @@ static int Con_SortCmds( const char **arg1, const char **arg2 )
 
 /*
 ===============
-pfnPrintMatches
+Con_PrintMatches
 ===============
 */
 static void Con_PrintMatches( const char *s, const char *unused1, const char *m, void *unused2 )
@@ -961,7 +1009,12 @@ static void Con_PrintMatches( const char *s, const char *unused1, const char *m,
 	}
 }
 
-static void ConcatRemaining( const char *src, const char *start )
+/*
+===============
+Con_ConcatRemaining
+===============
+*/
+static void Con_ConcatRemaining( const char *src, const char *start )
 {
 	char	*arg;
 	int	i;
@@ -1045,7 +1098,7 @@ void Con_CompleteCommand( field_t *field )
 
 	if( !con.matchCount ) return; // no matches
 
-	Q_memcpy( &temp, con.completionField, sizeof( field_t ));
+	memcpy( &temp, con.completionField, sizeof( field_t ));
 
 	if(( Cmd_Argc() == 2 ) || (( Cmd_Argc() == 1 ) && nextcmd ))
 	{
@@ -1080,7 +1133,7 @@ void Con_CompleteCommand( field_t *field )
 	{
 		Q_sprintf( con.completionField->buffer, "\\%s", con.cmds[0] );
 		if( Cmd_Argc() == 1 ) Q_strncat( con.completionField->buffer, " ", sizeof( con.completionField->buffer ));
-		else ConcatRemaining( temp.buffer, con.completionString );
+		else Con_ConcatRemaining( temp.buffer, con.completionString );
 		con.completionField->cursor = Q_strlen( con.completionField->buffer );
 	}
 	else
@@ -1108,7 +1161,7 @@ void Con_CompleteCommand( field_t *field )
 		// multiple matches, complete to shortest
 		Q_sprintf( con.completionField->buffer, "\\%s", con.shortestMatch );
 		con.completionField->cursor = Q_strlen( con.completionField->buffer );
-		ConcatRemaining( temp.buffer, con.completionString );
+		Con_ConcatRemaining( temp.buffer, con.completionString );
 
 		Msg( "]%s\n", con.completionField->buffer );
 
@@ -1135,7 +1188,6 @@ void Field_Paste( field_t *edit )
 	pasteLen = Q_strlen( cbd );
 	for( i = 0; i < pasteLen; i++ )
 		Field_CharEvent( edit, cbd[i] );
-	Mem_Free( cbd );
 }
 
 /*
@@ -1164,7 +1216,7 @@ void Field_KeyDownEvent( field_t *edit, int key )
 	if( key == K_DEL )
 	{
 		if( edit->cursor < len )
-			Q_memmove( edit->buffer + edit->cursor, edit->buffer + edit->cursor + 1, len - edit->cursor );
+			memmove( edit->buffer + edit->cursor, edit->buffer + edit->cursor + 1, len - edit->cursor );
 		return;
 	}
 
@@ -1172,7 +1224,7 @@ void Field_KeyDownEvent( field_t *edit, int key )
 	{
 		if( edit->cursor > 0 )
 		{
-			Q_memmove( edit->buffer + edit->cursor - 1, edit->buffer + edit->cursor, len - edit->cursor + 1 );
+			memmove( edit->buffer + edit->cursor - 1, edit->buffer + edit->cursor, len - edit->cursor + 1 );
 			edit->cursor--;
 			if( edit->scroll ) edit->scroll--;
 		}
@@ -1267,7 +1319,7 @@ void Field_CharEvent( field_t *edit, int ch )
 	{
 		// insert mode
 		if ( len == MAX_STRING - 1 ) return; // all full
-		Q_memmove( edit->buffer + edit->cursor + 1, edit->buffer + edit->cursor, len + 1 - edit->cursor );
+		memmove( edit->buffer + edit->cursor + 1, edit->buffer + edit->cursor, len + 1 - edit->cursor );
 		edit->buffer[edit->cursor] = ch;
 		edit->cursor++;
 	}
@@ -1313,9 +1365,9 @@ void Field_DrawInputLine( int x, int y, field_t *edit )
 		drawLen = len - prestep;
 
 	// extract <drawLen> characters from the field at <prestep>
-	ASSERT( drawLen < MAX_SYSPATH );
+	drawLen = Q_min( drawLen, MAX_SYSPATH - 1 );
 
-	Q_memcpy( str, edit->buffer + prestep, drawLen );
+	memcpy( str, edit->buffer + prestep, drawLen );
 	str[drawLen] = 0;
 
 	// save char for overstrike
@@ -1370,7 +1422,7 @@ void Key_Console( int key )
 	}
 
 	// enter finishes the line
-	if ( key == K_ENTER || key == K_KP_ENTER )
+	if( key == K_ENTER || key == K_KP_ENTER )
 	{
 		// if not in the game explicitly prepent a slash if needed
 		if( cls.state != ca_active && con.input.buffer[0] != '\\' && con.input.buffer[0] != '/' )
@@ -1418,9 +1470,7 @@ void Key_Console( int key )
 	if(( key == K_MWHEELUP && Key_IsDown( K_SHIFT )) || ( key == K_UPARROW ) || (( Q_tolower(key) == 'p' ) && Key_IsDown( K_CTRL )))
 	{
 		if( con.nextHistoryLine - con.historyLine < CON_HISTORY && con.historyLine > 0 )
-		{
 			con.historyLine--;
-		}
 		con.input = con.historyLines[con.historyLine % CON_HISTORY];
 		return;
 	}
@@ -1436,13 +1486,13 @@ void Key_Console( int key )
 	// console scrolling
 	if( key == K_PGUP )
 	{
-		Con_PageUp( 2 );
+		Con_PageUp( 1 );
 		return;
 	}
 
 	if( key == K_PGDN )
 	{
-		Con_PageDown( 2 );
+		Con_PageDown( 1 );
 		return;
 	}
 
@@ -1534,8 +1584,8 @@ void Con_DrawInput( void )
 	int	x, y;
 
 	// don't draw anything (always draw if not active)
-	if( cls.key_dest != key_console ) return;
-	if( !con.curFont ) return;
+	if( cls.key_dest != key_console || !con.curFont )
+		return;
 
 	x = QCHAR_WIDTH; // room for ']'
 	y = con.vislines - ( con.curFont->charHeight * 2 );
@@ -1555,8 +1605,8 @@ Custom debug messages
 int Con_DrawDebugLines( void )
 {
 	int	i, count = 0;
-	int	y = 20;
 	int	defaultX;
+	int	y = 20;
 
 	defaultX = glState.width / 4;
 	
@@ -1568,7 +1618,7 @@ int Con_DrawDebugLines( void )
 			int	fontTall;
 
 			Con_DrawStringLen( con.notify[i].szNotify, &len, &fontTall );
-			x = scr_width->integer - max( defaultX, len ) - 10;
+			x = scr_width->integer - Q_max( defaultX, len ) - 10;
 			fontTall += 1;
 
 			if( y + fontTall > (int)scr_height->integer - 20 )
@@ -1947,6 +1997,14 @@ void Con_CharEvent( int key )
 	}
 }
 
+/*
+=========
+Con_VidInit
+
+reload background
+resize console
+=========
+*/
 void Con_VidInit( void )
 {
 	Con_CheckResize();
@@ -1990,9 +2048,15 @@ void Con_VidInit( void )
 	Con_LoadConchars();
 }
 
+/*
+=========
+Con_InvalidateFonts
+
+=========
+*/
 void Con_InvalidateFonts( void )
 {
-	Q_memset( con.chars, 0, sizeof( con.chars ));
+	memset( con.chars, 0, sizeof( con.chars ));
 	con.curFont = con.lastUsedFont = NULL;
 }
 
@@ -2022,7 +2086,14 @@ void Cmd_AutoComplete( char *complete_string )
 	else Q_strncpy( complete_string, input.buffer, sizeof( input.buffer ));
 }
 
-void Con_Close( void )
+/*
+=========
+Con_FastClose
+
+immediately close the console
+=========
+*/
+void Con_FastClose( void )
 {
 	Con_ClearField( &con.input );
 	Con_ClearNotify();

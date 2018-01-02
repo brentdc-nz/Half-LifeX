@@ -270,7 +270,7 @@ qboolean Sound_LoadWAV( const char *name, const byte *buffer, size_t filesize )
 		if(( filesize - hdr_size ) < 16384 )
 		{
 			sound.tempbuffer = (byte *)Mem_Realloc( host.soundpool, sound.tempbuffer, 16384 );
-			Q_memcpy( sound.tempbuffer, buffer + (iff_dataPtr - buffer), filesize - hdr_size );
+			memcpy( sound.tempbuffer, buffer + (iff_dataPtr - buffer), filesize - hdr_size );
 			return Sound_LoadMPG( name, sound.tempbuffer, 16384 );
 		}
 
@@ -281,7 +281,7 @@ qboolean Sound_LoadWAV( const char *name, const byte *buffer, size_t filesize )
 	sound.size = sound.samples * sound.width * sound.channels;
 	sound.wav = Mem_Alloc( host.soundpool, sound.size );
 
-	Q_memcpy( sound.wav, buffer + (iff_dataPtr - buffer), sound.size );
+	memcpy( sound.wav, buffer + (iff_dataPtr - buffer), sound.size );
 
 	// now convert 8-bit sounds to signed
 	if( sound.width == 1 )

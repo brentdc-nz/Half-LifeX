@@ -375,7 +375,7 @@ void Delta_CustomEncode( delta_info_t *dt, const void *from, const void *to )
 {
 	int	i;
 
-	ASSERT( dt != NULL );
+	Assert( dt != NULL );
 
 	// set all fields is active by default
 	for( i = 0; i < dt->numFields; i++ )
@@ -424,7 +424,7 @@ qboolean Delta_AddField( const char *pStructName, const char *pName, int flags, 
 
 	// get the delta struct
 	dt = Delta_FindStruct( pStructName );
-	ASSERT( dt != NULL );
+	Assert( dt != NULL );
 
 	// check for coexisting field
 	for( i = 0, pField = dt->pFields; i < dt->numFields; i++, pField++ )
@@ -472,37 +472,37 @@ void Delta_WriteTableField( sizebuf_t *msg, int tableIndex, const delta_t *pFiel
 	int		nameIndex;
 	delta_info_t	*dt;
 	
-	ASSERT( pField );
+	Assert( pField );
 
 	if( !pField->name || !*pField->name )
 		return;	// not initialized ?
 
 	dt = Delta_FindStructByIndex( tableIndex );
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	nameIndex = Delta_IndexForFieldInfo( dt->pInfo, pField->name );
-	ASSERT( nameIndex >= 0 && nameIndex < dt->maxFields );
+	Assert( nameIndex >= 0 && nameIndex < dt->maxFields );
 
-	BF_WriteByte( msg, svc_deltatable );
-	BF_WriteUBitLong( msg, tableIndex, 4 );		// assume we support 16 network tables
-	BF_WriteUBitLong( msg, nameIndex, 8 );		// 255 fields by struct should be enough
-	BF_WriteUBitLong( msg, pField->flags, 10 );	// flags are indicated various input types
-	BF_WriteUBitLong( msg, pField->bits - 1, 5 );	// max received value is 32 (32 bit)
+	MSG_WriteByte( msg, svc_deltatable );
+	MSG_WriteUBitLong( msg, tableIndex, 4 );		// assume we support 16 network tables
+	MSG_WriteUBitLong( msg, nameIndex, 8 );		// 255 fields by struct should be enough
+	MSG_WriteUBitLong( msg, pField->flags, 10 );	// flags are indicated various input types
+	MSG_WriteUBitLong( msg, pField->bits - 1, 5 );	// max received value is 32 (32 bit)
 
 	// multipliers is null-compressed
 	if( pField->multiplier != 1.0f )
 	{
-		BF_WriteOneBit( msg, 1 );
-		BF_WriteFloat( msg, pField->multiplier );
+		MSG_WriteOneBit( msg, 1 );
+		MSG_WriteFloat( msg, pField->multiplier );
 	}
-	else BF_WriteOneBit( msg, 0 );
+	else MSG_WriteOneBit( msg, 0 );
 
 	if( pField->post_multiplier != 1.0f )
 	{
-		BF_WriteOneBit( msg, 1 );
-		BF_WriteFloat( msg, pField->post_multiplier );
+		MSG_WriteOneBit( msg, 1 );
+		MSG_WriteFloat( msg, pField->post_multiplier );
 	}
-	else BF_WriteOneBit( msg, 0 );
+	else MSG_WriteOneBit( msg, 0 );
 }
 
 void Delta_ParseTableField( sizebuf_t *msg )
@@ -513,23 +513,23 @@ void Delta_ParseTableField( sizebuf_t *msg )
 	const char	*pName;
 	delta_info_t	*dt;
 
-	tableIndex = BF_ReadUBitLong( msg, 4 );
+	tableIndex = MSG_ReadUBitLong( msg, 4 );
 	dt = Delta_FindStructByIndex( tableIndex );
 
-	ASSERT( dt != NULL );
+	Assert( dt != NULL );
 
-	nameIndex = BF_ReadUBitLong( msg, 8 );	// read field name index		
-	ASSERT( nameIndex >= 0 && nameIndex < dt->maxFields );
+	nameIndex = MSG_ReadUBitLong( msg, 8 );	// read field name index		
+	Assert( nameIndex >= 0 && nameIndex < dt->maxFields );
 	pName = dt->pInfo[nameIndex].name;
-	flags = BF_ReadUBitLong( msg, 10 );
-	bits = BF_ReadUBitLong( msg, 5 ) + 1;
+	flags = MSG_ReadUBitLong( msg, 10 );
+	bits = MSG_ReadUBitLong( msg, 5 ) + 1;
 
 	// read the multipliers
-	if( BF_ReadOneBit( msg ))
-		mul = BF_ReadFloat( msg );
+	if( MSG_ReadOneBit( msg ))
+		mul = MSG_ReadFloat( msg );
 
-	if( BF_ReadOneBit( msg ))
-		post_mul = BF_ReadFloat( msg );
+	if( MSG_ReadOneBit( msg ))
+		post_mul = MSG_ReadFloat( msg );
 
 	// delta encoders it's already initialized on this machine (local game)
 	if( delta_init ) return;
@@ -695,7 +695,7 @@ void Delta_ParseTable( char **delta_script, delta_info_t *dt, const char *encode
 	// assume we have handled '{'
 	while(( *delta_script = COM_ParseFile( *delta_script, token )) != NULL )
 	{
-		ASSERT( dt->numFields <= dt->maxFields );
+		Assert( dt->numFields <= dt->maxFields );
 
 		if( !Q_strcmp( token, "DEFINE_DELTA" ))
 		{
@@ -747,9 +747,10 @@ void Delta_InitFields( void )
 	while(( pfile = COM_ParseFile( pfile, token )) != NULL )
 	{
 		dt = Delta_FindStruct( token );
+
 		if( dt == NULL )
 		{
-			Sys_Error( "delta.lst: unknown struct %s\n", token );
+			Sys_Error( "%s: unknown struct %s\n", DELTA_PATH, token );
 		}
 
 		pfile = COM_ParseFile( pfile, encodeDll );
@@ -760,10 +761,11 @@ void Delta_InitFields( void )
 
 		// jump to '{'
 		pfile = COM_ParseFile( pfile, token );
+	
 		if( token[0] != '{' )
 		{
-			Sys_Error( "delta.lst: missing '{' in section %s\n", dt->pName );
-		}			
+			Sys_Error( "%s: missing '{' in section %s\n", DELTA_PATH, dt->pName );
+		}
 
 		Delta_ParseTable( &pfile, dt, encodeDll, encodeFunc );
 	}
@@ -787,7 +789,7 @@ void Delta_Init( void )
 
 	dt = Delta_FindStruct( "movevars_t" );
 
-	ASSERT( dt != NULL );
+	Assert( dt != NULL );
 	if( dt->bInitialized ) return;	// "movevars_t" already specified by user
 
 	// create movevars_t delta internal
@@ -822,6 +824,7 @@ void Delta_Init( void )
 	Delta_AddField( "movevars_t", "skyangle", DT_ANGLE, 16, 1.0f, 1.0f ); // 0 - 360
 	Delta_AddField( "movevars_t", "wateralpha", DT_FLOAT|DT_SIGNED, 16, 32.0f, 1.0f );
 	Delta_AddField( "movevars_t", "fog_settings", DT_INTEGER, 32, 1.0f, 1.0f );
+
 	// now done
 	dt->bInitialized = true;
 }
@@ -964,9 +967,9 @@ qboolean Delta_CompareField( delta_t *pField, void *from, void *to, float timeba
 	float	val_a, val_b;
 	int	fromF, toF;
 
-	ASSERT( pField );
-	ASSERT( from );
-	ASSERT( to );
+	Assert( pField );
+	Assert( from );
+	Assert( to );
 
 	if( pField->bInactive )
 		return true;
@@ -1027,7 +1030,7 @@ qboolean Delta_CompareField( delta_t *pField, void *from, void *to, float timeba
 		if( pField->multiplier != 1.0f ) fromF *= pField->multiplier;
 		if( pField->multiplier != 1.0f ) toF *= pField->multiplier;
 	}
-	else if( pField->flags & ( DT_FLOAT|DT_ANGLE ))
+	else if( pField->flags & ( DT_ANGLE|DT_FLOAT ))
 	{
 		// don't convert floats to integers
 		fromF = *((int *)((byte *)from + pField->offset ));
@@ -1093,38 +1096,38 @@ qboolean Delta_WriteField( sizebuf_t *msg, delta_t *pField, void *from, void *to
 
 	if( Delta_CompareField( pField, from, to, timebase ))
 	{
-		BF_WriteOneBit( msg, 0 );	// unchanged
+		MSG_WriteOneBit( msg, 0 );	// unchanged
 		return false;
 	}
 
-	BF_WriteOneBit( msg, 1 );	// changed
+	MSG_WriteOneBit( msg, 1 );	// changed
 
 	if( pField->flags & DT_BYTE )
 	{
 		iValue = *(byte *)((byte *)to + pField->offset );
 		iValue = Delta_ClampIntegerField( iValue, bSigned, pField->bits );
 		if( pField->multiplier != 1.0f ) iValue *= pField->multiplier;
-		BF_WriteBitLong( msg, iValue, pField->bits, bSigned );
+		MSG_WriteBitLong( msg, iValue, pField->bits, bSigned );
 	}
 	else if( pField->flags & DT_SHORT )
 	{
 		iValue = *(word *)((byte *)to + pField->offset );
 		iValue = Delta_ClampIntegerField( iValue, bSigned, pField->bits );
 		if( pField->multiplier != 1.0f ) iValue *= pField->multiplier;
-		BF_WriteBitLong( msg, iValue, pField->bits, bSigned );
+		MSG_WriteBitLong( msg, iValue, pField->bits, bSigned );
 	}
 	else if( pField->flags & DT_INTEGER )
 	{
 		iValue = *(uint *)((byte *)to + pField->offset );
 		iValue = Delta_ClampIntegerField( iValue, bSigned, pField->bits );
 		if( pField->multiplier != 1.0f ) iValue *= pField->multiplier;
-		BF_WriteBitLong( msg, iValue, pField->bits, bSigned );
+		MSG_WriteBitLong( msg, iValue, pField->bits, bSigned );
 	}
 	else if( pField->flags & DT_FLOAT )
 	{
 		flValue = *(float *)((byte *)to + pField->offset );
 		iValue = (int)(flValue * pField->multiplier);
-		BF_WriteBitLong( msg, iValue, pField->bits, bSigned );
+		MSG_WriteBitLong( msg, iValue, pField->bits, bSigned );
 	}
 	else if( pField->flags & DT_ANGLE )
 	{
@@ -1132,7 +1135,7 @@ qboolean Delta_WriteField( sizebuf_t *msg, delta_t *pField, void *from, void *to
 
 		// NOTE: never applies multipliers to angle because
 		// result may be wrong on client-side
-		BF_WriteBitAngle( msg, flAngle, pField->bits );
+		MSG_WriteBitAngle( msg, flAngle, pField->bits );
 	}
 	else if( pField->flags & DT_TIMEWINDOW_8 )
 	{
@@ -1140,7 +1143,7 @@ qboolean Delta_WriteField( sizebuf_t *msg, delta_t *pField, void *from, void *to
 		flTime = Q_rint( timebase * 100.0f ) - Q_rint(flValue * 100.0f);
 		iValue = (uint)abs( flTime );
 
-		BF_WriteBitLong( msg, iValue, pField->bits, bSigned );
+		MSG_WriteBitLong( msg, iValue, pField->bits, bSigned );
 	}
 	else if( pField->flags & DT_TIMEWINDOW_BIG )
 	{
@@ -1148,12 +1151,12 @@ qboolean Delta_WriteField( sizebuf_t *msg, delta_t *pField, void *from, void *to
 		flTime = (timebase * pField->multiplier) - (flValue * pField->multiplier);
 		iValue = (uint)abs( flTime );
 
-		BF_WriteBitLong( msg, iValue, pField->bits, bSigned );
+		MSG_WriteBitLong( msg, iValue, pField->bits, bSigned );
 	}
 	else if( pField->flags & DT_STRING )
 	{
 		pStr = (char *)((byte *)to + pField->offset );
-		BF_WriteString( msg, pStr );
+		MSG_WriteString( msg, pStr );
 	}
 	return true;
 }
@@ -1175,15 +1178,15 @@ qboolean Delta_ReadField( sizebuf_t *msg, delta_t *pField, void *from, void *to,
 	const char	*pStr;
 	char		*pOut;
 	
-	bChanged = BF_ReadOneBit( msg );
+	bChanged = MSG_ReadOneBit( msg );
 
-	ASSERT( pField->multiplier != 0.0f );
+	Assert( pField->multiplier != 0.0f );
 
 	if( pField->flags & DT_BYTE )
 	{
 		if( bChanged )
 		{
-			iValue = BF_ReadBitLong( msg, pField->bits, bSigned );
+			iValue = MSG_ReadBitLong( msg, pField->bits, bSigned );
 			if( pField->multiplier != 1.0f ) iValue /= pField->multiplier;
 		}
 		else
@@ -1196,7 +1199,7 @@ qboolean Delta_ReadField( sizebuf_t *msg, delta_t *pField, void *from, void *to,
 	{
 		if( bChanged )
 		{
-			iValue = BF_ReadBitLong( msg, pField->bits, bSigned );
+			iValue = MSG_ReadBitLong( msg, pField->bits, bSigned );
 			if( pField->multiplier != 1.0f ) iValue /= pField->multiplier;
 		}
 		else
@@ -1209,7 +1212,7 @@ qboolean Delta_ReadField( sizebuf_t *msg, delta_t *pField, void *from, void *to,
 	{
 		if( bChanged )
 		{
-			iValue = BF_ReadBitLong( msg, pField->bits, bSigned );
+			iValue = MSG_ReadBitLong( msg, pField->bits, bSigned );
 			if( pField->multiplier != 1.0f ) iValue /= pField->multiplier;
 		}
 		else
@@ -1222,7 +1225,7 @@ qboolean Delta_ReadField( sizebuf_t *msg, delta_t *pField, void *from, void *to,
 	{
 		if( bChanged )
 		{
-			iValue = BF_ReadBitLong( msg, pField->bits, bSigned );
+			iValue = MSG_ReadBitLong( msg, pField->bits, bSigned );
 			flValue = (int)iValue * ( 1.0f / pField->multiplier );
 			flValue = flValue * pField->post_multiplier;
 		}
@@ -1236,7 +1239,7 @@ qboolean Delta_ReadField( sizebuf_t *msg, delta_t *pField, void *from, void *to,
 	{
 		if( bChanged )
 		{
-			flAngle = BF_ReadBitAngle( msg, pField->bits );
+			flAngle = MSG_ReadBitAngle( msg, pField->bits );
 		}
 		else
 		{
@@ -1248,7 +1251,7 @@ qboolean Delta_ReadField( sizebuf_t *msg, delta_t *pField, void *from, void *to,
 	{
 		if( bChanged )
 		{
-			iValue = BF_ReadBitLong( msg, pField->bits, bSigned );
+			iValue = MSG_ReadBitLong( msg, pField->bits, bSigned );
 			flValue = (float)((int)(iValue * 0.01f ));
 			flTime = timebase + flValue;
 		}
@@ -1262,7 +1265,7 @@ qboolean Delta_ReadField( sizebuf_t *msg, delta_t *pField, void *from, void *to,
 	{
 		if( bChanged )
 		{
-			iValue = BF_ReadBitLong( msg, pField->bits, bSigned );
+			iValue = MSG_ReadBitLong( msg, pField->bits, bSigned );
 			flValue = (float)((int)iValue) * ( 1.0f / pField->multiplier );
 			flTime = timebase + flValue;
 		}
@@ -1276,7 +1279,7 @@ qboolean Delta_ReadField( sizebuf_t *msg, delta_t *pField, void *from, void *to,
 	{
 		if( bChanged )
 		{
-			pStr = BF_ReadString( msg );
+			pStr = MSG_ReadString( msg );
 		}
 		else
 		{
@@ -1308,10 +1311,10 @@ void MSG_WriteDeltaUsercmd( sizebuf_t *msg, usercmd_t *from, usercmd_t *to )
 	int		i;
 
 	dt = Delta_FindStruct( "usercmd_t" );
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	// activate fields and call custom encode func
 	Delta_CustomEncode( dt, from, to );
@@ -1335,10 +1338,10 @@ void MSG_ReadDeltaUsercmd( sizebuf_t *msg, usercmd_t *from, usercmd_t *to )
 	int		i;
 
 	dt = Delta_FindStruct( "usercmd_t" );
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	*to = *from;
 
@@ -1368,10 +1371,10 @@ void MSG_WriteDeltaEvent( sizebuf_t *msg, event_args_t *from, event_args_t *to )
 	int		i;
 
 	dt = Delta_FindStruct( "event_t" );
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	// activate fields and call custom encode func
 	Delta_CustomEncode( dt, from, to );
@@ -1395,10 +1398,10 @@ void MSG_ReadDeltaEvent( sizebuf_t *msg, event_args_t *from, event_args_t *to )
 	int		i;
 
 	dt = Delta_FindStruct( "event_t" );
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	*to = *from;
 
@@ -1424,17 +1427,17 @@ qboolean MSG_WriteDeltaMovevars( sizebuf_t *msg, movevars_t *from, movevars_t *t
 	int		numChanges = 0;
 
 	dt = Delta_FindStruct( "movevars_t" );
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	startBit = msg->iCurBit;
 
 	// activate fields and call custom encode func
 	Delta_CustomEncode( dt, from, to );
 
-	BF_WriteByte( msg, svc_deltamovevars );
+	MSG_WriteByte( msg, svc_deltamovevars );
 
 	// process fields
 	for( i = 0; i < dt->numFields; i++, pField++ )
@@ -1446,7 +1449,7 @@ qboolean MSG_WriteDeltaMovevars( sizebuf_t *msg, movevars_t *from, movevars_t *t
 	// if we have no changes - kill the message
 	if( !numChanges )
 	{
-		BF_SeekToBit( msg, startBit );
+		MSG_SeekToBit( msg, startBit );
 		return false;
 	}
 	return true;
@@ -1459,10 +1462,10 @@ void MSG_ReadDeltaMovevars( sizebuf_t *msg, movevars_t *from, movevars_t *to )
 	int		i;
 
 	dt = Delta_FindStruct( "movevars_t" );
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	*to = *from;
 
@@ -1495,10 +1498,10 @@ void MSG_WriteClientData( sizebuf_t *msg, clientdata_t *from, clientdata_t *to, 
 	int		i;
 
 	dt = Delta_FindStruct( "clientdata_t" );
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	// activate fields and call custom encode func
 	Delta_CustomEncode( dt, from, to );
@@ -1524,10 +1527,10 @@ void MSG_ReadClientData( sizebuf_t *msg, clientdata_t *from, clientdata_t *to, f
 	int		i;
 
 	dt = Delta_FindStruct( "clientdata_t" );
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	*to = *from;
 
@@ -1561,18 +1564,18 @@ void MSG_WriteWeaponData( sizebuf_t *msg, weapon_data_t *from, weapon_data_t *to
 	int		numChanges = 0;
 
 	dt = Delta_FindStruct( "weapon_data_t" );
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	// activate fields and call custom encode func
 	Delta_CustomEncode( dt, from, to );
 
 	startBit = msg->iCurBit;
 
-	BF_WriteOneBit( msg, 1 );
-	BF_WriteUBitLong( msg, index, MAX_WEAPON_BITS );
+	MSG_WriteOneBit( msg, 1 );
+	MSG_WriteUBitLong( msg, index, MAX_WEAPON_BITS );
                
 	// process fields
 	for( i = 0; i < dt->numFields; i++, pField++ )
@@ -1582,7 +1585,7 @@ void MSG_WriteWeaponData( sizebuf_t *msg, weapon_data_t *from, weapon_data_t *to
 	}
 
 	// if we have no changes - kill the message
-	if( !numChanges ) BF_SeekToBit( msg, startBit );
+	if( !numChanges ) MSG_SeekToBit( msg, startBit );
 }
 
 /*
@@ -1599,10 +1602,10 @@ void MSG_ReadWeaponData( sizebuf_t *msg, weapon_data_t *from, weapon_data_t *to,
 	int		i;
 
 	dt = Delta_FindStruct( "weapon_data_t" );
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	*to = *from;
 
@@ -1645,7 +1648,7 @@ void MSG_WriteDeltaEntity( entity_state_t *from, entity_state_t *to, sizebuf_t *
 		if( from == NULL ) return;
 
 		// a NULL to is a delta remove message
-		BF_WriteWord( msg, from->number );
+		MSG_WriteWord( msg, from->number );
 
 		// fRemoveType:
 		// 0 - keep alive, has delta-update
@@ -1654,7 +1657,7 @@ void MSG_WriteDeltaEntity( entity_state_t *from, entity_state_t *to, sizebuf_t *
 		if( force ) fRemoveType = 2;
 		else fRemoveType = 1;
 
-		BF_WriteUBitLong( msg, fRemoveType, 2 );
+		MSG_WriteUBitLong( msg, fRemoveType, 2 );
 		return;
 	}
 
@@ -1663,15 +1666,15 @@ void MSG_WriteDeltaEntity( entity_state_t *from, entity_state_t *to, sizebuf_t *
 	if( to->number < 0 || to->number >= GI->max_edicts )
 		Host_Error( "MSG_WriteDeltaEntity: Bad entity number: %i\n", to->number );
 
-	BF_WriteWord( msg, to->number );
-	BF_WriteUBitLong( msg, 0, 2 ); // alive
+	MSG_WriteWord( msg, to->number );
+	MSG_WriteUBitLong( msg, 0, 2 ); // alive
 
 	if( to->entityType != from->entityType )
 	{
-		BF_WriteOneBit( msg, 1 );
-		BF_WriteUBitLong( msg, to->entityType, 2 );
+		MSG_WriteOneBit( msg, 1 );
+		MSG_WriteUBitLong( msg, to->entityType, 2 );
 	}
-	else BF_WriteOneBit( msg, 0 ); 
+	else MSG_WriteOneBit( msg, 0 ); 
 
 	if( to->entityType == ENTITY_NORMAL )
 	{
@@ -1689,10 +1692,10 @@ void MSG_WriteDeltaEntity( entity_state_t *from, entity_state_t *to, sizebuf_t *
 		dt = Delta_FindStruct( "custom_entity_state_t" );
 	}
 
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 		
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	// activate fields and call custom encode func
 	Delta_CustomEncode( dt, from, to );
@@ -1705,7 +1708,7 @@ void MSG_WriteDeltaEntity( entity_state_t *from, entity_state_t *to, sizebuf_t *
 	}
 
 	// if we have no changes - kill the message
-	if( !numChanges && !force ) BF_SeekToBit( msg, startBit );
+	if( !numChanges && !force ) MSG_SeekToBit( msg, startBit );
 }
 
 /*
@@ -1730,12 +1733,12 @@ qboolean MSG_ReadDeltaEntity( sizebuf_t *msg, entity_state_t *from, entity_state
 
 	*to = *from;
 	to->number = number;
-	fRemoveType = BF_ReadUBitLong( msg, 2 );
+	fRemoveType = MSG_ReadUBitLong( msg, 2 );
 
 	if( fRemoveType )
 	{
 		// check for a remove
-		Q_memset( to, 0, sizeof( *to ));
+		memset( to, 0, sizeof( *to ));
 
 		if( fRemoveType & 1 )
 		{
@@ -1753,8 +1756,8 @@ qboolean MSG_ReadDeltaEntity( sizebuf_t *msg, entity_state_t *from, entity_state
 		Host_Error( "MSG_ReadDeltaEntity: unknown update type %i\n", fRemoveType );
 	}
 
-	if( BF_ReadOneBit( msg ))
-		to->entityType = BF_ReadUBitLong( msg, 2 );
+	if( MSG_ReadOneBit( msg ))
+		to->entityType = MSG_ReadUBitLong( msg, 2 );
 
 	if( to->entityType == ENTITY_NORMAL )
 	{
@@ -1772,10 +1775,10 @@ qboolean MSG_ReadDeltaEntity( sizebuf_t *msg, entity_state_t *from, entity_state
 		dt = Delta_FindStruct( "custom_entity_state_t" );
 	}
 
-	ASSERT( dt && dt->bInitialized );
+	Assert( dt && dt->bInitialized );
 
 	pField = dt->pFields;
-	ASSERT( pField );
+	Assert( pField );
 
 	// process fields
 	for( i = 0; i < dt->numFields; i++, pField++ )

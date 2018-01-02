@@ -104,7 +104,7 @@ static qboolean DS_CreateBuffers( void *hInst )
 
 	DSMIXBINS dsmb;
 #endif
-	Q_memset( &format, 0, sizeof( format ));
+	memset( &format, 0, sizeof( format ));
 
 	format.wFormatTag = WAVE_FORMAT_PCM;
 	format.nChannels = 2;
@@ -126,13 +126,13 @@ static qboolean DS_CreateBuffers( void *hInst )
 	MsgDev( D_NOTE, "- ok\n" );
 
 	// get access to the primary buffer, if possible, so we can set the sound hardware format
-	Q_memset( &dsbuf, 0, sizeof( dsbuf ));
+	memset( &dsbuf, 0, sizeof( dsbuf ));
 	dsbuf.dwSize = sizeof( DSBUFFERDESC );
 	dsbuf.dwFlags = 0;//DSBCAPS_PRIMARYBUFFER; //MARTY
 	dsbuf.dwBufferBytes = 0;
 	dsbuf.lpwfxFormat = &format;//NULL //MARTY
 
-//	Q_memset( &dsbcaps, 0, sizeof( dsbcaps )); //MARTY
+//	memset( &dsbcaps, 0, sizeof( dsbcaps )); //MARTY
 //	dsbcaps.dwSize = sizeof( dsbcaps ); //MARTY
 	primary_format_set = false;
 
@@ -162,13 +162,13 @@ static qboolean DS_CreateBuffers( void *hInst )
 	if( !primary_format_set || !s_primary->integer )
 	{
 		// create the secondary buffer we'll actually work with
-		Q_memset( &dsbuf, 0, sizeof( dsbuf ));
+		memset( &dsbuf, 0, sizeof( dsbuf ));
 		dsbuf.dwSize = sizeof( DSBUFFERDESC );
 		dsbuf.dwFlags = (DSBCAPS_CTRLFREQUENCY/*|DSBCAPS_LOCSOFTWARE*/); //MARTY
 		dsbuf.dwBufferBytes = SECONDARY_BUFFER_SIZE;
 		dsbuf.lpwfxFormat = &format;
 
-//		Q_memset( &dsbcaps, 0, sizeof( dsbcaps ));
+//		memset( &dsbcaps, 0, sizeof( dsbcaps ));
 //		dsbcaps.dwSize = sizeof( dsbcaps );
 
 		MsgDev( D_NOTE, "DS_CreateBuffers: creating secondary buffer " );
@@ -245,7 +245,7 @@ static qboolean DS_CreateBuffers( void *hInst )
 #endif //_XBOX
 
 	SNDDMA_BeginPainting();
-	if( dma.buffer ) Q_memset( dma.buffer, 0, dma.samples * 2 );
+	if( dma.buffer ) memset( dma.buffer, 0, dma.samples * 2 );
 	SNDDMA_Submit();
 
 	return true;
@@ -377,7 +377,7 @@ qboolean SNDDMA_Init( /*void *hInst*/ ) //MARTY
 	// already initialized
 	if( dma.initialized ) return true;
 
-	Q_memset( &dma, 0, sizeof( dma ));
+	memset( &dma, 0, sizeof( dma ));
 
 	s_primary = Cvar_Get( "s_primary", "0", CVAR_INIT, "use direct primary buffer" ); 
 

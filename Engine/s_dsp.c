@@ -546,9 +546,9 @@ typedef struct
 // flt flts
 flt_t	flts[CFLTS];
 
-void FLT_Init( flt_t *pf ) { if( pf ) Q_memset( pf, 0, sizeof( flt_t )); }
+void FLT_Init( flt_t *pf ) { if( pf ) memset( pf, 0, sizeof( flt_t )); }
 void FLT_InitAll( void ) { int i; for( i = 0; i < CFLTS; i++ ) FLT_Init( &flts[i] ); }
-void FLT_Free( flt_t *pf ) { if( pf ) Q_memset( pf, 0, sizeof( flt_t )); }
+void FLT_Free( flt_t *pf ) { if( pf ) memset( pf, 0, sizeof( flt_t )); }
 void FLT_FreeAll( void ) { int i; for( i = 0; i < CFLTS; i++ ) FLT_Free( &flts[i] ); }
 
 
@@ -664,8 +664,8 @@ void cas2can( int K, double A[KMAX+1][3], int *aout )
 
 	ASSERT( K <= KMAX );
 	
-	Q_memset( d, 0, sizeof( double ) * ( 2 * KMAX + 1 ));
-	Q_memset( a, 0, sizeof( double ) * ( 2 * KMAX + 1 ));
+	memset( d, 0, sizeof( double ) * ( 2 * KMAX + 1 ));
+	memset( a, 0, sizeof( double ) * ( 2 * KMAX + 1 ));
 
 	a[0] = 1;
 
@@ -1063,7 +1063,7 @@ typedef struct
 
 dly_t	dlys[CDLYS];				// delay lines
 
-void DLY_Init( dly_t *pdly ) { if( pdly ) Q_memset( pdly, 0, sizeof( dly_t )); }
+void DLY_Init( dly_t *pdly ) { if( pdly ) memset( pdly, 0, sizeof( dly_t )); }
 void DLY_InitAll( void ) { int i; for( i = 0; i < CDLYS; i++ ) DLY_Init( &dlys[i] ); }
 void DLY_Free( dly_t *pdly )
 {
@@ -1079,7 +1079,7 @@ void DLY_Free( dly_t *pdly )
 		}
 		
 		// free dly slot
-		Q_memset( pdly, 0, sizeof( dly_t ));
+		memset( pdly, 0, sizeof( dly_t ));
 	}
 }
 
@@ -1194,7 +1194,7 @@ dly_t * DLY_AllocLP( int D, int a, int b, int type, int M, int L, int *fa, int *
 	}
 	
 	// clear delay array
-	Q_memset( w, 0, cb );
+	memset( w, 0, cb );
 	
 	// init values
 	pdly->type = type;
@@ -1419,7 +1419,7 @@ typedef struct
 
 rva_t rvas[CRVAS];
 
-void RVA_Init( rva_t *prva ) { if( prva ) Q_memset( prva, 0, sizeof( rva_t )); }
+void RVA_Init( rva_t *prva ) { if( prva ) memset( prva, 0, sizeof( rva_t )); }
 void RVA_InitAll( void ) { int i; for( i = 0; i < CRVAS; i++ ) RVA_Init( &rvas[i] ); }
 
 // free parallel series reverb
@@ -1434,7 +1434,7 @@ void RVA_Free( rva_t *prva )
 			DLY_Free ( prva->pdlys[i] );
 	
 		FLT_Free( prva->pflt );
-		Q_memset( prva, 0, sizeof (rva_t) );
+		memset( prva, 0, sizeof (rva_t) );
 	}
 }
 
@@ -1751,7 +1751,7 @@ typedef struct
 
 dfr_t	dfrs[CDFRS];
 
-void DFR_Init( dfr_t *pdfr ) { if( pdfr ) Q_memset( pdfr, 0, sizeof( dfr_t )); }
+void DFR_Init( dfr_t *pdfr ) { if( pdfr ) memset( pdfr, 0, sizeof( dfr_t )); }
 void DFR_InitAll( void ) { int i; for( i = 0; i < CDFRS; i++ ) DFR_Init ( &dfrs[i] ); }
 
 // free parallel series reverb
@@ -1765,7 +1765,7 @@ void DFR_Free( dfr_t *pdfr )
 		for( i = 0; i < CDFR_DLYS; i++ )
 			DLY_Free( pdfr->pdlys[i] );
 	
-		Q_memset( pdfr, 0, sizeof( dfr_t ));
+		memset( pdfr, 0, sizeof( dfr_t ));
 	}
 }
 
@@ -2004,7 +2004,7 @@ void LFOWAV_Free( lfowav_t *plw )
 	// free delay
 	if( plw ) DLY_Free( plw->pdly );
 
-	Q_memset( plw, 0, sizeof( lfowav_t ));
+	memset( plw, 0, sizeof( lfowav_t ));
 }
 
 // deallocate all lfo wave tables. Called only when sound engine exits.
@@ -2078,7 +2078,7 @@ void LFOWAV_InitAll( void )
 	int	i;
 	dly_t	*pdly;
 
-	Q_memset( lfowavs, 0, sizeof( lfowavs ));
+	memset( lfowavs, 0, sizeof( lfowavs ));
 
 	// alloc space for each lfo wav type
 	for( i = 0; i < CLFOWAV; i++ )
@@ -2118,9 +2118,9 @@ typedef struct
 
 lfo_t lfos[CLFO];
 
-void LFO_Init( lfo_t *plfo ) { if( plfo ) Q_memset( plfo, 0, sizeof( lfo_t )); }
+void LFO_Init( lfo_t *plfo ) { if( plfo ) memset( plfo, 0, sizeof( lfo_t )); }
 void LFO_InitAll( void ) { int i; for( i = 0; i < CLFO; i++ ) LFO_Init( &lfos[i] ); }
-void LFO_Free( lfo_t *plfo ) { if( plfo ) Q_memset( plfo, 0, sizeof( lfo_t )); }
+void LFO_Free( lfo_t *plfo ) { if( plfo ) memset( plfo, 0, sizeof( lfo_t )); }
 void LFO_FreeAll( void ) { int i; for( i = 0; i < CLFO; i++ ) LFO_Free( &lfos[i] ); }
 
 
@@ -2311,7 +2311,7 @@ void RMP_Init( rmp_t *prmp, float ramptime, int initval, int targetval )
 	int	rise;
 	int	run;
 
-	if( prmp ) Q_memset( prmp, 0, sizeof( rmp_t )); 
+	if( prmp ) memset( prmp, 0, sizeof( rmp_t )); 
 			
 	run = (int)( ramptime * SOUND_DMA_SPEED );	// 'samples' in ramp
 	rise = (targetval - initval);			// height of ramp
@@ -2408,7 +2408,7 @@ typedef struct
 
 ptc_t	ptcs[CPTCS];
 
-void PTC_Init( ptc_t *pptc ) { if( pptc ) Q_memset( pptc, 0, sizeof( ptc_t )); };
+void PTC_Init( ptc_t *pptc ) { if( pptc ) memset( pptc, 0, sizeof( ptc_t )); };
 void PTC_Free( ptc_t *pptc ) 
 {
 	if( pptc )
@@ -2416,7 +2416,7 @@ void PTC_Free( ptc_t *pptc )
 		DLY_Free( pptc->pdly_in );
 		DLY_Free( pptc->pdly_out );
 
-		Q_memset( pptc, 0, sizeof( ptc_t )); 
+		memset( pptc, 0, sizeof( ptc_t )); 
 	}
 };
 
@@ -2827,8 +2827,8 @@ typedef struct
 
 env_t	envs[CENVS];
 
-void ENV_Init( env_t *penv ) { if( penv ) Q_memset( penv, 0, sizeof( env_t )); };
-void ENV_Free( env_t *penv ) { if( penv ) Q_memset( penv, 0, sizeof( env_t )); };
+void ENV_Init( env_t *penv ) { if( penv ) memset( penv, 0, sizeof( env_t )); };
+void ENV_Free( env_t *penv ) { if( penv ) memset( penv, 0, sizeof( env_t )); };
 void ENV_InitAll() { int i; for( i = 0; i < CENVS; i++ ) ENV_Init( &envs[i] ); };
 void ENV_FreeAll() { int i; for( i = 0; i < CENVS; i++ ) ENV_Free( &envs[i] ); };
 
@@ -3011,8 +3011,8 @@ typedef struct
 
 efo_t	efos[CEFOS];
 
-void EFO_Init( efo_t *pefo ) { if( pefo ) Q_memset( pefo, 0, sizeof( efo_t )); };
-void EFO_Free( efo_t *pefo ) { if( pefo ) Q_memset( pefo, 0, sizeof( efo_t )); };
+void EFO_Init( efo_t *pefo ) { if( pefo ) memset( pefo, 0, sizeof( efo_t )); };
+void EFO_Free( efo_t *pefo ) { if( pefo ) memset( pefo, 0, sizeof( efo_t )); };
 void EFO_InitAll() { int i; for( i = 0; i < CEFOS; i++ ) EFO_Init( &efos[i] ); };
 void EFO_FreeAll() { int i; for( i = 0; i < CEFOS; i++ ) EFO_Free( &efos[i] ); };
 
@@ -3138,8 +3138,8 @@ typedef struct
 
 mdy_t	mdys[CMDYS];
 
-void MDY_Init( mdy_t *pmdy ) { if( pmdy ) Q_memset( pmdy, 0, sizeof( mdy_t )); };
-void MDY_Free( mdy_t *pmdy ) { if( pmdy ) { DLY_Free( pmdy->pdly ); Q_memset( pmdy, 0, sizeof( mdy_t )); } };
+void MDY_Init( mdy_t *pmdy ) { if( pmdy ) memset( pmdy, 0, sizeof( mdy_t )); };
+void MDY_Free( mdy_t *pmdy ) { if( pmdy ) { DLY_Free( pmdy->pdly ); memset( pmdy, 0, sizeof( mdy_t )); } };
 void MDY_InitAll() { int i; for( i = 0; i < CMDYS; i++ ) MDY_Init( &mdys[i] ); };
 void MDY_FreeAll() { int i; for( i = 0; i < CMDYS; i++ ) MDY_Free( &mdys[i] ); };
 
@@ -3392,14 +3392,14 @@ typedef struct
 
 crs_t	crss[CCRSS];
 
-void CRS_Init( crs_t *pcrs ) { if( pcrs ) Q_memset( pcrs, 0, sizeof( crs_t )); };
+void CRS_Init( crs_t *pcrs ) { if( pcrs ) memset( pcrs, 0, sizeof( crs_t )); };
 void CRS_Free( crs_t *pcrs ) 
 {
 	if( pcrs )
 	{
 		MDY_Free( pcrs->pmdy );
 		LFO_Free( pcrs->plfo );
-		Q_memset( pcrs, 0, sizeof( crs_t )); 
+		memset( pcrs, 0, sizeof( crs_t )); 
 	}
 }
 
@@ -3589,8 +3589,8 @@ typedef struct
 
 amp_t	amps[CAMPS];
 
-void AMP_Init( amp_t *pamp ) { if( pamp ) Q_memset( pamp, 0, sizeof( amp_t )); }
-void AMP_Free( amp_t *pamp ) { if( pamp ) Q_memset( pamp, 0, sizeof( amp_t )); }
+void AMP_Init( amp_t *pamp ) { if( pamp ) memset( pamp, 0, sizeof( amp_t )); }
+void AMP_Free( amp_t *pamp ) { if( pamp ) memset( pamp, 0, sizeof( amp_t )); }
 void AMP_InitAll() { int i; for( i = 0; i < CAMPS; i++ ) AMP_Init( &amps[i] ); }
 void AMP_FreeAll() { int i; for( i = 0; i < CAMPS; i++ ) AMP_Free( &amps[i] ); }
 
@@ -4375,7 +4375,7 @@ pset_t psettemplates[] =
 void PSET_Init( pset_t *ppset ) 
 { 
 	// clear state array
-	if( ppset ) Q_memset( ppset->w, 0, sizeof( int ) * ( CPSET_STATES )); 
+	if( ppset ) memset( ppset->w, 0, sizeof( int ) * ( CPSET_STATES )); 
 }
 
 // clear runtime slots
@@ -4384,7 +4384,7 @@ void PSET_InitAll( void )
 	int	i;
 
 	for( i = 0; i < CPSETS; i++ )
-		Q_memset( &psets[i], 0, sizeof( pset_t ));
+		memset( &psets[i], 0, sizeof( pset_t ));
 }
 
 // free the preset - free all processors
@@ -4397,7 +4397,7 @@ void PSET_Free( pset_t *ppset )
 		PRC_FreeAll( ppset->prcs, ppset->cprcs );
 
 		// clear
-		Q_memset( ppset, 0, sizeof( pset_t ));
+		memset( ppset, 0, sizeof( pset_t ));
 	}
 }
 
@@ -4852,7 +4852,7 @@ void DSP_Init( int idsp )
 		return;
 	
 	pdsp = &dsps[idsp];
-	Q_memset( pdsp, 0, sizeof( dsp_t )); 
+	memset( pdsp, 0, sizeof( dsp_t )); 
 }
 
 void DSP_Free( int idsp ) 
@@ -4874,7 +4874,7 @@ void DSP_Free( int idsp )
 			PSET_Free( pdsp->ppsetprev[i] );
 	}
 
-	Q_memset( pdsp, 0, sizeof( dsp_t )); 
+	memset( pdsp, 0, sizeof( dsp_t )); 
 }
 
 // Init all dsp processors - called once, during engine startup

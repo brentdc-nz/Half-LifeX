@@ -186,7 +186,7 @@ byte CRC32_BlockSequence( byte *base, int length, int sequence )
 	ptr = (char *)crc32table + (sequence % 0x3FC);
 
 	if( length > 60 ) length = 60;
-	Q_memcpy( buffer, base, length );
+	memcpy( buffer, base, length );
 
 	buffer[length+0] = ptr[0];
 	buffer[length+1] = ptr[1];
@@ -362,11 +362,11 @@ void MD5Update( MD5Context_t *ctx, const byte *buf, uint len )
 		t = 64 - t;
 		if( len < t )
 		{
-			Q_memcpy( p, buf, len );
+			memcpy( p, buf, len );
 			return;
 		}
 
-		Q_memcpy( p, buf, t );
+		memcpy( p, buf, t );
 		MD5Transform( ctx->buf, (uint *)ctx->in );
 		buf += t;
 		len -= t;
@@ -375,14 +375,14 @@ void MD5Update( MD5Context_t *ctx, const byte *buf, uint len )
 	// process data in 64-byte chunks
 	while( len >= 64 )
 	{
-		Q_memcpy( ctx->in, buf, 64 );
+		memcpy( ctx->in, buf, 64 );
 		MD5Transform( ctx->buf, (uint *)ctx->in );
 		buf += 64;
 		len -= 64;
 	}
 
 	// handle any remaining bytes of data.
-	Q_memcpy( ctx->in, buf, len );
+	memcpy( ctx->in, buf, len );
 }
 
 /*
@@ -414,16 +414,16 @@ void MD5Final( byte digest[16], MD5Context_t *ctx )
 	{
 
 		// two lots of padding: pad the first block to 64 bytes
-		Q_memset( p, 0, count );
+		memset( p, 0, count );
 		MD5Transform( ctx->buf, (uint *)ctx->in );
 
 		// now fill the next block with 56 bytes
-		Q_memset( ctx->in, 0, 56 );
+		memset( ctx->in, 0, 56 );
 	}
 	else
 	{
 		// pad block to 56 bytes
-		Q_memset( p, 0, count - 8 );
+		memset( p, 0, count - 8 );
 	}
 
 	// append length in bits and transform
@@ -431,8 +431,8 @@ void MD5Final( byte digest[16], MD5Context_t *ctx )
 	((uint *)ctx->in)[15] = ctx->bits[1];
 
 	MD5Transform( ctx->buf, (uint *)ctx->in );
-	Q_memcpy( digest, ctx->buf, 16 );
-	Q_memset( ctx, 0, sizeof( ctx ));	// in case it's sensitive
+	memcpy( digest, ctx->buf, 16 );
+	memset( ctx, 0, sizeof( ctx ));	// in case it's sensitive
 }
 
 // The four core functions
@@ -546,7 +546,7 @@ qboolean MD5_HashFile( byte digest[16], const char *pszFileName, uint seed[4] )
 	if(( file = FS_Open( pszFileName, "rb", false )) == NULL )
 		return false;
 
-	Q_memset( &MD5_Hash, 0, sizeof( MD5Context_t ));
+	memset( &MD5_Hash, 0, sizeof( MD5Context_t ));
 
 	MD5Init( &MD5_Hash );
 

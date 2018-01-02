@@ -94,7 +94,7 @@ static char *VOX_GetDirectory( char *szpath, char *psz )
 	}
 
 	cb = Q_strlen( psz ) - cb;
-	Q_memcpy( szpath, psz, cb );
+	memcpy( szpath, psz, cb );
 	szpath[cb] = 0;
 
 	return p + 1;
@@ -134,7 +134,7 @@ char **VOX_ParseString( char *psz )
 	int	i, fdone = 0;
 	char	c, *p = psz;
 
-	Q_memset( rgpparseword, 0, sizeof( char* ) * CVOXWORDMAX );
+	memset( rgpparseword, 0, sizeof( char* ) * CVOXWORDMAX );
 
 	if( !psz ) return NULL;
 
@@ -300,7 +300,7 @@ int VOX_ParseWordParams( char *psz, voxword_t *pvoxword, int fFirst )
 		if( ct == ')' )
 			break;
 
-		Q_memset( sznum, 0, sizeof( sznum ));
+		memset( sznum, 0, sizeof( sznum ));
 		i = 0;
 
 		c = *(++psz);
@@ -381,19 +381,19 @@ void VOX_LoadWord( channel_t *pchan )
 void VOX_FreeWord( channel_t *pchan )
 {
 	pchan->currentWord = NULL; // sentence is finished
-	Q_memset( &pchan->pMixer, 0, sizeof( pchan->pMixer ));
+	memset( &pchan->pMixer, 0, sizeof( pchan->pMixer ));
 
-#if 0	// release unused sounds ?
+	// release unused sounds
 	if( pchan->words[pchan->wordIndex].sfx )
 	{
 		// If this wave wasn't precached by the game code
 		if( !pchan->words[pchan->wordIndex].fKeepCached )
 		{
-			S_FreeSound( pchan->words[pchan->wordIndex].sfx );
+			FS_FreeSound( pchan->words[pchan->wordIndex].sfx->cache );
+			pchan->words[pchan->wordIndex].sfx->cache = NULL;
 			pchan->words[pchan->wordIndex].sfx = NULL;
 		}
 	}
-#endif
 }
 
 void VOX_LoadFirstWord( channel_t *pchan, voxword_t *pwords )
@@ -459,8 +459,8 @@ void VOX_LoadSound( channel_t *pchan, const char *pszin )
 	if( !pszin || !*pszin )
 		return;
 
-	Q_memset( rgvoxword, 0, sizeof( voxword_t ) * CVOXWORDMAX );
-	Q_memset( buffer, 0, sizeof( buffer ));
+	memset( rgvoxword, 0, sizeof( voxword_t ) * CVOXWORDMAX );
+	memset( buffer, 0, sizeof( buffer ));
 
 	// lookup actual string in g_Sentences, 
 	// set pointer to string data
@@ -549,7 +549,7 @@ void VOX_ParseLineCommands( char *pSentenceData, int sentenceIndex )
 		}
 
 		// Copy good string to temp buffer
-		Q_memcpy( tempBuffer + tempBufferPos, pSentenceData, length );
+		memcpy( tempBuffer + tempBufferPos, pSentenceData, length );
 		
 		// move the copy position
 		tempBufferPos += length;
@@ -672,7 +672,7 @@ void VOX_ReadSentenceFile( const char *psentenceFileName )
 
 void VOX_Init( void )
 {
-	Q_memset( g_Sentences, 0, sizeof( g_Sentences ));
+	memset( g_Sentences, 0, sizeof( g_Sentences ));
 	g_numSentences = 0;
 
 	VOX_ReadSentenceFile( "sound/sentences.txt" );

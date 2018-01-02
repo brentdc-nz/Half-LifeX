@@ -23,9 +23,9 @@ GNU General Public License for more details.
 #define num_vidmodes	((int)(sizeof(vidmode) / sizeof(vidmode[0])) - 1)
 
 #ifndef _XBOX //MARTY
-#define WINDOW_STYLE	(WS_OVERLAPPED|WS_BORDER|WS_SYSMENU|WS_CAPTION|WS_VISIBLE)
-#define WINDOW_EX_STYLE	(0)
-#define WINDOW_NAME		"Xash Window" // Half-Life
+#define WINDOW_STYLE		(WS_OVERLAPPED|WS_BORDER|WS_SYSMENU|WS_CAPTION|WS_VISIBLE)
+#define WINDOW_EX_STYLE		(0)
+#define WINDOW_NAME			"Xash3D Window" // Half-Life
 #endif 
 
 convar_t	*renderinfo;
@@ -589,7 +589,7 @@ void GL_BuildGammaTable( void )
 	invGamma = 1.0 / bound( 0.5, vid_gamma->value, 2.3 );
 	div = (double) 1.0 / 255.5;
 
-	Q_memcpy( glState.gammaRamp, glState.stateRamp, sizeof( glState.gammaRamp ));
+	memcpy( glState.gammaRamp, glState.stateRamp, sizeof( glState.gammaRamp ));
 	
 	for( i = 0; i < 256; i++ )
 	{
@@ -640,8 +640,8 @@ static void GL_SetDefaultTexState( void )
 {
 	int	i;
 
-	Q_memset( glState.currentTextures, -1, MAX_TEXTURE_UNITS * sizeof( *glState.currentTextures ));
-	Q_memset( glState.genSTEnabled, 0, MAX_TEXTURE_UNITS * sizeof( *glState.genSTEnabled ));
+	memset( glState.currentTextures, -1, MAX_TEXTURE_UNITS * sizeof( *glState.currentTextures ));
+	memset( glState.genSTEnabled, 0, MAX_TEXTURE_UNITS * sizeof( *glState.genSTEnabled ));
 
 	for( i = 0; i < MAX_TEXTURE_UNITS; i++ )
 	{
@@ -657,7 +657,7 @@ GL_SetDefaultState
 */
 static void GL_SetDefaultState( void )
 {
-	Q_memset( &glState, 0, sizeof( glState ));
+	memset( &glState, 0, sizeof( glState ));
 	GL_SetDefaultTexState ();
 }
 
@@ -779,7 +779,7 @@ void VID_StartupGamma( void )
 	byte	*savedGamma;
 
 	// init gamma ramp
-	Q_memset( glState.stateRamp, 0, sizeof( glState.stateRamp ));
+	memset( glState.stateRamp, 0, sizeof( glState.stateRamp ));
 
 	glConfig.deviceSupportsGamma = TRUE;//GetDeviceGammaRamp( glw_state.hDC, glState.stateRamp ); //MARTY
 
@@ -814,20 +814,20 @@ void VID_StartupGamma( void )
 		GL_BuildGammaTable();
 
 		// validate base gamma
-		if( !Q_memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
+		if( !memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
 		{
 			// all ok, previous gamma is valid
 			MsgDev( D_NOTE, "VID_StartupGamma: validate screen gamma - ok\n" );
 		}
-		else if( !Q_memcmp( glState.gammaRamp, glState.stateRamp, sizeof( glState.stateRamp )))
+		else if( !memcmp( glState.gammaRamp, glState.stateRamp, sizeof( glState.stateRamp )))
 		{
 			// screen gamma is equal to render gamma (probably previous instance crashed)
 			// run additional check to make sure for it
-			if( Q_memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
+			if( memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
 			{
 				// yes, current gamma it's totally wrong, restore it from gamma.dat
 				MsgDev( D_NOTE, "VID_StartupGamma: restore original gamma after crash\n" );
-				Q_memcpy( glState.stateRamp, savedGamma, sizeof( glState.gammaRamp ));
+				memcpy( glState.stateRamp, savedGamma, sizeof( glState.gammaRamp ));
 			}
 			else
 			{
@@ -836,11 +836,11 @@ void VID_StartupGamma( void )
 				MsgDev( D_NOTE, "VID_StartupGamma: validate screen gamma - disabled\n" ); 
 			}
 		}
-		else if( !Q_memcmp( glState.gammaRamp, savedGamma, sizeof( glState.stateRamp )))
+		else if( !memcmp( glState.gammaRamp, savedGamma, sizeof( glState.stateRamp )))
 		{
 			// saved gamma is equal render gamma, probably gamma.dat wroted after crash
 			// run additional check to make sure it
-			if( Q_memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
+			if( memcmp( savedGamma, glState.stateRamp, sizeof( glState.stateRamp )))
 			{
 				// yes, saved gamma it's totally wrong, get origianl gamma from screen
 				MsgDev( D_NOTE, "VID_StartupGamma: merge gamma.dat after crash\n" );
@@ -857,7 +857,7 @@ void VID_StartupGamma( void )
 		{
 			// current gamma unset by other application, so we can restore it here
 			MsgDev( D_NOTE, "VID_StartupGamma: restore original gamma after crash\n" );
-			Q_memcpy( glState.stateRamp, savedGamma, sizeof( glState.gammaRamp ));			
+			memcpy( glState.stateRamp, savedGamma, sizeof( glState.gammaRamp ));			
 		}
 
 		Mem_Free( savedGamma );
@@ -1200,7 +1200,7 @@ rserr_t R_ChangeDisplaySettings( int vid_mode, qboolean fullscreen )
 	{
 		DEVMODE	dm;
 
-		Q_memset( &dm, 0, sizeof( dm ));
+		memset( &dm, 0, sizeof( dm ));
 		dm.dmSize = sizeof( dm );
 		dm.dmPelsWidth = width;
 		dm.dmPelsHeight = height;
@@ -1374,7 +1374,7 @@ void R_Free_OpenGL( void )
 #endif
 
 	// now all extensions are disabled
-	Q_memset( glConfig.extension, 0, sizeof( glConfig.extension[0] ) * GL_EXTCOUNT );
+	memset( glConfig.extension, 0, sizeof( glConfig.extension[0] ) * GL_EXTCOUNT );
 	glw_state.initialized = false;
 }
 
@@ -1786,7 +1786,7 @@ void R_Shutdown( void )
 		if( !clgame.sprites[i].name[0] ) continue;
 		Mod_UnloadSpriteModel( &clgame.sprites[i] );
 	}
-	Q_memset( clgame.sprites, 0, sizeof( clgame.sprites ));
+	memset( clgame.sprites, 0, sizeof( clgame.sprites ));
 
 	GL_RemoveCommands();
 	R_ShutdownImages();

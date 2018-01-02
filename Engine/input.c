@@ -110,8 +110,8 @@ static int Host_MapKey( int key )
 		case 0x0D: return K_KP_ENTER;
 		case 0x2F: return K_KP_SLASH;
 		case 0xAF: return K_KP_PLUS;
+		default: return result;
 		}
-		return result;
 	}
 }
 #endif //_XBOX
@@ -358,12 +358,12 @@ void IN_MouseEvent( int mstate )
 	// perform button actions
 	for( i = 0; i < in_mouse_buttons; i++ )
 	{
-		if(( mstate & ( 1<<i )) && !( in_mouse_oldbuttonstate & ( 1<<i )))
+		if( FBitSet( mstate, BIT( i )) && !FBitSet( in_mouse_oldbuttonstate, BIT( i )))
 		{
 			Key_Event( K_MOUSE1 + i, true );
 		}
 
-		if(!( mstate & ( 1<<i )) && ( in_mouse_oldbuttonstate & ( 1<<i )))
+		if( !FBitSet( mstate, BIT( i )) && FBitSet( in_mouse_oldbuttonstate, BIT( i )))
 		{
 			Key_Event( K_MOUSE1 + i, false );
 		}
@@ -410,9 +410,6 @@ void Host_InputFrame( void )
 	Sys_SendKeyEvents ();
 
 	Cbuf_Execute ();
-
-	if( host.state == HOST_RESTART )
-		host.state = HOST_FRAME; // restart is finished
 
 	if( host.type == HOST_DEDICATED )
 	{
@@ -487,7 +484,8 @@ long IN_WndProc( void *hWnd, uint uMsg, uint wParam, long lParam )
 		IN_ActivateCursor();
 		break;
 	case WM_MOUSEWHEEL:
-		if( !in_mouseactive ) break;
+		if( !in_mouseactive )
+			break;
 		if(( short )HIWORD( wParam ) > 0 )
 		{
 			Key_Event( K_MWHEELUP, true );

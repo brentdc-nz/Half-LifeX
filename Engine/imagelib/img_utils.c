@@ -165,7 +165,7 @@ byte *Image_Copy( size_t size )
 	byte	*out;
 
 	out = Mem_Alloc( host.imagepool, size );
-	Q_memcpy( out, image.tempbuffer, size );
+	memcpy( out, image.tempbuffer, size );
 
 	return out; 
 }
@@ -247,9 +247,9 @@ int Image_ComparePalette( const byte *pal )
 {
 	if( pal == NULL )
 		return PAL_INVALID;
-	else if( !Q_memcmp( palette_q1, pal, 768 ))
+	else if( !memcmp( palette_q1, pal, 768 ))
 		return PAL_QUAKE1;
-	else if( !Q_memcmp( palette_hl, pal, 768 ))
+	else if( !memcmp( palette_hl, pal, 768 ))
 		return PAL_HALFLIFE;
 	return PAL_CUSTOM;		
 }
@@ -410,7 +410,7 @@ void Image_CopyPalette32bit( void )
 {
 	if( image.palette ) return; // already created ?
 	image.palette = Mem_Alloc( host.imagepool, 1024 );
-	Q_memcpy( image.palette, image.d_currentpal, 1024 );
+	memcpy( image.palette, image.d_currentpal, 1024 );
 }
 
 void Image_PaletteHueReplace( byte *palSrc, int newHue, int start, int end )
@@ -496,7 +496,7 @@ void Image_CopyParms( rgbdata_t *src )
 	image.size = src->size;
 	image.palette = src->palette;	// may be NULL
 
-	Q_memcpy( image.fogParams, src->fogParams, sizeof( image.fogParams ));
+	memcpy( image.fogParams, src->fogParams, sizeof( image.fogParams ));
 }
 
 /*
@@ -681,7 +681,7 @@ void Image_Resample32Lerp( const void *indata, int inwidth, int inheight, void *
 			if( yi != oldy )
 			{
 				inrow = (byte *)indata + inwidth4 * yi;
-				if (yi == oldy+1) Q_memcpy( resamplerow1, resamplerow2, outwidth4 );
+				if (yi == oldy+1) memcpy( resamplerow1, resamplerow2, outwidth4 );
 				else Image_Resample32LerpLine( inrow, resamplerow1, inwidth, outwidth );
 				Image_Resample32LerpLine( inrow + inwidth4, resamplerow2, inwidth, outwidth );
 				oldy = yi;
@@ -747,12 +747,12 @@ void Image_Resample32Lerp( const void *indata, int inwidth, int inheight, void *
 			if( yi != oldy )
 			{
 				inrow = (byte *)indata + inwidth4*yi;
-				if( yi == oldy + 1 ) Q_memcpy( resamplerow1, resamplerow2, outwidth4 );
+				if( yi == oldy + 1 ) memcpy( resamplerow1, resamplerow2, outwidth4 );
 				else Image_Resample32LerpLine( inrow, resamplerow1, inwidth, outwidth);
 				oldy = yi;
 			}
 
-			Q_memcpy( out, resamplerow1, outwidth4 );
+			memcpy( out, resamplerow1, outwidth4 );
 		}
 	}
 
@@ -828,7 +828,7 @@ void Image_Resample24Lerp( const void *indata, int inwidth, int inheight, void *
 			if( yi != oldy )
 			{
 				inrow = (byte *)indata + inwidth3 * yi;
-				if( yi == oldy + 1) Q_memcpy( resamplerow1, resamplerow2, outwidth3 );
+				if( yi == oldy + 1) memcpy( resamplerow1, resamplerow2, outwidth3 );
 				else Image_Resample24LerpLine( inrow, resamplerow1, inwidth, outwidth );
 				Image_Resample24LerpLine( inrow + inwidth3, resamplerow2, inwidth, outwidth );
 				oldy = yi;
@@ -887,12 +887,12 @@ void Image_Resample24Lerp( const void *indata, int inwidth, int inheight, void *
 			if( yi != oldy )
 			{
 				inrow = (byte *)indata + inwidth3*yi;
-				if( yi == oldy + 1) Q_memcpy( resamplerow1, resamplerow2, outwidth3 );
+				if( yi == oldy + 1) memcpy( resamplerow1, resamplerow2, outwidth3 );
 				else Image_Resample24LerpLine( inrow, resamplerow1, inwidth, outwidth );
 				oldy = yi;
 			}
 
-			Q_memcpy( out, resamplerow1, outwidth3 );
+			memcpy( out, resamplerow1, outwidth3 );
 		}
 	}
 
@@ -1071,8 +1071,8 @@ byte *Image_FloodInternal( const byte *indata, int inwidth, int inheight, int ou
 		return (byte *)indata;	
 	}
 
-	if( samples == 1 ) Q_memset( out, 0xFF, newsize );	// last palette color
-	else Q_memset( out, 0x00808080, newsize );		// gray (alpha leaved 0x00)
+	if( samples == 1 ) memset( out, 0xFF, newsize );	// last palette color
+	else memset( out, 0x00808080, newsize );		// gray (alpha leaved 0x00)
 
 	for( y = 0; y < outheight; y++ )
 	{
@@ -1082,7 +1082,7 @@ byte *Image_FloodInternal( const byte *indata, int inwidth, int inheight, int ou
 			{
 				if( x < inwidth )
 					*out++ = *in++;
-				else *out++;
+				else out++;
 			}
 		}
 	}
@@ -1228,7 +1228,7 @@ qboolean Image_AddIndexedImageToPack( const byte *in, int width, int height )
 
 	// reallocate image buffer
 	image.rgba = Mem_Alloc( host.imagepool, image.size );	
-	if( !expand_to_rgba ) Q_memcpy( image.rgba, in, image.size );
+	if( !expand_to_rgba ) memcpy( image.rgba, in, image.size );
 	else if( !Image_Copy8bitRGBA( in, image.rgba, mipsize ))
 		return false; // probably pallette not installed
 
@@ -1299,7 +1299,7 @@ qboolean Image_Decompress( const byte *data )
 		break;
 	case PF_RGBA_32:
 		// fast default case
-		Q_memcpy( fout, fin, size );
+		memcpy( fout, fin, size );
 		break;
 	default: return false;
 	}
@@ -1325,7 +1325,7 @@ rgbdata_t *Image_DecompressInternal( rgbdata_t *pic )
 	pic->type = PF_RGBA_32;
 
 	pic->buffer = Mem_Realloc( host.imagepool, pic->buffer, image.size );
-	Q_memcpy( pic->buffer, image.tempbuffer, image.size );
+	memcpy( pic->buffer, image.tempbuffer, image.size );
 	if( pic->palette ) Mem_Free( pic->palette );
 	pic->flags = image.flags;
 	pic->palette = NULL;
@@ -1414,7 +1414,7 @@ qboolean Image_Process( rgbdata_t **pix, int width, int height, float gamma, uin
 	if( flags & IMAGE_MAKE_LUMA )
 	{
 		out = Image_CreateLumaInternal( pic->buffer, pic->width, pic->height, pic->type, pic->flags );
-		if( pic->buffer != out ) Q_memcpy( pic->buffer, image.tempbuffer, pic->size );
+		if( pic->buffer != out ) memcpy( pic->buffer, image.tempbuffer, pic->size );
 		pic->flags &= ~IMAGE_HAS_LUMA;
 	}
 
@@ -1430,7 +1430,7 @@ qboolean Image_Process( rgbdata_t **pix, int width, int height, float gamma, uin
 	if( flags & IMAGE_LIGHTGAMMA ) pic = Image_LightGamma( pic, gamma );
 
 	out = Image_FlipInternal( pic->buffer, &pic->width, &pic->height, pic->type, flags );
-	if( pic->buffer != out ) Q_memcpy( pic->buffer, image.tempbuffer, pic->size );
+	if( pic->buffer != out ) memcpy( pic->buffer, image.tempbuffer, pic->size );
 
 	if(( flags & IMAGE_RESAMPLE && width > 0 && height > 0 ) || ( flags & IMAGE_ROUND ) || ( flags & IMAGE_ROUNDFILLER ))
 	{

@@ -718,6 +718,7 @@ byte *GL_ResampleTexture( const byte *source, int inWidth, int inHeight, int out
 			}
 		}
 	}
+
 	return scaledImage;
 }
 
@@ -1252,7 +1253,7 @@ int GL_CreateTexture( const char *name, int width, int height, const void *buffe
 	rgbdata_t	r_empty;
 	int	texture;
 
-	Q_memset( &r_empty, 0, sizeof( r_empty ));
+	memset( &r_empty, 0, sizeof( r_empty ));
 	r_empty.width = width;
 	r_empty.height = height;
 	r_empty.type = PF_RGBA_32;
@@ -1445,7 +1446,7 @@ void GL_FreeTexture( GLenum texnum )
 		FS_FreeImage( image->original );
 
 	/*p*/glDeleteTextures( 1, &image->texnum );
-	Q_memset( image, 0, sizeof( *image ));
+	memset( image, 0, sizeof( *image ));
 }
 
 /*
@@ -1653,7 +1654,7 @@ static rgbdata_t *R_InitDlightTexture( texFlags_t *flags )
 	r_image.size = r_image.width * r_image.height * 4;
 	r_image.buffer = data2D;
 
-	Q_memset( data2D, 0x00, r_image.size );
+	memset( data2D, 0x00, r_image.size );
 
 	*flags = TF_NOPICMIP|TF_UNCOMPRESSED|TF_NOMIPMAP;
 
@@ -1670,7 +1671,7 @@ static rgbdata_t *R_InitDlightTexture2( texFlags_t *flags )
 	r_image.size = r_image.width * r_image.height * 4;
 	r_image.buffer = data2D;
 
-	Q_memset( data2D, 0x00, r_image.size );
+	memset( data2D, 0x00, r_image.size );
 
 	*flags = TF_NOPICMIP|TF_UNCOMPRESSED|TF_NOMIPMAP;
 
@@ -1712,8 +1713,8 @@ static void R_InitBuiltinTextures( void )
 
 	for( i = 0; i < num_builtin_textures; i++ )
 	{
-		Q_memset( &r_image, 0, sizeof( rgbdata_t ));
-		Q_memset( data2D, 0xFF, sizeof( data2D ));
+		memset( &r_image, 0, sizeof( rgbdata_t ));
+		memset( data2D, 0xFF, sizeof( data2D ));
 
 		pic = textures[i].init( &flags );
 		if( pic == NULL ) continue;
@@ -1733,10 +1734,10 @@ void R_InitImages( void )
 	uint	i, hash;
 	float	f;
 
-	r_numTextures = 0;
 	scaledImage = NULL;
-	Q_memset( r_textures, 0, sizeof( r_textures ));
-	Q_memset( r_texturesHashTable, 0, sizeof( r_texturesHashTable ));
+	memset( r_textures, 0, sizeof( r_textures ));
+	memset( r_texturesHashTable, 0, sizeof( r_texturesHashTable ));
+	r_numTextures = 0;
 
 	// create unused 0-entry
 	Q_strncpy( r_textures->name, "*unused*", sizeof( r_textures->name ));
@@ -1789,8 +1790,8 @@ void R_ShutdownImages( void )
 		GL_FreeTexture( i );
 	}
 
-	Q_memset( tr.lightmapTextures, 0, sizeof( tr.lightmapTextures ));
-	Q_memset( r_texturesHashTable, 0, sizeof( r_texturesHashTable ));
-	Q_memset( r_textures, 0, sizeof( r_textures ));
+	memset( tr.lightmapTextures, 0, sizeof( tr.lightmapTextures ));
+	memset( r_texturesHashTable, 0, sizeof( r_texturesHashTable ));
+	memset( r_textures, 0, sizeof( r_textures ));
 	r_numTextures = 0;
 }

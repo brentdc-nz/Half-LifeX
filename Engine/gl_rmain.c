@@ -370,16 +370,16 @@ int R_ComputeFxBlend( cl_entity_t *e )
 		break;	
 	}
 
-	if( e->model->type != mod_brush )
+	if( e->model && e->model->type != mod_brush )
 	{
 		// NOTE: never pass sprites with rendercolor '0 0 0' it's a stupid Valve Hammer Editor bug
 		if( !e->curstate.rendercolor.r && !e->curstate.rendercolor.g && !e->curstate.rendercolor.b )
 			e->curstate.rendercolor.r = e->curstate.rendercolor.g = e->curstate.rendercolor.b = 255;
-	}
 
-	// apply scale to studiomodels and sprites only
-	if( e->model && e->model->type != mod_brush && !e->curstate.scale )
-		e->curstate.scale = 1.0f;
+		// apply scale to studiomodels and sprites only
+		if( !e->curstate.scale )
+			e->curstate.scale = 1.0f;
+	}
 
 	blend = bound( 0, blend, 255 );
 
@@ -637,7 +637,11 @@ static void R_SetupProjectionMatrix( const ref_params_t *fd, matrix4x4 m )
 
 	RI.farClip = R_GetFarClip();
 
+#ifndef _XBOX // MARTY - Fix weapons cliping the near plane with FakeGLx
 	zNear = 4.0f;
+#else
+	zNear = 3.0f;
+#endif
 	zFar = max( 256.0f, RI.farClip );
 
 	yMax = zNear * tan( fd->fov_y * M_PI / 360.0 );
@@ -805,7 +809,6 @@ static void R_SetupFrame( void )
 		VectorCopy( RI.vup, RI.cull_vup );
 	}
 
-	R_AnimateLight();
 	R_RunViewmodelEvents();
 
 	// sort opaque entities by model type to avoid drawing model shadows under alpha-surfaces
@@ -1072,7 +1075,13 @@ void R_DrawFog( void )
 		return;
 
 	/*p*/glEnable( GL_FOG );
+#ifdef _USEFAKEGL01 //MARTY - FakeGLx01 Compatible
+	/*p*/glFogi( GL_FOG_MODE, GL_LINEAR );
+	/*p*/glFogf( GL_FOG_START, 4.0f );
+	/*p*/glFogf( GL_FOG_END, 1000.0f );
+#else
 	/*p*/glFogi( GL_FOG_MODE, GL_EXP );
+#endif
 	/*p*/glFogf( GL_FOG_DENSITY, RI.fogDensity );
 	/*p*/glFogfv( GL_FOG_COLOR, RI.fogColor );
 	/*p*/glHint( GL_FOG_HINT, GL_NICEST );
@@ -1255,7 +1264,6 @@ void R_BeginFrame( qboolean clearScene )
 	// draw buffer stuff
 	/*p*/glDrawBuffer( GL_BACK );
 
-	// texturemode stuff
 	// update texture parameters
 	if( gl_texturemode->modified || gl_texture_anisotropy->modified || gl_texture_lodbias->modified )
 		R_SetTextureParameters();
@@ -1338,8 +1346,17 @@ void R_EndFrame( void )
 	// flush any remaining 2D bits
 	R_Set2DMode( false );
 
-	if( !FakeSwapBuffers( /*glw_state.hDC*/ )) //MARTY
-		Sys_Error( "wglSwapBuffers() failed!\n" );
+#ifndef _XBOX //MARTY
+	if( !pwglSwapBuffers( glw_state.hDC ))	
+#else
+	if( !/*p*/FakeSwapBuffers( /*glw_state.hDC*/ ))	
+#endif
+	{	
+		Msg( "Error: WGL: failed to swap buffers\n" );
+#ifndef _XBOX //MARTY		
+		Host_NewInstance( va("#%s", GI->gamefolder ), "stopped" );
+#endif
+	}
 }
 
 /*
@@ -1612,18 +1629,18 @@ Initialize client external rendering
 qboolean R_InitRenderAPI( void )  //MARTY FIXME WIP - Not really needed as we don't care about extensions
 {
 	// make sure what render functions is cleared
-	Q_memset( &clgame.drawFuncs, 0, sizeof( clgame.drawFuncs ));
+	memset( &clgame.drawFuncs, 0, sizeof( clgame.drawFuncs ));
 
 	if( clgame.dllFuncs.pfnGetRenderInterface )
 	{
 /*		if( clgame.dllFuncs.pfnGetRenderInterface( CL_RENDER_INTERFACE_VERSION, &gRenderAPI, &clgame.drawFuncs ))
 		{
-			MsgDev( D_AICONSOLE, "CL_LoadProgs: ^2initailized extended RenderAPI ^7ver. %i\n", CL_RENDER_INTERFACE_VERSION );
+			MsgDev( D_REPORT, "CL_LoadProgs: ^2initailized extended RenderAPI ^7ver. %i\n", CL_RENDER_INTERFACE_VERSION );
 			return true;
 		}
 
 		// make sure what render functions is cleared
-		Q_memset( &clgame.drawFuncs, 0, sizeof( clgame.drawFuncs ));
+		memset( &clgame.drawFuncs, 0, sizeof( clgame.drawFuncs ));
 
 */		return false; // just tell user about problems
 	}

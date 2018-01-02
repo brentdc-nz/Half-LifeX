@@ -117,7 +117,8 @@ hull_t *PM_HullForBsp( physent_t *pe, playermove_t *pmove, float *offset )
 {
 	hull_t	*hull;
 
-	ASSERT( pe && pe->model != NULL );
+	Assert( pe != NULL );
+	Assert( pe->model != NULL );
 
 	switch( pmove->usehull )
 	{
@@ -135,7 +136,7 @@ hull_t *PM_HullForBsp( physent_t *pe, playermove_t *pmove, float *offset )
 		break;
 	}
 
-	ASSERT( hull != NULL );
+	Assert( hull != NULL );
 
 	// force to use hull0 because other hulls doesn't exist for water
 	if( pe->model->flags & MODEL_LIQUID && pe->solid != SOLID_TRIGGER )
@@ -202,7 +203,7 @@ qboolean PM_RecursiveHullCheck( hull_t *hull, int num, float p1f, float p2f, vec
 	}
 
 	if( num < hull->firstclipnode || num > hull->lastclipnode )
-		Sys_Error( "PM_RecursiveHullCheck: bad node number\n" );
+		Host_Error( "PM_RecursiveHullCheck: bad node number %i\n", num );
 		
 	// find the point distances
 	node = hull->clipnodes + num;
@@ -299,7 +300,7 @@ pmtrace_t PM_PlayerTraceExt( playermove_t *pmove, vec3_t start, vec3_t end, int 
 	qboolean	rotated, transform_bbox;
 	hull_t	*hull = NULL;
 
-	Q_memset( &trace_total, 0, sizeof( trace_total ));
+	memset( &trace_total, 0, sizeof( trace_total ));
 	VectorCopy( end, trace_total.endpos );
 	trace_total.fraction = 1.0f;
 	trace_total.ent = -1;
@@ -418,7 +419,7 @@ pmtrace_t PM_PlayerTraceExt( playermove_t *pmove, vec3_t start, vec3_t end, int 
 			VectorSubtract( end, offset, end_l );
 		}
 
-		Q_memset( &trace_bbox, 0, sizeof( trace_bbox ));
+		memset( &trace_bbox, 0, sizeof( trace_bbox ));
 		VectorCopy( end, trace_bbox.endpos );
 		trace_bbox.allsolid = true;
 		trace_bbox.fraction = 1.0f;
@@ -445,7 +446,7 @@ pmtrace_t PM_PlayerTraceExt( playermove_t *pmove, vec3_t start, vec3_t end, int 
 
 			for( last_hitgroup = 0, j = 0; j < hullcount; j++ )
 			{
-				Q_memset( &trace_hitbox, 0, sizeof( trace_hitbox ));
+				memset( &trace_hitbox, 0, sizeof( trace_hitbox ));
 				VectorCopy( end, trace_hitbox.endpos );
 				trace_hitbox.allsolid = true;
 				trace_hitbox.fraction = 1.0f;
@@ -592,7 +593,7 @@ int PM_TestPlayerPosition( playermove_t *pmove, vec3_t pos, pmtrace_t *ptrace, p
 		{
 			pmtrace_t	trace;
 
-			Q_memset( &trace, 0, sizeof( trace ));
+			memset( &trace, 0, sizeof( trace ));
 			VectorCopy( pos, trace.endpos );
 			trace.allsolid = true;
 			trace.fraction = 1.0f;

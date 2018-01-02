@@ -56,6 +56,11 @@ GNU General Public License for more details.
 #define RAD_TO_STUDIO	(32768.0 / M_PI)
 #define STUDIO_TO_RAD	(M_PI / 32768.0)
 #define nanmask		(255<<23)
+#define Q_min( a, b )	(((a) < (b)) ? (a) : (b))
+#define Q_max( a, b )	(((a) > (b)) ? (a) : (b))
+#define Q_recip( a )	((float)(1.0f / (float)(a)))
+#define Q_floor( a )	((float)(long)(a))
+#define Q_ceil( a )		((float)(long)((a) + 1))
 
 #define Q_rint(x)		((x) < 0 ? ((int)((x)-0.5f)) : ((int)((x)+0.5f)))
 #define IS_NAN(x)		(((*(int *)&x)&nanmask)==nanmask)
@@ -132,7 +137,7 @@ float ApproachVal( float target, float value, float speed );
 // matrixlib.c
 //
 #define Matrix3x4_LoadIdentity( mat )		Matrix3x4_Copy( mat, matrix3x4_identity )
-#define Matrix3x4_Copy( out, in )		Q_memcpy( out, in, sizeof( matrix3x4 ))
+#define Matrix3x4_Copy( out, in )		memcpy( out, in, sizeof( matrix3x4 ))
 
 void Matrix3x4_VectorTransform( const matrix3x4 in, const float v[3], float out[3] );
 void Matrix3x4_VectorITransform( const matrix3x4 in, const float v[3], float out[3] );
@@ -147,7 +152,7 @@ void Matrix3x4_Invert_Simple( matrix3x4 out, const matrix3x4 in1 );
 void Matrix3x4_OriginFromMatrix( const matrix3x4 in, float *out );
 
 #define Matrix4x4_LoadIdentity( mat )	Matrix4x4_Copy( mat, matrix4x4_identity )
-#define Matrix4x4_Copy( out, in )	Q_memcpy( out, in, sizeof( matrix4x4 ))
+#define Matrix4x4_Copy( out, in )	memcpy( out, in, sizeof( matrix4x4 ))
 
 void Matrix4x4_VectorTransform( const matrix4x4 in, const float v[3], float out[3] );
 void Matrix4x4_VectorITransform( const matrix4x4 in, const float v[3], float out[3] );

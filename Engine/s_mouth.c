@@ -32,8 +32,8 @@ void SND_InitMouth( int entnum, int entchannel )
 		if( clientEntity )
 		{
 			clientEntity->mouth.mouthopen = 0;
-			clientEntity->mouth.sndavg = 0;
 			clientEntity->mouth.sndcount = 0;
+			clientEntity->mouth.sndavg = 0;
 		}
 	}
 }
@@ -59,8 +59,8 @@ void SND_MoveMouth8( channel_t *ch, wavdata_t *pSource, int count )
 	cl_entity_t	*clientEntity;
 	char		*pdata = NULL;
 	mouth_t		*pMouth = NULL;
-	int		savg, data;
 	int		scount, pos = 0;
+	int		savg, data;
 	uint 		i;
 
 	clientEntity = CL_GetEntityByIndex( ch->entnum );

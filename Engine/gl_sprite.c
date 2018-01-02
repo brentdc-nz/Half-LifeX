@@ -336,7 +336,7 @@ void Mod_LoadMapSprite( model_t *mod, const void *buffer, size_t size, qboolean 
 	psprite->type = SPR_FWD_PARALLEL_ORIENTED;
 	psprite->texFormat = SPR_ALPHTEST;
 	psprite->numframes = mod->numframes = numframes;
-	psprite->radius = sqrt((( w >> 1) * (w >> 1)) + ((h >> 1) * (h >> 1)));
+	psprite->radius = sqrt(((w >> 1) * (w >> 1)) + ((h >> 1) * (h >> 1)));
 
 	mod->mins[0] = mod->mins[1] = -w / 2;
 	mod->maxs[0] = mod->maxs[1] = w / 2;
@@ -344,7 +344,7 @@ void Mod_LoadMapSprite( model_t *mod, const void *buffer, size_t size, qboolean 
 	mod->maxs[2] = h / 2;
 
 	// create a temporary pic
-	Q_memset( &temp, 0, sizeof( temp ));
+	memset( &temp, 0, sizeof( temp ));
 	temp.width = w;
 	temp.height = h;
 	temp.type = pix->type;
@@ -446,7 +446,7 @@ void Mod_UnloadSpriteModel( model_t *mod )
 	}
 
 	Mem_FreePool( &mod->mempool );
-	Q_memset( mod, 0, sizeof( *mod ));
+	memset( mod, 0, sizeof( *mod ));
 }
 
 /*
@@ -468,7 +468,10 @@ mspriteframe_t *R_GetSpriteFrame( const model_t *pModel, int frame, float yaw )
 	ASSERT( pModel );
 	psprite = pModel->cache.data;
 
-	if( frame < 0 ) frame = 0;
+	if( frame < 0 )
+	{
+		frame = 0;
+	}
 	else if( frame >= psprite->numframes )
 	{
 		MsgDev( D_WARN, "R_GetSpriteFrame: no such frame %d (%s)\n", frame, pModel->name );

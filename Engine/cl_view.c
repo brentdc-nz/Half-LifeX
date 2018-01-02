@@ -361,7 +361,7 @@ qboolean V_PreRender( void )
 	{
 		if(( host.realtime - cls.disable_screen ) > cl_timeout->value )
 		{
-			MsgDev( D_NOTE, "V_PreRender: loading plaque timed out.\n" );
+			MsgDev( D_ERROR, "V_PreRender: loading plaque timed out\n" );
 			cls.disable_screen = 0.0f;
 		}
 		return false;
@@ -380,11 +380,11 @@ V_PostRender
 */
 void V_PostRender( void )
 {
-	qboolean	draw_2d = false;
+	qboolean		draw_2d = false;
 
 	R_Set2DMode( true );
 
-	if( cls.state == ca_active )
+	if( cls.state == ca_active && cls.scrshot_action != scrshot_mapshot )
 	{
 		SCR_TileClear();
 		CL_DrawHUD( CL_ACTIVE );
@@ -409,12 +409,13 @@ void V_PostRender( void )
 		SCR_DrawFPS();
 		SV_DrawOrthoTriangles();
 		CL_DrawDemoRecording();
-		R_ShowTextures();
 		CL_DrawHUD( CL_CHANGELEVEL );
+		R_ShowTextures();
 		Con_DrawConsole();
 		UI_UpdateMenu( host.realtime );
 		Con_DrawVersion();
 		Con_DrawDebug(); // must be last
+
 		S_ExtraUpdate();
 	}
 

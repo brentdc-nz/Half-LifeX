@@ -197,7 +197,7 @@ qboolean FS_AddSideToPack( const char *name, int adjust_flags )
 	if( resampled ) image.rgba = Image_Copy( image.size );
 
 	image.cubemap = Mem_Realloc( host.imagepool, image.cubemap, image.ptr + image.size );
-	Q_memcpy( image.cubemap + image.ptr, image.rgba, image.size ); // add new side
+	memcpy( image.cubemap + image.ptr, image.rgba, image.size ); // add new side
 
 	Mem_Free( image.rgba );	// release source buffer
 	image.ptr += image.size; 	// move to next
@@ -488,13 +488,13 @@ rgbdata_t *FS_CopyImage( rgbdata_t *in )
 	if( palSize )
 	{
 		out->palette = Mem_Alloc( host.imagepool, palSize );
-		Q_memcpy( out->palette, in->palette, palSize );
+		memcpy( out->palette, in->palette, palSize );
 	}
 
 	if( in->size )
 	{
 		out->buffer = Mem_Alloc( host.imagepool, in->size );
-		Q_memcpy( out->buffer, in->buffer, in->size );
+		memcpy( out->buffer, in->buffer, in->size );
 	}
 
 	return out;

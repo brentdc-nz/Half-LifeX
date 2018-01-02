@@ -25,12 +25,13 @@ extern byte *sndpool;
 #define SND_STOP_LOOPING	(1<<10)	// stop all looping sounds on the entity.
 
 // sound engine rate defines
-#define SOUND_DMA_SPEED	44100	// hardware playback rate
-#define SOUND_11k		11025	// 11khz sample rate
-#define SOUND_16k		16000	// 16khz sample rate
-#define SOUND_22k		22050	// 22khz sample rate
-#define SOUND_32k		32000	// 32khz sample rate
-#define SOUND_44k		44100	// 44khz sample rate
+#define SOUND_DMA_SPEED		44100	// hardware playback rate
+#define SOUND_11k			11025	// 11khz sample rate
+#define SOUND_16k			16000	// 16khz sample rate
+#define SOUND_22k			22050	// 22khz sample rate
+#define SOUND_32k			32000	// 32khz sample rate
+#define SOUND_44k			44100	// 44khz sample rate
+
 
 #define SND_TRACE_UPDATE_MAX  	2	// max of N channels may be checked for obscured source per frame
 #define SND_RADIUS_MAX		240.0f	// max sound source radius
@@ -50,14 +51,14 @@ extern byte *sndpool;
 #define SND_GAIN_PLAYER_WEAPON_DB	2.0f	// increase player weapon gain by N dB
 
 // fixed point stuff for real-time resampling
-#define FIX_BITS		28
-#define FIX_SCALE		(1 << FIX_BITS)
-#define FIX_MASK		((1 << FIX_BITS)-1)
-#define FIX_FLOAT(a)	((int)((a) * FIX_SCALE))
-#define FIX(a)		(((int)(a)) << FIX_BITS)
-#define FIX_INTPART(a)	(((int)(a)) >> FIX_BITS)
-#define FIX_FRACTION(a,b)	(FIX(a)/(b))
-#define FIX_FRACPART(a)	((a) & FIX_MASK)
+#define FIX_BITS			28
+#define FIX_SCALE			(1 << FIX_BITS)
+#define FIX_MASK			((1 << FIX_BITS)-1)
+#define FIX_FLOAT(a)		((int)((a) * FIX_SCALE))
+#define FIX(a)			(((int)(a)) << FIX_BITS)
+#define FIX_INTPART(a)		(((int)(a)) >> FIX_BITS)
+#define FIX_FRACTION(a,b)		(FIX(a)/(b))
+#define FIX_FRACPART(a)		((a) & FIX_MASK)
 
 #define SNDLVL_TO_DIST_MULT( sndlvl ) \
 	( sndlvl ? ((pow( 10, s_refdb->value / 20 ) / pow( 10, (float)sndlvl / 20 )) / s_refdist->value ) : 0 )
@@ -66,25 +67,24 @@ extern byte *sndpool;
 	(int)( dist_mult ? ( 20 * log10( pow( 10, s_refdb->value / 20 ) / (dist_mult * s_refdist->value ))) : 0 )
 
 // NOTE: clipped sound at 32760 to avoid overload
-#define CLIP( x )		(( x ) > 32760 ? 32760 : (( x ) < -32760 ? -32760 : ( x )))
-#define SWAP( a, b, t )	{(t) = (a); (a) = (b); (b) = (t);}
-#define AVG( a, b )		(((a) + (b)) >> 1 )
-#define AVG4( a, b, c, d )	(((a) + (b) + (c) + (d)) >> 2 )
+#define CLIP( x )			(( x ) > 32760 ? 32760 : (( x ) < -32760 ? -32760 : ( x )))
+#define SWAP( a, b, t )		{(t) = (a); (a) = (b); (b) = (t);}
+#define AVG( a, b )			(((a) + (b)) >> 1 )
+#define AVG4( a, b, c, d )		(((a) + (b) + (c) + (d)) >> 2 )
 
-#define PAINTBUFFER_SIZE	1024	// 44k: was 512
-#define PAINTBUFFER		(g_curpaintbuffer)
-#define CPAINTBUFFERS	3
+#define PAINTBUFFER_SIZE		1024	// 44k: was 512
+#define PAINTBUFFER			(g_curpaintbuffer)
+#define CPAINTBUFFERS		3
+
+// sound mixing buffer
+#define CPAINTFILTERMEM		3
+#define CPAINTFILTERS		4	// maximum number of consecutive upsample passes per paintbuffer
 
 typedef struct
 {
-	int		left;
-	int		right;
+	int			left;
+	int			right;
 } portable_samplepair_t;
-
-// sound mixing buffer
-
-#define CPAINTFILTERMEM		3
-#define CPAINTFILTERS		4	// maximum number of consecutive upsample passes per paintbuffer
 
 typedef struct
 {
@@ -235,9 +235,9 @@ extern int	total_channels;
 extern int	paintedtime;
 extern int	s_rawend;
 extern int	soundtime;
-extern dma_t	dma;
 extern listener_t	s_listener;
 extern int	idsp_room;
+extern dma_t	dma;
 
 extern convar_t	*s_volume;
 extern convar_t	*s_musicvolume;
@@ -245,7 +245,7 @@ extern convar_t	*s_show;
 extern convar_t	*s_mixahead;
 extern convar_t	*s_lerping;
 extern convar_t	*dsp_off;
-extern convar_t	*s_test;
+extern convar_t	*s_test;		// cvar to testify new effects
 extern convar_t	*s_phs;
 
 extern portable_samplepair_t		s_rawsamples[MAX_RAW_SAMPLES];

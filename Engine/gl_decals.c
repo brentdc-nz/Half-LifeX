@@ -60,7 +60,7 @@ static int	gDecalCount;
 
 void R_ClearDecals( void )
 {
-	Q_memset( gDecalPool, 0, sizeof( gDecalPool ));
+	memset( gDecalPool, 0, sizeof( gDecalPool ));
 	gDecalCount = 0;
 }
 
@@ -334,7 +334,7 @@ static int SHClip( float *vert, int vertCount, float *out, int edge )
 			if( R_ClipInside( s, edge ))
 			{
 				// Add a vertex and advance out to next vertex
-				Q_memcpy( out, p, sizeof( float ) * VERTEXSIZE );
+				memcpy( out, p, sizeof( float ) * VERTEXSIZE );
 				out += VERTEXSIZE;
 				outCount++;
 			}
@@ -344,7 +344,7 @@ static int SHClip( float *vert, int vertCount, float *out, int edge )
 				out += VERTEXSIZE;
 				outCount++;
 
-				Q_memcpy( out, p, sizeof( float ) * VERTEXSIZE );
+				memcpy( out, p, sizeof( float ) * VERTEXSIZE );
 				out += VERTEXSIZE;
 				outCount++;
 			}
@@ -577,7 +577,7 @@ msurfmesh_t *R_DecalCreateMesh( decalinfo_t *decalinfo, decal_t *pdecal, msurfac
 		out->sccoord[1] = (( DotProduct( v , surf->texinfo->vecs[1] ) + surf->texinfo->vecs[1][3] ) / surf->texinfo->texture->height );
 
 		// clear colors (it can be used for vertex lighting)
-		Q_memset( out->color, 0xFF, sizeof( out->color ));
+		memset( out->color, 0xFF, sizeof( out->color ));
 	}
 
 	pdecal->mesh = mesh;
@@ -1232,7 +1232,11 @@ void R_DecalRemoveAll( int textureIndex )
 	{
 		pdecal = &gDecalPool[i];
 
-		if( !textureIndex || pdecal->texture == textureIndex )
+		// don't remove permanent decals
+		if( pdecal->flags & FDECAL_PERMANENT )
+			continue;
+
+		if( !textureIndex || ( pdecal->texture == textureIndex ))
 			R_DecalUnlink( pdecal );
 	}
 }

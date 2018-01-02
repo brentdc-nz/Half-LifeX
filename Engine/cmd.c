@@ -58,7 +58,7 @@ Cbuf_Clear
 */
 void Cbuf_Clear( void )
 {
-	Q_memset( cmd_text.data, 0, sizeof( cmd_text_buf ));
+	memset( cmd_text.data, 0, sizeof( cmd_text_buf ));
 	cmd_text.cursize = 0;
 }
 
@@ -92,17 +92,16 @@ Adds command text at the end of the buffer
 */
 void Cbuf_AddText( const char *text )
 {
-	int	l;
-
-	l = Q_strlen( text );
+	int	l = Q_strlen( text );
 
 	if( cmd_text.cursize + l >= cmd_text.maxsize )
 	{
 		MsgDev( D_WARN, "Cbuf_AddText: overflow\n" );
-		return;
 	}
-
-	Q_memcpy( Cbuf_GetSpace( &cmd_text, l ), text, l ); 
+	else
+	{
+		memcpy( Cbuf_GetSpace( &cmd_text, l ), text, l );
+	}
 }
 
 /*
@@ -124,7 +123,7 @@ void Cbuf_InsertText( const char *text )
 	if( templen )
 	{
 		temp = Z_Malloc( templen );
-		Q_memcpy( temp, cmd_text.data, templen );
+		memcpy( temp, cmd_text.data, templen );
 		cmd_text.cursize = 0;
 	}
 	else temp = NULL;
@@ -135,7 +134,7 @@ void Cbuf_InsertText( const char *text )
 	// add the copied off data
 	if( templen )
 	{
-		Q_memcpy( Cbuf_GetSpace( &cmd_text, templen ), temp, templen ); 
+		memcpy( Cbuf_GetSpace( &cmd_text, templen ), temp, templen ); 
 		Z_Free( temp );
 	}
 }
@@ -170,7 +169,7 @@ void Cbuf_Execute( void )
 		if( i >= ( MAX_CMD_LINE - 1 ))
 			Sys_Error( "Cbuf_Execute: command string owerflow\n" );
 
-		Q_memcpy( line, text, i );
+		memcpy( line, text, i );
 		line[i] = 0;
 
 		// delete the text from the command buffer and move remaining commands down
@@ -184,7 +183,7 @@ void Cbuf_Execute( void )
 		{
 			i++;
 			cmd_text.cursize -= i;
-			Q_memcpy( text, text + i, cmd_text.cursize );
+			memcpy( text, text + i, cmd_text.cursize );
 		}
 
 		// execute the command line
@@ -332,7 +331,7 @@ void Cmd_Alias_f( void )
 		return;
 	}
 
-	// if the alias allready exists, reuse it
+	// if the alias already exists, reuse it
 	for( a = cmd_alias; a; a = a->next )
 	{
 		if( !Q_strcmp( s, a->name ))
@@ -516,7 +515,6 @@ void Cmd_TokenizeString( char *text )
 	}
 }
 
-
 /*
 ============
 Cmd_AddCommand
@@ -551,33 +549,38 @@ void Cmd_AddCommand( const char *cmd_name, xcommand_t function, const char *cmd_
 
 /*
 ============
-Cmd_AddGameCommand
+Cmd_AddServerCommand
 ============
 */
-void Cmd_AddGameCommand( const char *cmd_name, xcommand_t function )
+void Cmd_AddServerCommand( const char *cmd_name, xcommand_t function )
 {
 	cmd_t	*cmd;
+	if( !cmd_name || !*cmd_name )
+	{
+		MsgDev( D_INFO, "Cmd_AddServerCommand: NULL name\n" );
+		return;
+	}
 
 	// fail if the command is a variable name
 	if( Cvar_FindVar( cmd_name ))
 	{
-		MsgDev( D_INFO, "Cmd_AddCommand: %s already defined as a var\n", cmd_name );
+		MsgDev( D_ERROR, "Cmd_AddServerCommand: %s already defined as a var\n", cmd_name );
 		return;
 	}
 	
 	// fail if the command already exists
 	if( Cmd_Exists( cmd_name ))
 	{
-		MsgDev(D_INFO, "Cmd_AddCommand: %s already defined\n", cmd_name);
+		MsgDev( D_ERROR, "Cmd_AddServerCommand: %s already defined\n", cmd_name );
 		return;
 	}
 
 	// use a small malloc to avoid zone fragmentation
 	cmd = Z_Malloc( sizeof( cmd_t ));
 	cmd->name = copystring( cmd_name );
-	cmd->desc = copystring( "game command" );
+	cmd->desc = copystring( "server command" );
 	cmd->function = function;
-	cmd->flags = CMD_EXTDLL;
+	cmd->flags = CMD_SERVERDLL;
 	cmd->next = cmd_functions;
 	cmd_functions = cmd;
 }
@@ -591,17 +594,23 @@ void Cmd_AddClientCommand( const char *cmd_name, xcommand_t function )
 {
 	cmd_t	*cmd;
 
+	if( !cmd_name || !*cmd_name )
+	{
+		MsgDev( D_INFO, "Cmd_AddClientCommand: NULL name\n" );
+		return;
+	}
+
 	// fail if the command is a variable name
 	if( Cvar_FindVar( cmd_name ))
 	{
-		MsgDev( D_INFO, "Cmd_AddCommand: %s already defined as a var\n", cmd_name );
+		MsgDev( D_INFO, "Cmd_AddClientCommand: %s already defined as a var\n", cmd_name );
 		return;
 	}
 	
 	// fail if the command already exists
 	if( Cmd_Exists( cmd_name ))
 	{
-		MsgDev(D_INFO, "Cmd_AddCommand: %s already defined\n", cmd_name);
+		MsgDev(D_INFO, "Cmd_AddClientCommand: %s already defined\n", cmd_name );
 		return;
 	}
 
@@ -700,7 +709,7 @@ A complete command line has been parsed, so try to execute it
 */
 void Cmd_ExecuteString( char *text, cmd_source_t src )
 {	
-	cmd_t	*cmd;
+	cmd_t		*cmd;
 	cmdalias_t	*a;
 
 	// set cmd source
@@ -711,7 +720,7 @@ void Cmd_ExecuteString( char *text, cmd_source_t src )
 
 	if( !Cmd_Argc()) return; // no tokens
 
-	// check alias
+	// check aliases
 	for( a = cmd_alias; a; a = a->next )
 	{
 		if( !Q_stricmp( cmd_argv[0], a->name ))
@@ -738,10 +747,7 @@ void Cmd_ExecuteString( char *text, cmd_source_t src )
 	if( cmd_source == src_command && host.type == HOST_NORMAL )
 	{
 		if( cls.state >= ca_connected )
-		{
 			Cmd_ForwardToServer();
-			return;
-		}
 	}
 	else if( text[0] != '@' && host.type == HOST_NORMAL )
 	{
@@ -776,7 +782,7 @@ void Cmd_ForwardToServer( void )
 		return; // not connected
 	}
 
-	BF_WriteByte( &cls.netchan.message, clc_stringcmd );
+	MSG_WriteByte( &cls.netchan.message, clc_stringcmd );
 
 	str[0] = 0;
 	if( Q_stricmp( Cmd_Argv( 0 ), "cmd" ))
@@ -789,7 +795,7 @@ void Cmd_ForwardToServer( void )
 		Q_strcat( str, Cmd_Args( ));
 	else Q_strcat( str, "\n" );
 
-	BF_WriteString( &cls.netchan.message, str );
+	MSG_WriteString( &cls.netchan.message, str );
 }
 
 /*
@@ -808,11 +814,16 @@ void Cmd_List_f( void )
 
 	for( cmd = cmd_functions; cmd; cmd = cmd->next )
 	{
+		if( cmd->name[0] == '@' )
+			continue;	// never show system cmds
+
 		if( match && !Q_stricmpext( match, cmd->name ))
 			continue;
-		Msg( "%10s            %s\n", cmd->name, cmd->desc );
+
+		Msg( " %-*s ^3%s^7\n", 32, cmd->name, cmd->desc );
 		i++;
 	}
+
 	Msg( "%i commands\n", i );
 }
 
@@ -820,7 +831,7 @@ void Cmd_List_f( void )
 ============
 Cmd_Unlink
 
-unlink all commands with flag CVAR_EXTDLL
+unlink all commands with specified flag
 ============
 */
 void Cmd_Unlink( int group )
@@ -829,15 +840,21 @@ void Cmd_Unlink( int group )
 	cmd_t	**prev;
 	int	count = 0;
 
-	if( Cvar_VariableInteger( "host_gameloaded" ) && ( group & CMD_EXTDLL ))
+	if( Cvar_VariableInteger( "host_gameloaded" ) && FBitSet( group, CMD_SERVERDLL ))
 	{
-		Msg( "can't unlink cvars while game is loaded\n" );
+		MsgDev( D_INFO, "can't unlink commands while server is loaded\n" );
+		return;
+	}
+
+	if( Cvar_VariableInteger( "host_clientloaded" ) && FBitSet( group, CMD_CLIENTDLL ))
+	{
+		MsgDev( D_INFO, "can't unlink commands while client is loaded\n" );
 		return;
 	}
 
 	if( Cvar_VariableInteger( "host_clientloaded" ) && ( group & CMD_CLIENTDLL ))
 	{
-		Msg( "can't unlink cvars while client is loaded\n" );
+		MsgDev( D_INFO, "can't unlink commands while GameUI is loaded\n" );
 		return;
 	}
 
@@ -847,7 +864,8 @@ void Cmd_Unlink( int group )
 		cmd = *prev;
 		if( !cmd ) break;
 
-		if( group && !( cmd->flags & group ))
+		// do filter by specified group
+		if( group && !FBitSet( cmd->flags, group ))
 		{
 			prev = &cmd->next;
 			continue;
@@ -855,11 +873,8 @@ void Cmd_Unlink( int group )
 
 		*prev = cmd->next;
 
-		if( cmd->name )
-			Mem_Free( cmd->name );
-
-		if( cmd->desc )
-			Mem_Free( cmd->desc );
+		if( cmd->name ) Mem_Free( cmd->name );
+		if( cmd->desc ) Mem_Free( cmd->desc );
 
 		Mem_Free( cmd );
 		count++;
@@ -885,13 +900,15 @@ Cmd_Init
 void Cmd_Init( void )
 {
 	Cbuf_Init();
+
 	cmd_functions = NULL;
 
 	// register our commands
-	Cmd_AddCommand ("echo", Cmd_Echo_f, "print a message to the console (useful in scripts)" );
-	Cmd_AddCommand ("wait", Cmd_Wait_f, "make script execution wait for some rendered frames" );
-	Cmd_AddCommand ("cmdlist", Cmd_List_f, "display all console commands beginning with the specified prefix" );
-	Cmd_AddCommand ("stuffcmds", Cmd_StuffCmds_f, va( "execute commandline parameters (must be present in %s.rc script)", SI.ModuleName ));
-	Cmd_AddCommand ("cmd", Cmd_ForwardToServer, "send a console commandline to the server" );
-	Cmd_AddCommand ("alias", Cmd_Alias_f, "create a script function. Without arguments show the list of all alias" );
+	Cmd_AddCommand( "echo", Cmd_Echo_f, "print a message to the console (useful in scripts)" );
+	Cmd_AddCommand( "wait", Cmd_Wait_f, "make script execution wait for some rendered frames" );
+	Cmd_AddCommand( "cmdlist", Cmd_List_f, "display all console commands beginning with the specified prefix" );
+	Cmd_AddCommand( "stuffcmds", Cmd_StuffCmds_f, va( "execute commandline parameters (must be present in %s.rc script)", SI.ModuleName ));
+	Cmd_AddCommand( "cmd", Cmd_ForwardToServer, "send a console commandline to the server" );
+	Cmd_AddCommand( "alias", Cmd_Alias_f, "create a script function. Without arguments show the list of all alias" );
+
 }

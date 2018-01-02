@@ -37,7 +37,7 @@ extern int SV_UPDATE_BACKUP;
 // hostflags
 #define SVF_SKIPLOCALHOST	BIT( 0 )
 #define SVF_PLAYERSONLY	BIT( 1 )
-#define SVF_PORTALPASS	BIT( 2 )			// we are do portal pass
+#define SVF_MERGE_VISIBILITY	BIT( 2 )	// we are do portal pass
 
 // mapvalid flags
 #define MAP_IS_EXIST	BIT( 0 )
@@ -53,7 +53,17 @@ extern int SV_UPDATE_BACKUP;
 #define MAKE_STRING(str)	SV_MakeString( str )
 
 #define MAX_PUSHED_ENTS	256
-#define MAX_CAMERAS		32
+#define MAX_VIEWENTS	32
+
+#define FCL_RESEND_USERINFO	BIT( 0 )
+#define FCL_RESEND_MOVEVARS	BIT( 1 )
+#define FCL_SKIP_NET_MESSAGE	BIT( 2 )
+#define FCL_SEND_NET_MESSAGE	BIT( 3 )
+#define FCL_PREDICT_MOVEMENT	BIT( 4 )	// movement prediction is enabled
+#define FCL_LOCAL_WEAPONS	BIT( 5 )	// weapon prediction is enabled
+#define FCL_LAG_COMPENSATION	BIT( 6 )	// lag compensation is enabled
+#define FCL_FAKECLIENT	BIT( 7 )	// this client is a fake player controlled by the game DLL
+#define FCL_HLTV_PROXY	BIT( 8 )	// this is a proxy for a HLTV client (spectator)
 
 #define DVIS_PVS		0
 #define DVIS_PHS		1
@@ -175,7 +185,7 @@ typedef struct
 	float		latency;
 
 	clientdata_t	clientdata;
-	weapon_data_t	weapondata[64];
+	weapon_data_t	weapondata[MAX_LOCAL_WEAPONS];
 
 	int  		num_entities;
 	int  		first_entity;		// into the circular sv_packet_entities[]
@@ -185,34 +195,23 @@ typedef struct sv_client_s
 {
 	cl_state_t	state;
 	char		name[32];			// extracted from userinfo, color string allowed
+	int		flags;			// client flags, some info
 
 	char		userinfo[MAX_INFO_STRING];	// name, etc (received from client)
 	char		physinfo[MAX_INFO_STRING];	// set on server (transmit to client)
-
-	qboolean		send_message;
-	qboolean		skip_message;
-
-	qboolean		local_weapons;		// enable weapon predicting
-	qboolean		lag_compensation;		// enable lag compensation
-	qboolean		hltv_proxy;		// this is spectator proxy (hltv)		
 
 	netchan_t		netchan;
 	int		chokecount;         	// number of messages rate supressed
 	int		delta_sequence;		// -1 = no compression.
 
 	double		next_messagetime;		// time when we should send next world state update  
-	double		cl_updaterate;		// default time to wait for next message
 	double		next_checkpingtime;		// time to send all players pings to client
+	double		cl_updaterate;		// client requested updaterate
 	double		timebase;			// client timebase
 
 	customization_t	customization;		// player customization linked list
 	resource_t	resource1;
 	resource_t	resource2;		// <mapname.res> from client (server downloading)
-
-	qboolean		sendmovevars;
-	qboolean		sendinfo;
-
-	qboolean		fakeclient;		// This client is a fake player controlled by the game DLL
 
 	usercmd_t		lastcmd;			// for filling in big drops
 
@@ -231,7 +230,7 @@ typedef struct sv_client_s
 	edict_t		*pViewEntity;		// svc_setview member
 	int		messagelevel;		// for filtering printed messages
 
-	edict_t		*cameras[MAX_CAMERAS];	// list of portal cameras in player PVS
+	edict_t		*cameras[MAX_VIEWENTS];	// list of portal cameras in player PVS
 	int		num_cameras;		// num of portal cameras that can merge PVS
 
 	// the datagram is written to by sound calls, prints, temp ents, etc.
@@ -269,8 +268,8 @@ typedef struct sv_client_s
 typedef struct
 {
 	netadr_t		adr;
-	int		challenge;
 	double		time;
+	int		challenge;
 	qboolean		connected;
 } challenge_t;
 
@@ -504,7 +503,6 @@ void SV_RefreshUserinfo( void );
 void SV_GetChallenge( netadr_t from );
 void SV_DirectConnect( netadr_t from );
 void SV_TogglePause( const char *msg );
-void SV_PutClientInServer( edict_t *ent );
 qboolean SV_ShouldUpdatePing( sv_client_t *cl );
 const char *SV_GetClientIDString( sv_client_t *cl );
 void SV_FullClientUpdate( sv_client_t *cl, sizebuf_t *msg );

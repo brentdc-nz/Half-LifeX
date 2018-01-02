@@ -59,7 +59,7 @@ GNU General Public License for more details.
 //  bytes will be stripped by the networking channel layer
 #define NET_MAX_MESSAGE		PAD_NUMBER(( NET_MAX_PAYLOAD + HEADER_BYTES ), 16 )
 
-#define MASTERSERVER_ADR		"celest.in:27010"
+#define MASTERSERVER_ADR		"ms.xash.su:27010"
 #define PORT_MASTER			27010
 #define PORT_CLIENT			27005
 #define PORT_SERVER			27015
@@ -130,9 +130,7 @@ typedef struct netchan_s
 	netsrc_t		sock;		// NS_SERVER or NS_CLIENT, depending on channel.
 	netadr_t		remote_address;	// address this channel is talking to.  
 	int		qport;		// qport value to write when transmitting
-	
-	qboolean		compress;		// enable huffman compression
-			
+
 	double		last_received;	// for timeouts
 	double		last_sent;	// for retransmits		
 
@@ -185,10 +183,7 @@ typedef struct netchan_s
 
 	// added for net_speeds
 	size_t		total_sended;
-	size_t		total_sended_uncompressed;
-
 	size_t		total_received;
-	size_t		total_received_uncompressed;
 } netchan_t;
 
 extern netadr_t		net_from;
@@ -215,10 +210,5 @@ qboolean Netchan_IncomingReady( netchan_t *chan );
 qboolean Netchan_CanPacket( netchan_t *chan );
 void Netchan_FragSend( netchan_t *chan );
 void Netchan_Clear( netchan_t *chan );
-
-// huffman compression
-void Huff_Init( void );
-void Huff_CompressPacket( sizebuf_t *msg, int offset );
-void Huff_DecompressPacket( sizebuf_t *msg, int offset );
 
 #endif//NET_MSG_H

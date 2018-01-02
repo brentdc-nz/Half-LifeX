@@ -103,8 +103,8 @@ qboolean CL_CopyEntityToPhysEnt( physent_t *pe, cl_entity_t *ent )
 	pe->frame = ent->curstate.frame;
 	pe->sequence = ent->curstate.sequence;
 
-	Q_memcpy( &pe->controller[0], &ent->curstate.controller[0], 4 * sizeof( byte ));
-	Q_memcpy( &pe->blending[0], &ent->curstate.blending[0], 2 * sizeof( byte ));
+	memcpy( &pe->controller[0], &ent->curstate.controller[0], 4 * sizeof( byte ));
+	memcpy( &pe->blending[0], &ent->curstate.blending[0], 2 * sizeof( byte ));
 
 	pe->movetype = ent->curstate.movetype;
 	pe->takedamage = ( pe->player ) ? DAMAGE_AIM : DAMAGE_YES;
@@ -211,24 +211,34 @@ pmove must be setup with world and solid entity hulls before calling
 */
 void CL_SetSolidPlayers( int playernum )
 {
-	int		j;
-	extern	vec3_t	player_mins;
-	extern	vec3_t	player_maxs;
+	entity_state_t	*state;
 	cl_entity_t	*ent;
 	physent_t		*pe;
+	int		i;
 
 	if( !cl_solid_players->integer )
 		return;
 
-	for( j = 0; j < cl.maxclients; j++ )
+	for( i = 0; i < cl.maxclients; i++ )
 	{
 		// the player object never gets added
-		if( j == playernum ) continue;
+		if( i == playernum ) continue;
 
-		ent = CL_GetEntityByIndex( j + 1 );		
+		ent = CL_GetEntityByIndex( i + 1 );		
 
 		if( !ent || !ent->player )
 			continue; // not present this frame
+
+		state = cl.frames[cl.parsecountmod].playerstate + i;
+
+		if( state->effects & EF_NODRAW )
+			continue; // skip invisible
+
+		if( !state->solid )
+			continue; // not solid
+
+		if( !state->movetype )
+			continue; // dead
 
 		pe = &clgame.pmove->physents[clgame.pmove->numphysent];
 		if( CL_CopyEntityToPhysEnt( pe, ent ))
@@ -550,9 +560,7 @@ static const char *pfnTraceTexture( int ground, float *vstart, float *vend )
 
 static void pfnPlaySound( int channel, const char *sample, float volume, float attenuation, int fFlags, int pitch )
 {
-	sound_t	snd = S_RegisterSound( sample );
-
-	S_StartSound( NULL, clgame.pmove->player_index + 1, channel, snd, volume, attenuation, pitch, fFlags );
+	S_StartSound( NULL, clgame.pmove->player_index + 1, channel, S_RegisterSound( sample ), volume, attenuation, pitch, fFlags );
 }
 
 static void pfnPlaybackEventFull( int flags, int clientindex, word eventindex, float delay, float *origin,
@@ -641,8 +649,8 @@ void CL_InitClientMove( void )
 			clgame.player_maxs[i][0], clgame.player_maxs[i][1], clgame.player_maxs[i][2] );
 	}
 
-	Q_memcpy( clgame.pmove->player_mins, clgame.player_mins, sizeof( clgame.player_mins ));
-	Q_memcpy( clgame.pmove->player_maxs, clgame.player_maxs, sizeof( clgame.player_maxs ));
+	memcpy( clgame.pmove->player_mins, clgame.player_mins, sizeof( clgame.player_mins ));
+	memcpy( clgame.pmove->player_maxs, clgame.player_maxs, sizeof( clgame.player_maxs ));
 
 	// common utilities
 	clgame.pmove->PM_Info_ValueForKey = Info_ValueForKey;
@@ -834,7 +842,7 @@ void CL_RunUsercmd( local_state_t *from, local_state_t *to, usercmd_t *u, qboole
 	local_state_t	temp;
 	usercmd_t		split;
 
-	Q_memset( &temp, 0, sizeof( temp ));
+	memset( &temp, 0, sizeof( temp ));
 
 	while( u->msec > 50 )
 	{
@@ -912,6 +920,8 @@ void CL_PostRunCmd( usercmd_t *ucmd, int random_seed )
 {
 	local_state_t	from, to;
 
+	memset( &from, 0, sizeof( local_state_t ));
+	memset( &to, 0, sizeof( local_state_t ));
 	memcpy( from.weapondata, cl.frame.weapondata, sizeof( from.weapondata ));
 	from.playerstate = cl.frame.playerstate[cl.playernum];
 	from.client = cl.frame.client;
@@ -954,7 +964,7 @@ void CL_PredictMovement( void )
 	ASSERT( cl.refdef.cmd != NULL );
 
 	if( !CL_IsPredicted( ))
-	{	
+	{
 		// run commands even if client predicting is disabled - client expected it
 		CL_PostRunCmd( cl.refdef.cmd, cls.lastoutgoingcommand );
 		return;

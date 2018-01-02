@@ -23,9 +23,9 @@ static long idum = 0;
 #define IQ		127773
 #define IR		2836
 #define NTAB		32
-#define NDIV		(1+(IM-1)/NTAB)
-#define AM		(1.0/IM)
 #define EPS		1.2e-7
+#define NDIV		(1 + (IM - 1) / NTAB)
+#define AM		(1.0 / IM)
 #define RNMX		(1.0 - EPS)
 
 void COM_SetRandomSeed( long lSeed )
@@ -41,15 +41,14 @@ void COM_SetRandomSeed( long lSeed )
 
 long lran1( void )
 {
-	int	j;
-	long	k;
+	static long	iy = 0;
+	static long	iv[NTAB];
+	int		j;
+	long		k;
 
-	static long iy = 0;
-	static long iv[NTAB];
-	
 	if( idum <= 0 || !iy )
 	{
-		if(-(idum) < 1) idum=1;
+		if( -(idum) < 1 ) idum = 1;
 		else idum = -(idum);
 
 		for( j = NTAB + 7; j >= 0; j-- )
@@ -59,10 +58,11 @@ long lran1( void )
 			if( idum < 0 ) idum += IM;
 			if( j < NTAB ) iv[j] = idum;
 		}
+
 		iy = iv[0];
 	}
 
-	k = (idum)/IQ;
+	k = (idum) / IQ;
 	idum = IA * (idum - k * IQ) - IR * k;
 	if( idum < 0 ) idum += IM;
 	j = iy / NDIV;
@@ -72,7 +72,7 @@ long lran1( void )
 	return iy;
 }
 
-// fran1 -- return a random floating-point number on the interval [0,1)
+// fran1 -- return a random floating-point number on the interval [0,1]
 float fran1( void )
 {
 	float temp = (float)AM * lran1();
@@ -85,20 +85,20 @@ float Com_RandomFloat( float flLow, float flHigh )
 {
 	float	fl;
 
-	if( idum == 0 ) COM_SetRandomSeed(0);
+	if( idum == 0 ) COM_SetRandomSeed( 0 );
 
-	fl = fran1(); // float in [0, 1)
+	fl = fran1(); // float in [0,1]
 	return (fl * (flHigh - flLow)) + flLow; // float in [low, high)
 }
 
 long Com_RandomLong( long lLow, long lHigh )
 {
 	dword	maxAcceptable;
-	dword	n, x = lHigh-lLow + 1; 	
+	dword	n, x = lHigh - lLow + 1; 	
 
-	if( idum == 0 ) COM_SetRandomSeed(0);
+	if( idum == 0 ) COM_SetRandomSeed( 0 );
 
-	if( x <= 0 || MAX_RANDOM_RANGE < x-1 )
+	if( x <= 0 || MAX_RANDOM_RANGE < x - 1 )
 		return lLow;
 
 	// The following maps a uniform distribution on the interval [0, MAX_RANDOM_RANGE]
@@ -108,7 +108,7 @@ long Com_RandomLong( long lLow, long lHigh )
 	// the average number of times through the loop is 2. For cases where x is
 	// much smaller than MAX_RANDOM_RANGE, the average number of times through the
 	// loop is very close to 1.
-	maxAcceptable = MAX_RANDOM_RANGE - ((MAX_RANDOM_RANGE+1) % x );
+	maxAcceptable = MAX_RANDOM_RANGE - ((MAX_RANDOM_RANGE + 1) % x );
 	do
 	{
 		n = lran1();

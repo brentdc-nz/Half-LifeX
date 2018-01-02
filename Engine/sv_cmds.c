@@ -25,19 +25,19 @@ Sends text across to be displayed if the level passes
 */
 void SV_ClientPrintf( sv_client_t *cl, int level, char *fmt, ... )
 {
-	va_list	argptr;
 	char	string[MAX_SYSPATH];
+	va_list	argptr;
 
-	if( level < cl->messagelevel || cl->fakeclient )
+	if( level < cl->messagelevel || FBitSet( cl->flags, FCL_FAKECLIENT ))
 		return;
 	
 	va_start( argptr, fmt );
 	Q_vsprintf( string, fmt, argptr );
 	va_end( argptr );
 	
-	BF_WriteByte( &cl->netchan.message, svc_print );
-	BF_WriteByte( &cl->netchan.message, level );
-	BF_WriteString( &cl->netchan.message, string );
+	MSG_WriteByte( &cl->netchan.message, svc_print );
+	MSG_WriteByte( &cl->netchan.message, level );
+	MSG_WriteString( &cl->netchan.message, string );
 }
 
 /*
@@ -54,7 +54,8 @@ void SV_BroadcastPrintf( int level, char *fmt, ... )
 	sv_client_t	*cl;
 	int		i;
 
-	if( !sv.state ) return;
+	if( sv.state == ss_dead )
+		return;
 
 	va_start( argptr, fmt );
 	Q_vsprintf( string, fmt, argptr );
@@ -65,13 +66,15 @@ void SV_BroadcastPrintf( int level, char *fmt, ... )
 
 	for( i = 0, cl = svs.clients; i < sv_maxclients->integer; i++, cl++ )
 	{
-		if( level < cl->messagelevel ) continue;
-		if( cl->state != cs_spawned ) continue;
-		if( cl->fakeclient ) continue;
+		if( level < cl->messagelevel || FBitSet( cl->flags, FCL_FAKECLIENT ))
+			continue;
 
-		BF_WriteByte( &cl->netchan.message, svc_print );
-		BF_WriteByte( &cl->netchan.message, level );
-		BF_WriteString( &cl->netchan.message, string );
+		if( cl->state != cs_spawned )
+			continue;
+
+		MSG_WriteByte( &cl->netchan.message, svc_print );
+		MSG_WriteByte( &cl->netchan.message, level );
+		MSG_WriteString( &cl->netchan.message, string );
 	}
 }
 
@@ -84,16 +87,18 @@ Sends text to all active clients
 */
 void SV_BroadcastCommand( char *fmt, ... )
 {
-	va_list	argptr;
 	char	string[MAX_SYSPATH];
-	
-	if( !sv.state ) return;
+	va_list	argptr;	
+
+	if( sv.state == ss_dead )
+		return;
+
 	va_start( argptr, fmt );
 	Q_vsprintf( string, fmt, argptr );
 	va_end( argptr );
 
-	BF_WriteByte( &sv.reliable_datagram, svc_stufftext );
-	BF_WriteString( &sv.reliable_datagram, string );
+	MSG_WriteByte( &sv.reliable_datagram, svc_stufftext );
+	MSG_WriteString( &sv.reliable_datagram, string );
 }
 
 /*
@@ -187,6 +192,7 @@ void SV_Map_f( void )
 
 	// hold mapname to other place
 	Q_strncpy( mapname, Cmd_Argv( 1 ), sizeof( mapname ));
+	FS_StripExtension( mapname );
 	
 	// determine spawn entity classname
 	if( sv_maxclients->integer == 1 )
@@ -195,19 +201,19 @@ void SV_Map_f( void )
 
 	flags = SV_MapIsValid( mapname, spawn_entity, NULL );
 
-	if( flags & MAP_INVALID_VERSION )
+	if( FBitSet( flags, MAP_INVALID_VERSION ))
 	{
 		Msg( "SV_NewMap: map %s is invalid or not supported\n", mapname );
 		return;
 	}
 	
-	if(!( flags & MAP_IS_EXIST ))
+	if( !FBitSet( flags, MAP_IS_EXIST ))
 	{
 		Msg( "SV_NewMap: map %s doesn't exist\n", mapname );
 		return;
 	}
 
-	if(!( flags & MAP_HAS_SPAWNPOINT ))
+	if( !FBitSet( flags, MAP_HAS_SPAWNPOINT ))
 	{
 		Msg( "SV_NewMap: map %s doesn't have a valid spawnpoint\n", mapname );
 		return;
@@ -259,16 +265,24 @@ void SV_MapBackground_f( void )
 
 	// hold mapname to other place
 	Q_strncpy( mapname, Cmd_Argv( 1 ), sizeof( mapname ));
+	FS_StripExtension( mapname );
+
 	flags = SV_MapIsValid( mapname, GI->sp_entity, NULL );
 
-	if(!( flags & MAP_IS_EXIST ))
+	if( FBitSet( flags, MAP_INVALID_VERSION ))
+	{
+		Msg( "SV_NewMap: map %s is invalid or not supported\n", mapname );
+		return;
+	}
+
+	if( !FBitSet( flags, MAP_IS_EXIST ))
 	{
 		Msg( "SV_NewMap: map %s doesn't exist\n", mapname );
 		return;
 	}
 
 	// background maps allow without spawnpoints (just throw warning)
-	if(!( flags & MAP_HAS_SPAWNPOINT ))
+	if( !FBitSet( flags, MAP_HAS_SPAWNPOINT ))
 		MsgDev( D_WARN, "SV_NewMap: map %s doesn't have a valid spawnpoint\n", mapname );
 		
 	Q_strncpy( host.finalmsg, "", MAX_STRING );
@@ -458,7 +472,8 @@ Saves the state of the map just being exited and goes to a new map.
 */
 void SV_ChangeLevel_f( void )
 {
-	char	*spawn_entity, *mapname;
+	string	mapname;
+	char	*spawn_entity;
 	int	flags, c = Cmd_Argc();
 
 	if( c < 2 )
@@ -467,7 +482,9 @@ void SV_ChangeLevel_f( void )
 		return;
 	}
 
-	mapname = Cmd_Argv( 1 );
+	// hold mapname to other place
+	Q_strncpy( mapname, Cmd_Argv( 1 ), sizeof( mapname ));
+	FS_StripExtension( mapname );
 
 	// determine spawn entity classname
 	if( sv_maxclients->integer == 1 )
@@ -476,19 +493,19 @@ void SV_ChangeLevel_f( void )
 
 	flags = SV_MapIsValid( mapname, spawn_entity, Cmd_Argv( 2 ));
 
-	if( flags & MAP_INVALID_VERSION )
+	if( FBitSet( flags, MAP_INVALID_VERSION ))
 	{
 		Msg( "SV_ChangeLevel: map %s is invalid or not supported\n", mapname );
 		return;
 	}
 	
-	if(!( flags & MAP_IS_EXIST ))
+	if( !FBitSet( flags, MAP_IS_EXIST ))
 	{
 		Msg( "SV_ChangeLevel: map %s doesn't exist\n", mapname );
 		return;
 	}
 
-	if( c >= 3 && !( flags & MAP_HAS_LANDMARK ))
+	if( c >= 3 && !FBitSet( flags, MAP_HAS_LANDMARK ))
 	{
 		if( sv_validate_changelevel->integer )
 		{
@@ -506,7 +523,7 @@ void SV_ChangeLevel_f( void )
 		return;	
 	}
 
-	if( c == 2 && !( flags & MAP_HAS_SPAWNPOINT ))
+	if( c == 2 && !FBitSet( flags, MAP_HAS_SPAWNPOINT ))
 	{
 		if( sv_validate_changelevel->integer )
 		{
@@ -515,7 +532,7 @@ void SV_ChangeLevel_f( void )
 		}
 	}
 
-	// bad changelevel position invoke enables in one-way transtion
+	// bad changelevel position invoke enables in one-way transition
 	if( sv.net_framenum < 15 )
 	{
 		if( sv_validate_changelevel->integer )
@@ -638,7 +655,7 @@ void SV_Kill_f( void )
 
 	if( svs.currentPlayer->edict->v.health <= 0.0f )
 	{
-		SV_ClientPrintf( svs.currentPlayer, PRINT_HIGH, "Can't suicide -- allready dead!\n");
+		SV_ClientPrintf( svs.currentPlayer, PRINT_HIGH, "Can't suicide - already dead!\n");
 		return;
 	}
 
@@ -678,8 +695,8 @@ SV_Status_f
 */
 void SV_Status_f( void )
 {
-	int		i;
 	sv_client_t	*cl;
+	int		i;
 
 	if( !svs.clients || sv.background )
 	{
@@ -703,7 +720,7 @@ void SV_Status_f( void )
 
 		if( cl->state == cs_connected ) Msg( "Connect" );
 		else if( cl->state == cs_zombie ) Msg( "Zombie " );
-		else if( cl->fakeclient ) Msg( "Bot   " );
+		else if( FBitSet( cl->flags, FCL_FAKECLIENT )) Msg( "Bot   " );
 		else
 		{
 			ping = cl->ping < 9999 ? cl->ping : 9999;
@@ -817,7 +834,9 @@ Kick everyone off, possibly in preparation for a new game
 */
 void SV_KillServer_f( void )
 {
-	if( !svs.initialized ) return;
+	if( !svs.initialized )
+		return;
+
 	Q_strncpy( host.finalmsg, "Server was killed", MAX_STRING );
 	SV_Shutdown( false );
 	NET_Config ( false ); // close network sockets
@@ -835,18 +854,18 @@ void SV_PlayersOnly_f( void )
 	if( !Cvar_VariableInteger( "sv_cheats" )) return;
 	sv.hostflags = sv.hostflags ^ SVF_PLAYERSONLY;
 
-	if(!( sv.hostflags & SVF_PLAYERSONLY ))
+	if( !FBitSet( sv.hostflags, SVF_PLAYERSONLY ))
 		SV_BroadcastPrintf( D_INFO, "Resume server physic\n" );
 	else SV_BroadcastPrintf( D_INFO, "Freeze server physic\n" );
 }
 
 /*
 ===============
-SV_EdictsInfo_f
+SV_EdictUsage_f
 
 ===============
 */
-void SV_EdictsInfo_f( void )
+void SV_EdictUsage_f( void )
 {
 	int	active;
 
@@ -929,7 +948,7 @@ void SV_InitOperatorCommands( void )
 	Cmd_AddCommand( "restart", SV_Restart_f, "restarting current level" );
 	Cmd_AddCommand( "reload", SV_Reload_f, "continue from latest save or restart level" );
 	Cmd_AddCommand( "entpatch", SV_EntPatch_f, "write entity patch to allow external editing" );
-	Cmd_AddCommand( "edicts_info", SV_EdictsInfo_f, "show info about edicts" );
+	Cmd_AddCommand( "edict_usage", SV_EdictUsage_f, "show info about edicts usage" );
 	Cmd_AddCommand( "entity_info", SV_EntityInfo_f, "show more info about edicts" );
 
 	if( host.type == HOST_DEDICATED )
@@ -973,7 +992,7 @@ void SV_KillOperatorCommands( void )
 	Cmd_RemoveCommand( "restart" );
 	Cmd_RemoveCommand( "reload" );
 	Cmd_RemoveCommand( "entpatch" );
-	Cmd_RemoveCommand( "edicts_info" );
+	Cmd_RemoveCommand( "edict_usage" );
 	Cmd_RemoveCommand( "entity_info" );
 
 	if( host.type == HOST_DEDICATED )

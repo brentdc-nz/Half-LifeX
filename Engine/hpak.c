@@ -64,7 +64,7 @@ void HPAK_AddToQueue( const char *name, resource_t *DirEnt, byte *data, file_t *
 	ptr->size = DirEnt->nDownloadSize;
 	ptr->data = Z_Malloc( ptr->size );
 
-	if( data ) Q_memcpy( ptr->data, data, ptr->size );
+	if( data ) memcpy( ptr->data, data, ptr->size );
 	else if( f ) FS_Read( f, ptr->data, ptr->size );
 	else Host_Error( "HPAK_AddToQueue: data == NULL.\n" );
 
@@ -106,7 +106,7 @@ void HPAK_CreatePak( const char *filename, resource_t *DirEnt, byte *data, file_
 	}
 
 	// let's hash it.
-	Q_memset( &MD5_Hash, 0, sizeof( MD5Context_t ));
+	memset( &MD5_Hash, 0, sizeof( MD5Context_t ));
 	MD5Init( &MD5_Hash );
 
 	if( data == NULL )
@@ -127,7 +127,7 @@ void HPAK_CreatePak( const char *filename, resource_t *DirEnt, byte *data, file_
 
 	MD5Final( md5, &MD5_Hash );
 
-	if( Q_memcmp( md5, DirEnt->rgucMD5_hash, 16 ))
+	if( memcmp( md5, DirEnt->rgucMD5_hash, 16 ))
 	{
 		MsgDev( D_ERROR, "HPAK_CreatePak: bad checksum for %s. Ignored\n", pakname );
 		return;
@@ -159,7 +159,7 @@ void HPAK_CreatePak( const char *filename, resource_t *DirEnt, byte *data, file_
 	FS_Write( fout, &hash_pack_dir.dirs[0], sizeof( hpak_dir_t ));
 
 	Mem_Free( hash_pack_dir.dirs );
-	Q_memset( &hash_pack_dir, 0, sizeof( hpak_container_t ));
+	memset( &hash_pack_dir, 0, sizeof( hpak_container_t ));
 
 	hash_pack_header.seek = filelocation;
 	FS_Seek( fout, 0, SEEK_SET );
@@ -173,7 +173,7 @@ qboolean HPAK_FindResource( hpak_container_t *hpk, char *inHash, resource_t *pRe
 
 	for( i = 0; i < hpk->count; i++ )
 	{
-		if( !Q_memcmp( hpk->dirs[i].DirectoryResource.rgucMD5_hash, inHash, 16 ))
+		if( !memcmp( hpk->dirs[i].DirectoryResource.rgucMD5_hash, inHash, 16 ))
 		{
 			if( pRes ) *pRes = hpk->dirs[i].DirectoryResource; // get full copy
 
@@ -219,7 +219,7 @@ void HPAK_AddLump( qboolean add_to_queue, const char *name, resource_t *DirEnt, 
 	}
 
 	// hash it
-	Q_memset( &MD5_Hash, 0, sizeof( MD5Context_t ));
+	memset( &MD5_Hash, 0, sizeof( MD5Context_t ));
 	MD5Init( &MD5_Hash );
 
 	if( data == NULL )
@@ -240,7 +240,7 @@ void HPAK_AddLump( qboolean add_to_queue, const char *name, resource_t *DirEnt, 
 
 	MD5Final( md5, &MD5_Hash );
 
-	if( Q_memcmp( md5, DirEnt->rgucMD5_hash, 0x10 ))
+	if( memcmp( md5, DirEnt->rgucMD5_hash, 0x10 ))
 	{
 		MsgDev( D_ERROR, "HPAK_AddLump: bad checksum for %s. Ignored\n", DirEnt->szFileName );
 		return;
@@ -317,11 +317,11 @@ void HPAK_AddLump( qboolean add_to_queue, const char *name, resource_t *DirEnt, 
 	// make a new container
 	hpak2.count = hpak1.count;
 	hpak2.dirs = Z_Malloc( sizeof( hpak_dir_t ) * hpak2.count );
-	Q_memcpy( hpak2.dirs, hpak1.dirs, hpak1.count );
+	memcpy( hpak2.dirs, hpak1.dirs, hpak1.count );
 
 	for( i = 0, dirs = NULL; i < hpak1.count; i++ )
 	{
-		if( Q_memcmp( hpak1.dirs[i].DirectoryResource.rgucMD5_hash, DirEnt->rgucMD5_hash, 16 ) < 0 )
+		if( memcmp( hpak1.dirs[i].DirectoryResource.rgucMD5_hash, DirEnt->rgucMD5_hash, 16 ) < 0 )
 		{
 			dirs = &hpak1.dirs[i];
 			while( i < hpak1.count )
@@ -335,7 +335,7 @@ void HPAK_AddLump( qboolean add_to_queue, const char *name, resource_t *DirEnt, 
 
 	if( dirs == NULL ) dirs = &hpak2.dirs[hpak2.count-1];
 
-	Q_memset( dirs, 0, sizeof( hpak_dir_t ));
+	memset( dirs, 0, sizeof( hpak_dir_t ));
 	FS_Seek( f2, hash_pack_header.seek, SEEK_SET );
 	dirs->DirectoryResource = *DirEnt;
 	dirs->seek = FS_Tell( f2 );
@@ -449,7 +449,7 @@ static qboolean HPAK_Validate( const char *filename, qboolean quiet )
 		FS_Seek( f, dataDir[i].seek, SEEK_SET );
 		FS_Read( f, dataPak, dataDir[i].size );
 
-		Q_memset( &MD5_Hash, 0, sizeof( MD5Context_t ));
+		memset( &MD5_Hash, 0, sizeof( MD5Context_t ));
 		MD5Init( &MD5_Hash );
 		MD5Update( &MD5_Hash, dataPak, dataDir[i].size );
 		MD5Final( md5, &MD5_Hash );
@@ -459,7 +459,7 @@ static qboolean HPAK_Validate( const char *filename, qboolean quiet )
 		MsgDev( D_INFO, "%i:      %s %s %s:   ", i, HPAK_TypeFromIndex( pRes->type ),
 		Q_pretifymem( pRes->nDownloadSize, 2 ), pRes->szFileName );  
 
-		if( Q_memcmp( md5, pRes->rgucMD5_hash, 0x10 ))
+		if( memcmp( md5, pRes->rgucMD5_hash, 0x10 ))
 		{
 			if( quiet )
 			{
@@ -533,7 +533,7 @@ qboolean HPAK_ResourceForHash( const char *filename, char *inHash, resource_t *p
 	
 	for( hpak = hpak_queue; hpak != NULL; hpak = hpak->next )
 	{
-		if( !Q_stricmp( hpak->name, filename ) && !Q_memcmp( hpak->HpakResource.rgucMD5_hash, inHash, 0x10 ))
+		if( !Q_stricmp( hpak->name, filename ) && !memcmp( hpak->HpakResource.rgucMD5_hash, inHash, 0x10 ))
 		{
 			if( pRes != NULL ) *pRes = hpak->HpakResource;
 			return true;
@@ -659,12 +659,12 @@ qboolean HPAK_GetDataPointer( const char *filename, resource_t *pResource, byte 
 
 	for( queue = hpak_queue; queue != NULL; queue = queue->next )
 	{
-		if( !Q_stricmp(queue->name, filename ) && !Q_memcmp( queue->HpakResource.rgucMD5_hash, pResource->rgucMD5_hash, 16 ))
+		if( !Q_stricmp(queue->name, filename ) && !memcmp( queue->HpakResource.rgucMD5_hash, pResource->rgucMD5_hash, 16 ))
 		{
 			if( buffer )
 			{
 				tmpbuf = Z_Malloc( queue->size );
-				Q_memcpy( tmpbuf, queue->data, queue->size );
+				memcpy( tmpbuf, queue->data, queue->size );
 				*buffer = tmpbuf;
 			}
 
@@ -712,7 +712,7 @@ qboolean HPAK_GetDataPointer( const char *filename, resource_t *pResource, byte 
 
 	for( i = 0; i < num_lumps; i++ )
 	{
-		if( !Q_memcmp( direntries[i].DirectoryResource.rgucMD5_hash, pResource->rgucMD5_hash, 16 ))
+		if( !memcmp( direntries[i].DirectoryResource.rgucMD5_hash, pResource->rgucMD5_hash, 16 ))
 		{
 			FS_Seek( f, direntries[i].seek, SEEK_SET );
 
@@ -830,7 +830,7 @@ void HPAK_RemoveLump( const char *name, resource_t *resource )
 	// If there's a collision, we've just corrupted this hpak.
 	for( i = 0, j = 0; i < hpak_read.count; i++ )
 	{
-		if( !Q_memcmp( hpak_read.dirs[i].DirectoryResource.rgucMD5_hash, resource->rgucMD5_hash, 16 ))
+		if( !memcmp( hpak_read.dirs[i].DirectoryResource.rgucMD5_hash, resource->rgucMD5_hash, 16 ))
 			continue;
 
 		hpak_save.dirs[j] = hpak_read.dirs[i];

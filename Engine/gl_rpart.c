@@ -847,6 +847,7 @@ void CL_BloodStream( const vec3_t org, const vec3_t dir, int pcolor, int speed )
 	for( i = 0; i < speed * 20; i++ )
 	{
 		p = CL_AllocParticle( NULL );
+
 		if( !p ) return;
 
 		p->die += Com_RandomFloat( 0.2f, 0.8f );

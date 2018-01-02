@@ -123,7 +123,7 @@ qboolean CL_FindInterpolationUpdates( cl_entity_t *ent, float targettime, positi
 
 int CL_InterpolateModel( cl_entity_t *e )
 {
-	position_history_t	*ph0, *ph1;
+	position_history_t  *ph0 = NULL, *ph1 = NULL;
 	vec3_t		origin, angles, delta;
 	float		t, t1, t2, frac;
 	int		i;
@@ -148,7 +148,7 @@ int CL_InterpolateModel( cl_entity_t *e )
 	if( t - t2 < 0.0f )
 		return 0;
 
-	if( t2 == 0.0f || VectorIsNull( ph1->origin ) && !VectorIsNull( ph0->origin ))
+	if( t2 == 0.0f || ( VectorIsNull( ph1->origin ) && !VectorIsNull( ph0->origin )))
 	{
 		VectorCopy( ph0->origin, e->origin );
 		VectorCopy( ph0->angles, e->angles );
@@ -217,7 +217,7 @@ void CL_UpdateEntityFields( cl_entity_t *ent )
 	if( ent->player && RP_LOCALCLIENT( ent )) // stupid Half-Life bug
 		ent->angles[PITCH] = -ent->angles[PITCH] / 3.0f;
 
-	// make me lerp
+	// make me lerp (multiplayer only. this code visually breaks XashXT parent system)
 	if( ent->model && ent->model->type == mod_brush && ent->curstate.animtime != 0.0f )
 	{
 		float		d, f = 0.0f;
@@ -324,7 +324,7 @@ void CL_UpdateEntityFields( cl_entity_t *ent )
 				}
 			}
 
-			// move code from StudioSetupTransform here
+			// moved code from StudioSetupTransform here
 			if( host.features & ENGINE_COMPUTE_STUDIO_LERP )
 			{
 				ent->origin[0] += ( ent->curstate.origin[0] - ent->latched.prevorigin[0] ) * f;
@@ -722,6 +722,8 @@ void CL_DeltaEntity( sizebuf_t *msg, frame_t *frame, int newnum, entity_state_t 
 /*
 =================
 CL_FlushEntityPacket
+
+Read and ignore whole entity packet.
 =================
 */
 void CL_FlushEntityPacket( sizebuf_t *msg )
@@ -729,8 +731,7 @@ void CL_FlushEntityPacket( sizebuf_t *msg )
 	int		newnum;
 	entity_state_t	from, to;
 
-	MsgDev( D_INFO, "FlushEntityPacket()\n" );
-	Q_memset( &from, 0, sizeof( from ));
+	memset( &from, 0, sizeof( from ));
 
 	cl.frames[cl.parsecountmod].valid = false;
 	cl.validsequence = 0; // can't render a frame
@@ -738,10 +739,10 @@ void CL_FlushEntityPacket( sizebuf_t *msg )
 	// read it all, but ignore it
 	while( 1 )
 	{
-		newnum = BF_ReadWord( msg );
+		newnum = MSG_ReadWord( msg );
 		if( !newnum ) break; // done
 
-		if( BF_CheckOverflow( msg ))
+		if( MSG_CheckOverflow( msg ))
 			Host_Error( "CL_FlushEntityPacket: read overflow\n" );
 
 		MSG_ReadDeltaEntity( msg, &from, &to, newnum, CL_IsPlayerIndex( newnum ), cl.mtime[0] );
@@ -770,7 +771,7 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 		CL_WriteDemoJumpTime();
 
 	// first, allocate packet for new frame
-	count = BF_ReadWord( msg );
+	count = MSG_ReadWord( msg );
 
 	newframe = &cl.frames[cl.parsecountmod];
 
@@ -783,7 +784,7 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 	{
 		int	subtracted;
 
-		oldpacket = BF_ReadByte( msg );
+		oldpacket = MSG_ReadByte( msg );
 		subtracted = ((( cls.netchan.incoming_sequence & 0xFF ) - oldpacket ) & 0xFF );
 
 		if( subtracted == 0 )
@@ -795,6 +796,7 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 		if( subtracted >= CL_UPDATE_MASK )
 		{	
 			// we can't use this, it is too old
+			MsgDev( D_NOTE, "CL_ParsePacketEntities: delta frame is too old: overflow (flush)\n");
 			Con_NPrintf( 2, "^3Warning:^1 delta frame is too old^7\n" );
 			CL_FlushEntityPacket( msg );
 			return;
@@ -804,6 +806,7 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 
 		if(( cls.next_client_entities - oldframe->first_entity ) > ( cls.num_client_entities - 128 ))
 		{
+			MsgDev( D_NOTE, "CL_ParsePacketEntities: delta frame is too old (flush)\n");
 			Con_NPrintf( 2, "^3Warning:^1 delta frame is too old^7\n" );
 			CL_FlushEntityPacket( msg );
 			return;
@@ -814,7 +817,7 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 		// this is a full update that we can start delta compressing from now
 		oldframe = NULL;
 		oldpacket = -1;		// delta too old or is initial message
-		cl.force_send_usercmd = true;	// send reply
+		cl.send_reply = true;	// send reply
 		cls.demowaiting = false;	// we can start recording now
 	}
 
@@ -843,10 +846,10 @@ void CL_ParsePacketEntities( sizebuf_t *msg, qboolean delta )
 
 	while( 1 )
 	{
-		newnum = BF_ReadWord( msg );
+		newnum = MSG_ReadWord( msg );
 		if( !newnum ) break; // end of packet entities
 
-		if( BF_CheckOverflow( msg ))
+		if( MSG_CheckOverflow( msg ))
 			Host_Error( "CL_ParsePacketEntities: read overflow\n" );
 
 		while( oldnum < newnum )
@@ -980,7 +983,7 @@ void CL_SetIdealPitch( void )
 
 	if( !( cl.frame.client.flags & FL_ONGROUND ))
 		return;
-		
+
 	angleval = cl.frame.playerstate[cl.playernum].angles[YAW] * M_PI2 / 360.0f;
 	SinCos( angleval, &sinval, &cosval );
 

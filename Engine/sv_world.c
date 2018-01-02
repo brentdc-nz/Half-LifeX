@@ -423,7 +423,7 @@ void SV_ClearWorld( void )
 		sv.lightstyles[i].time = 0.0f;
 	}
 
-	Q_memset( sv_areanodes, 0, sizeof( sv_areanodes ));
+	memset( sv_areanodes, 0, sizeof( sv_areanodes ));
 	iTouchLinkSemaphore = 0;
 	sv_numareanodes = 0;
 
@@ -544,7 +544,7 @@ void SV_FindTouchedLeafs( edict_t *ent, mnode_t *node, int *headnode )
 		return;
 	
 	// add an efrag if the node is a leaf
-	if(  node->contents < 0 )
+	if( node->contents < 0 )
 	{
 		if( ent->num_leafs > ( MAX_ENT_LEAFS - 1 ))
 		{
@@ -566,7 +566,7 @@ void SV_FindTouchedLeafs( edict_t *ent, mnode_t *node, int *headnode )
 	splitplane = node->plane;
 	sides = BOX_ON_PLANE_SIDE( ent->v.absmin, ent->v.absmax, splitplane );
 
-	if( sides == 3 && *headnode == -1 )
+	if(( sides == 3 ) && ( *headnode == -1 ))
 		*headnode = node - sv.worldmodel->nodes;
 	
 	// recurse down the contacted sides
@@ -623,9 +623,9 @@ void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
 
 	if( ent->v.movetype == MOVETYPE_FOLLOW && SV_IsValidEdict( ent->v.aiment ))
 	{
-		ent->headnode = ent->v.aiment->headnode;
+		memcpy( ent->leafnums, ent->v.aiment->leafnums, sizeof( ent->leafnums ));
 		ent->num_leafs = ent->v.aiment->num_leafs;
-		Q_memcpy( ent->leafnums, ent->v.aiment->leafnums, sizeof( ent->leafnums ));
+		ent->headnode = ent->v.aiment->headnode;
 	}
 	else
 	{
@@ -639,7 +639,7 @@ void SV_LinkEdict( edict_t *ent, qboolean touch_triggers )
 
 		if( ent->num_leafs > MAX_ENT_LEAFS )
 		{
-			Q_memset( ent->leafnums, -1, sizeof( ent->leafnums ));
+			memset( ent->leafnums, -1, sizeof( ent->leafnums ));
 			ent->num_leafs = 0;	// so we use headnode instead
 			ent->headnode = headnode;
 		}
@@ -962,7 +962,7 @@ void SV_ClipMoveToEntity( edict_t *ent, const vec3_t start, vec3_t mins, vec3_t 
 	qboolean	rotated, transform_bbox;
 	matrix4x4	matrix;
 
-	Q_memset( trace, 0, sizeof( trace_t ));
+	memset( trace, 0, sizeof( trace_t ));
 	VectorCopy( end, trace->endpos );
 	trace->fraction = 1.0f;
 	trace->allsolid = 1;
@@ -1036,7 +1036,7 @@ void SV_ClipMoveToEntity( edict_t *ent, const vec3_t start, vec3_t mins, vec3_t 
 
 		for( i = 0; i < hullcount; i++ )
 		{
-			Q_memset( &trace_hitbox, 0, sizeof( trace_t ));
+			memset( &trace_hitbox, 0, sizeof( trace_t ));
 			VectorCopy( end, trace_hitbox.endpos );
 			trace_hitbox.fraction = 1.0;
 			trace_hitbox.allsolid = 1;
@@ -1090,7 +1090,7 @@ or custom physics implementation
 */
 void SV_CustomClipMoveToEntity( edict_t *ent, const vec3_t start, vec3_t mins, vec3_t maxs, const vec3_t end, trace_t *trace )
 {
-	Q_memset( trace, 0, sizeof( trace_t ));
+	memset( trace, 0, sizeof( trace_t ));
 	VectorCopy( end, trace->endpos );
 	trace->allsolid = true;
 	trace->fraction = 1.0f;
@@ -1270,7 +1270,7 @@ trace_t SV_Move( const vec3_t start, vec3_t mins, vec3_t maxs, const vec3_t end,
 	vec3_t		trace_endpos;
 	float		trace_fraction;
 
-	Q_memset( &clip, 0, sizeof( moveclip_t ));
+	memset( &clip, 0, sizeof( moveclip_t ));
 	SV_ClipMoveToEntity( EDICT_NUM( 0 ), start, mins, maxs, end, &clip.trace );
 
 	if( clip.trace.fraction != 0.0f )
@@ -1320,7 +1320,7 @@ trace_t SV_MoveNoEnts( const vec3_t start, vec3_t mins, vec3_t maxs, const vec3_
 	vec3_t		trace_endpos;
 	float		trace_fraction;
 
-	Q_memset( &clip, 0, sizeof( moveclip_t ));
+	memset( &clip, 0, sizeof( moveclip_t ));
 	SV_ClipMoveToEntity( EDICT_NUM( 0 ), start, mins, maxs, end, &clip.trace );
 
 	if( clip.trace.fraction != 0.0f )
@@ -1592,10 +1592,10 @@ void SV_SetLightStyle( int style, const char* s, float f )
 	if( sv.state != ss_active ) return;
 
 	// tell the clients about changed lightstyle
-	BF_WriteByte( &sv.reliable_datagram, svc_lightstyle );
-	BF_WriteByte( &sv.reliable_datagram, style );
-	BF_WriteString( &sv.reliable_datagram, sv.lightstyles[style].pattern );
-	BF_WriteFloat( &sv.reliable_datagram, sv.lightstyles[style].time );
+	MSG_WriteByte( &sv.reliable_datagram, svc_lightstyle );
+	MSG_WriteByte( &sv.reliable_datagram, style );
+	MSG_WriteString( &sv.reliable_datagram, sv.lightstyles[style].pattern );
+	MSG_WriteFloat( &sv.reliable_datagram, sv.lightstyles[style].time );
 }
 
 /*

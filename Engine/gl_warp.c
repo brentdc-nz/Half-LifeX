@@ -346,7 +346,7 @@ void R_UnloadSkybox( void )
 
 	tr.skyboxbasenum = 5800;	// set skybox base (to let some mods load hi-res skyboxes)
 
-	Q_memset( tr.skyboxTextures, 0, sizeof( tr.skyboxTextures ));
+	memset( tr.skyboxTextures, 0, sizeof( tr.skyboxTextures ));
 }
 
 /*
@@ -614,10 +614,10 @@ void EmitWaterPolys( glpoly_t *polys, qboolean noCull )
 			os = v[3];
 			ot = v[4];
 
-			s = os + r_turbsin[(int)((ot * 0.125f + cl.time ) * TURBSCALE) & 255];
+			s = os + r_turbsin[(int)((ot * 0.125f + cl.time) * TURBSCALE) & 255];
 			s *= ( 1.0f / SUBDIVIDE_SIZE );
 
-			t = ot + r_turbsin[(int)((os * 0.125f + cl.time ) * TURBSCALE) & 255];
+			t = ot + r_turbsin[(int)((os * 0.125f + cl.time) * TURBSCALE) & 255];
 			t *= ( 1.0f / SUBDIVIDE_SIZE );
 
 			if( glState.activeTMU != 0 )

@@ -48,18 +48,18 @@ keyname_t keynames[] =
 {"RIGHTARROW",	K_RIGHTARROW,	"+right"		},
 {"ALT",		K_ALT,		"+strafe"		},
 {"CTRL",		K_CTRL,		"+attack"		},
-{"SHIFT",		K_SHIFT,		"+speed"		}, // replace with +attack2 ?
+{"SHIFT",		K_SHIFT,		"+speed"		},
 {"CAPSLOCK",	K_CAPSLOCK,	""		},
 {"F1",		K_F1,		"cmd help"	},
 {"F2",		K_F2,		"menu_savegame"	},
 {"F3",		K_F3,		"menu_loadgame"	},
-{"F4",		K_F4,		"menu_keys"	},
-{"F5",		K_F5,		"menu_startserver"	},
+{"F4",		K_F4,		"menu_controls"	},
+{"F5",		K_F5,		"menu_creategame"	},
 {"F6",		K_F6,		"savequick"	},
 {"F7",		K_F7,		"loadquick"	},
 {"F8",		K_F8,		"stop"		},
 {"F9",		K_F9,		""		},
-{"F10",		K_F10,		"menu_quit"	},
+{"F10",		K_F10,		"menu_main"	},
 {"F11",		K_F11,		""		},
 {"F12",		K_F12,		"screenshot"	},
 {"INS",		K_INS,		""		},
@@ -128,7 +128,7 @@ Key_IsDown
 */
 qboolean Key_IsDown( int keynum )
 {
-	if ( keynum == -1 )
+	if( keynum == -1 )
 		return false;
 	return keys[keynum].down;
 }
@@ -201,6 +201,7 @@ int Key_StringToKeynum( const char *str )
 		if( !Q_stricmp( str, kn->name ))
 			return kn->keynum;
 	}
+
 	return -1;
 }
 
@@ -297,6 +298,7 @@ int Key_GetKey( const char *binding )
 		if( keys[i].binding && !Q_stricmp( binding, keys[i].binding ))
 			return i;
 	}
+
 	return -1;
 }
 
@@ -316,11 +318,13 @@ void Key_Unbind_f( void )
 	}
 	
 	b = Key_StringToKeynum( Cmd_Argv( 1 ));
+
 	if( b == -1 )
 	{
 		Msg( "\"%s\" isn't a valid key\n", Cmd_Argv( 1 ));
 		return;
 	}
+
 	Key_SetBinding( b, "" );
 }
 
@@ -347,8 +351,8 @@ Key_Reset_f
 */
 void Key_Reset_f( void )
 {
-	int	i;
 	keyname_t	*kn;
+	int	i;
 
 	// clear all keys first	
 	for( i = 0; i < /*256*/KEYCOUNT; i++ ) //MARTY
@@ -369,8 +373,8 @@ Key_Bind_f
 */
 void Key_Bind_f( void )
 {
-	int	i, c, b;
 	char	cmd[1024];
+	int	i, c, b;
 	
 	c = Cmd_Argc();
 
@@ -420,12 +424,13 @@ void Key_WriteBindings( file_t *f )
 	int	i;
 
 	if( !f ) return;
+
 	FS_Printf( f, "unbindall\n" );
 
 	for( i = 0; i < /*256*/KEYCOUNT; i++ )  //MARTY
 	{
 		if( keys[i].binding && keys[i].binding[0] )
-			FS_Printf( f, "bind %s \"%s\"\n", Key_KeynumToString(i), keys[i].binding );
+			FS_Printf( f, "bind %s \"%s\"\n", Key_KeynumToString( i ), keys[i].binding );
 	}
 }
 
@@ -580,6 +585,7 @@ void Key_Event( int key, qboolean down )
 		case key_game:
 			if( host.mouse_visible && cls.state != ca_cinematic )
 			{
+				clgame.dllFuncs.pfnKey_Event( down, key, keys[key].binding );
 				return; // handled in client.dll
 			}
 			break;
@@ -738,9 +744,7 @@ void Key_ClearStates( void )
 	}
 
 	if( clgame.hInstance )
-	{
 		clgame.dllFuncs.IN_ClearStates();
-	}
 }
 
 /*

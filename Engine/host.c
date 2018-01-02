@@ -42,8 +42,6 @@ convar_t	*host_framerate;
 convar_t	*con_gamemaps;
 convar_t	*build, *ver;
 
-static int num_decals;
-
 // these cvars will be duplicated on each client across network
 int Host_ServerState( void )
 {
@@ -77,23 +75,23 @@ Host_PrintEngineFeatures
 */
 void Host_PrintEngineFeatures( void )
 {
-	if( host.features & ENGINE_WRITE_LARGE_COORD )
-		MsgDev( D_AICONSOLE, "^3EXT:^7 big world support enabled\n" );
+	if( FBitSet( host.features, ENGINE_WRITE_LARGE_COORD ))
+		MsgDev( D_REPORT, "^3EXT:^7 big world support enabled\n" );
 
-	if( host.features & ENGINE_BUILD_SURFMESHES )
-		MsgDev( D_AICONSOLE, "^3EXT:^7 surfmeshes enabled\n" );
+	if( FBitSet( host.features, ENGINE_BUILD_SURFMESHES ))
+		MsgDev( D_REPORT, "^3EXT:^7 surfmeshes enabled\n" );
 
-	if( host.features & ENGINE_LOAD_DELUXEDATA )
-		MsgDev( D_AICONSOLE, "^3EXT:^7 deluxemap support enabled\n" );
+	if( FBitSet( host.features, ENGINE_LOAD_DELUXEDATA ))
+		MsgDev( D_REPORT, "^3EXT:^7 deluxemap support enabled\n" );
 
-	if( host.features & ENGINE_TRANSFORM_TRACE_AABB )
-		MsgDev( D_AICONSOLE, "^3EXT:^7 Transform trace AABB enabled\n" );
+	if( FBitSet( host.features, ENGINE_TRANSFORM_TRACE_AABB ))
+		MsgDev( D_REPORT, "^3EXT:^7 Transform trace AABB enabled\n" );
 
-	if( host.features & ENGINE_LARGE_LIGHTMAPS )
-		MsgDev( D_AICONSOLE, "^3EXT:^7 Large lightmaps enabled\n" );
+	if( FBitSet( host.features, ENGINE_LARGE_LIGHTMAPS ))
+		MsgDev( D_REPORT, "^3EXT:^7 Large lightmaps enabled\n" );
 
-	if( host.features & ENGINE_COMPENSATE_QUAKE_BUG )
-		MsgDev( D_AICONSOLE, "^3EXT:^7 Compensate quake bug enabled\n" );
+	if( FBitSet( host.features, ENGINE_COMPENSATE_QUAKE_BUG ))
+		MsgDev( D_REPORT, "^3EXT:^7 Compensate quake bug enabled\n" );
 }
 
 /*
@@ -121,7 +119,7 @@ void Host_EndGame( const char *message, ... )
 	static char	string[MAX_SYSPATH];
 	
 	va_start( argptr, message );
-	Q_vsprintf( string, message, argptr );
+	Q_vsnprintf( string, sizeof( string ), message, argptr );
 	va_end( argptr );
 
 	MsgDev( D_INFO, "Host_EndGame: %s\n", string );
@@ -236,10 +234,10 @@ void Host_Exec_f( void )
 		return;
 	}
 
-	// HACKHACK: don't execute listenserver.cfg in singleplayer
-	if( !Q_stricmp( Cvar_VariableString( "lservercfgfile" ),  Cmd_Argv( 1 )))
+	// don't execute listenserver.cfg in singleplayer
+	if( !Q_stricmp( Cvar_VariableString( "lservercfgfile" ), Cmd_Argv( 1 )))
 	{
-		if( Cvar_VariableValue( "maxplayers" ) == 1.0f )
+		if( Cvar_VariableInteger( "maxplayers" ) == 1 )
 			return;
 	}
 
@@ -255,7 +253,7 @@ void Host_Exec_f( void )
 
 	// adds \n\0 at end of the file
 	txt = Z_Malloc( len + 2 );
-	Q_memcpy( txt, f, len );
+	memcpy( txt, f, len );
 	Q_strncat( txt, "\n", len + 2 );
 	Mem_Free( f );
 
@@ -287,7 +285,7 @@ void Host_MemStats_f( void )
 	}
 }
 
-#ifndef _XBOX //MARTY - Not needed on XBOX obviously
+#ifndef _XBOX //MARTY - Not needed on XBox obviously
 void Host_Minimize_f( void )
 {
 	if( host.hWnd ) ShowWindow( host.hWnd, SW_MINIMIZE );
@@ -314,12 +312,12 @@ qboolean Host_IsLocalClient( void )
 Host_RegisterDecal
 =================
 */
-qboolean Host_RegisterDecal( const char *name )
+qboolean Host_RegisterDecal( const char *name, int *count )
 {
 	char	shortname[CS_SIZE];
 	int	i;
 
-	if( !name || !name[0] )
+	if( !name || !*name )
 		return 0;
 
 	FS_FileBase( name, shortname );
@@ -338,7 +336,7 @@ qboolean Host_RegisterDecal( const char *name )
 
 	// register new decal
 	Q_strncpy( host.draw_decals[i], shortname, sizeof( host.draw_decals[i] ));
-	num_decals++;
+	*count += 1;
 
 	return true;
 }
@@ -351,17 +349,16 @@ Host_InitDecals
 void Host_InitDecals( void )
 {
 	search_t	*t;
-	int	i;
+	int	i, num_decals = 0;
 
-	Q_memset( host.draw_decals, 0, sizeof( host.draw_decals ));
-	num_decals = 0;
+	memset( host.draw_decals, 0, sizeof( host.draw_decals ));
 
 	// lookup all decals in decals.wad
 	t = FS_Search( "decals.wad/*.*", true, false );
 
 	for( i = 0; t && i < t->numfilenames; i++ )
 	{
-		if( !Host_RegisterDecal( t->filenames[i] ))
+		if( !Host_RegisterDecal( t->filenames[i], &num_decals ))
 			break;
 	}
 
@@ -383,10 +380,7 @@ void Host_RestartAmbientSounds( void )
 	int		i, nSounds;
 	fs_offset_t	position;
 
-	if( !SV_Active( ))
-	{
-		return;
-	}
+	if( !SV_Active( )) return;
 
 	nSounds = S_GetCurrentStaticSounds( soundInfo, 64 );
 	
@@ -423,10 +417,7 @@ void Host_RestartDecals( void )
 	sizebuf_t		*msg;
 	int		i;
 
-	if( !SV_Active( ))
-	{
-		return;
-	}
+	if( !SV_Active( )) return;
 
 	// g-cont. add space for studiodecals if present
 	host.decalList = (decallist_t *)Z_Malloc( sizeof( decallist_t ) * MAX_RENDER_DECALS * 2 );
@@ -507,6 +498,7 @@ qboolean Host_FilterTime( float time )
 	// dedicated's tic_rate regulates server frame rate.  Don't apply fps filter here.
 	fps = host_maxfps->value;
 
+	// clamp the fps in multiplayer games
 	if( fps != 0 )
 	{
 		float	minframetime;
@@ -742,7 +734,7 @@ void Host_InitCommon( const char *progname, qboolean bChangeGame )
 	Q_strncpy( host.rootdir, "D:\\", sizeof( host.rootdir )); //MARTY
 #ifndef _XBOX //MARTY
 	if( !GetCurrentDirectory( sizeof( host.rootdir ), host.rootdir ))
-		Sys_Error( "couldn't determine current directory" );
+		Sys_Error( "couldn't determine current directory\n" );
 #endif
 
 	if( host.rootdir[Q_strlen( host.rootdir ) - 1] == '/' )
@@ -756,7 +748,7 @@ void Host_InitCommon( const char *progname, qboolean bChangeGame )
 	host.state = HOST_INIT; // initialzation started
 	host.developer = host.old_developer = 0;
 
-	CRT_Init(); // init some CRT functions
+	Memory_Init(); // init memory subsystem
 
 	// some commands may turn engine into infinity loop,
 	// e.g. xash.exe +game xash -game xash
@@ -768,7 +760,9 @@ void Host_InitCommon( const char *progname, qboolean bChangeGame )
 
 	host.mempool = Mem_AllocPool( "Zone Engine" );
 
-	if( Sys_CheckParm( "-console" )) host.developer = 1;
+	if( Sys_CheckParm( "-console" ))
+		host.developer = 1;
+
 	if( Sys_CheckParm( "-dev" ))
 	{
 		if( Sys_GetParmFromCmdLine( "-dev", dev_level ))
@@ -841,8 +835,8 @@ void Host_InitCommon( const char *progname, qboolean bChangeGame )
 #endif //_XBOX
 		FS_FileBase( szTemp, szTemp );
 	
-#ifndef _XBOX //MARTY
-	Con_CreateConsole(); //MARTY - No Windows console on XBox
+#ifndef _XBOX //MARTY - No Windows console on XBox
+	Con_CreateConsole();
 #endif
 
 	// first text message into console or log 
@@ -1003,7 +997,7 @@ int /*EXPORT*/ Host_Main( const char *progname, int bChangeGame, pfnChangeGame f
 	// we need to execute it again here
 	Cmd_ExecuteString( "exec config.cfg\n", src_command );
 	oldtime = Sys_DoubleTime();
-	SCR_CheckStartupVids();	// must be last
+	SCR_CheckStartupVids(); // must be last
 
 	// main window message loop
 	while( !host.crashed )

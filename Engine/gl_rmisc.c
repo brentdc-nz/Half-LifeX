@@ -241,6 +241,7 @@ void R_ParseDetailTextures( const char *filename )
 		pfile = COM_ParseFile( pfile, token );
 		Q_snprintf( detail_texname, sizeof( detail_texname ), "gfx/%s", token );
 
+		// trying the scales or '{'
 		pfile = COM_ParseFile( pfile, token );
 		// read scales
 		xScale = Q_atof( token );		

@@ -51,7 +51,7 @@ void Info_Print( const char *s )
 		l = o - key;
 		if( l < 20 )
 		{
-			Q_memset( o, ' ', 20 - l );
+			memset( o, ' ', 20 - l );
 			key[20] = 0;
 		}
 		else *o = 0;

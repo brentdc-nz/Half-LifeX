@@ -22,6 +22,39 @@ GNU General Public License for more details.
 
 /*
 ==============
+COM_IsSingleChar
+
+interpert this character as single
+==============
+*/
+static int COM_IsSingleChar( char c )
+{
+	if( c == '{' || c == '}' || c == ')' || c == '(' || c == '\'' || c == ',' )
+		return true;
+
+	if( host.com_handlecolon && c == ':' )
+		return true;
+
+	return false;
+}
+
+/*
+==============
+COM_IsWhiteSpace
+
+interpret symbol as whitespace
+==============
+*/
+
+static int COM_IsWhiteSpace( char space )
+{
+	if( space == ' ' || space == '\t' || space == '\r' || space == '\n' )
+		return 1;
+	return 0;
+}
+
+/*
+==============
 COM_ParseFile
 
 text parser
@@ -74,7 +107,7 @@ skipwhite:
 	}
 
 	// parse single characters
-	if( c == '{' || c == '}' || c == ')' || c == '(' || c == '\'' || c == ',' )
+	if( COM_IsSingleChar( c ))
 	{
 		token[len] = c;
 		len++;
@@ -90,7 +123,7 @@ skipwhite:
 		len++;
 		c = ((byte)*data);
 
-		if( c == '{' || c == '}' || c == ')' || c == '(' || c == '\'' || c == ',' )
+		if( COM_IsSingleChar( c ))
 			break;
 	} while( c > 32 );
 	
@@ -164,6 +197,39 @@ int COM_ExpandFilename( const char *fileName, char *nameOutBuffer, int nameOutBu
 }
 
 /*
+=============
+COM_TrimSpace
+
+trims all whitespace from the front
+and end of a string
+=============
+*/
+void COM_TrimSpace( const char *source, char *dest )
+{
+	int	start, end, length;
+
+	start = 0;
+	end = Q_strlen( source );
+
+	while( source[start] && COM_IsWhiteSpace( source[start] ))
+		start++;
+	end--;
+
+	while( end > 0 && COM_IsWhiteSpace( source[end] ))
+		end--;
+	end++;
+
+	length = end - start;
+
+	if( length > 0 )
+		memcpy( dest, source + start, length );
+	else length = 0;
+
+	// terminate the dest string
+	dest[length] = 0;
+}
+
+/*
 ============
 COM_FixSlashes
 
@@ -215,7 +281,6 @@ char *COM_MemFgets( byte *pMemFile, int fileSize, int *filePos, char *pBuffer, i
 		i++;
 	}
 
-
 	// if we actually advanced the pointer, copy it over
 	if( i != *filePos )
 	{
@@ -223,7 +288,7 @@ char *COM_MemFgets( byte *pMemFile, int fileSize, int *filePos, char *pBuffer, i
 		int	size = i - *filePos;
 
 		// copy it out
-		Q_memcpy( pBuffer, pMemFile + *filePos, size );
+		memcpy( pBuffer, pMemFile + *filePos, size );
 		
 		// If the buffer isn't full, terminate (this is always true)
 		if( size < bufferSize ) pBuffer[size] = 0;
@@ -268,7 +333,8 @@ byte* COM_LoadFileForMe( const char *filename, int *pLength )
 
 	if( !filename || !*filename )
 	{
-		if( pLength ) *pLength = 0;
+		if( pLength )
+			*pLength = 0;
 		return NULL;
 	}
 
@@ -281,8 +347,11 @@ byte* COM_LoadFileForMe( const char *filename, int *pLength )
 	if( pfile )
 	{
 		file = malloc( iLength + 1 );
-		Q_memcpy( file, pfile, iLength );
-		file[iLength] = '\0';
+		if( file != NULL )
+		{
+			memcpy( file, pfile, iLength );
+			file[iLength] = '\0';
+		}
 		Mem_Free( pfile );
 		pfile = file;
 	}
@@ -304,6 +373,7 @@ byte *COM_LoadFile( const char *filename, int usehunk, int *pLength )
 
 	ASSERT( usehunk == 5 );
 
+	// check for empty filename
 	if( !filename || !*filename )
 	{
 		if( pLength ) *pLength = 0;
@@ -319,7 +389,7 @@ byte *COM_LoadFile( const char *filename, int usehunk, int *pLength )
 	if( pfile )
 	{
 		file = malloc( iLength + 1 );
-		Q_memcpy( file, pfile, iLength );
+		memcpy( file, pfile, iLength );
 		file[iLength] = '\0';
 		Mem_Free( pfile );
 		pfile = file;
@@ -431,7 +501,7 @@ void Con_Printf( char *szFmt, ... )
 		return;
 
 	va_start( args, szFmt );
-	Q_vsnprintf( buffer, 16384, szFmt, args );
+	Q_vsnprintf( buffer, sizeof( buffer ), szFmt, args );
 	va_end( args );
 
 	Sys_Print( buffer );
@@ -452,7 +522,7 @@ void Con_DPrintf( char *szFmt, ... )
 		return;
 
 	va_start( args, szFmt );
-	Q_vsnprintf( buffer, 16384, szFmt, args );
+	Q_vsnprintf( buffer, sizeof( buffer ), szFmt, args );
 	va_end( args );
 
 	Sys_Print( buffer );

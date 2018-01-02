@@ -253,7 +253,7 @@ typedef struct render_interface_s
 	qboolean		(*R_SpeedsMessage)( char *out, size_t size );
 	// replace with built-in R_DrawCubemapView for make skyshots or envshots
 	qboolean		(*R_DrawCubemapView)( const float *origin, const float *angles, int size );
-	// alloc or destroy studiomodel custom data
+	// alloc or destroy model custom data
 	void		(*Mod_ProcessUserData)( struct model_s *mod, qboolean create, const byte *buffer );
 } render_interface_t;
 

@@ -2098,8 +2098,9 @@ public:
 		}
 
 		locksurf->UnlockRect();
-		locksurf->Release();
-		bbsurf->Release();
+
+		RELEASENULL(locksurf);
+		RELEASENULL(bbsurf);
 	}
 
 	inline void glRotatef (GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
@@ -2716,10 +2717,16 @@ private:
 		if (!m_bFogSwitched)
 		{
 			if (m_bFogEnabled)
+			{
+				m_pD3DDev->SetVertexShader( D3DFVF_XYZ|D3DFVF_NORMAL|D3DFVF_TEX1 );
+				m_pD3DDev->SetRenderState( D3DRS_RANGEFOGENABLE, TRUE );
 				m_pD3DDev->SetRenderState(D3DRS_FOGENABLE, true);
+			}
 			else
+			{
+				m_pD3DDev->SetRenderState( D3DRS_RANGEFOGENABLE, FALSE );
 				m_pD3DDev->SetRenderState(D3DRS_FOGENABLE, false);
-
+			}
 			m_bFogSwitched = true;
 		}
 

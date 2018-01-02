@@ -175,7 +175,7 @@ void CL_WriteErrorMessage( int current_count, sizebuf_t *msg )
 
 	FS_Write( fp, &starting_count, sizeof( int ));
 	FS_Write( fp, &current_count, sizeof( int ));
-	FS_Write( fp, BF_GetData( msg ), BF_GetMaxBytes( msg ));
+	FS_Write( fp, MSG_GetData( msg ), MSG_GetMaxBytes( msg ));
 	FS_Close( fp );
 
 	MsgDev( D_INFO, "Wrote erroneous message to %s\n", buffer_file );
@@ -217,11 +217,11 @@ void CL_WriteMessageHistory( void )
 	}
 
 	failcommand = &cls_message_debug.oldcmd[thecmd];
-	MsgDev( D_INFO, "BAD:  %3i:%s\n", BF_GetNumBytesRead( msg ) - 1, CL_MsgInfo( failcommand->command ));
+	MsgDev( D_INFO, "BAD:  %3i:%s\n", MSG_GetNumBytesRead( msg ) - 1, CL_MsgInfo( failcommand->command ));
 
 	if( host.developer >= 3 )
 	{
-		CL_WriteErrorMessage( BF_GetNumBytesRead( msg ) - 1, msg );
+		CL_WriteErrorMessage( MSG_GetNumBytesRead( msg ) - 1, msg );
 	}
 	cls_message_debug.parsing = false;
 }
@@ -252,29 +252,29 @@ void CL_ParseSoundPacket( sizebuf_t *msg, qboolean is_ambient )
 	int	flags, pitch, entnum;
 	sound_t	handle = 0;
 
-	flags = BF_ReadWord( msg );
+	flags = MSG_ReadWord( msg );
 	if( flags & SND_LARGE_INDEX )
-		sound = BF_ReadWord( msg );
-	else sound = BF_ReadByte( msg );
-	chan = BF_ReadByte( msg );
+		sound = MSG_ReadWord( msg );
+	else sound = MSG_ReadByte( msg );
+	chan = MSG_ReadByte( msg );
 
 	if( flags & SND_VOLUME )
-		volume = (float)BF_ReadByte( msg ) / 255.0f;
+		volume = (float)MSG_ReadByte( msg ) / 255.0f;
 	else volume = VOL_NORM;
 
 	if( flags & SND_ATTENUATION )
-		attn = (float)BF_ReadByte( msg ) / 64.0f;
+		attn = (float)MSG_ReadByte( msg ) / 64.0f;
 	else attn = ATTN_NONE;	
 
 	if( flags & SND_PITCH )
-		pitch = BF_ReadByte( msg );
+		pitch = MSG_ReadByte( msg );
 	else pitch = PITCH_NORM;
 
 	// entity reletive
-	entnum = BF_ReadWord( msg ); 
+	entnum = MSG_ReadWord( msg ); 
 
 	// positioned in space
-	BF_ReadVec3Coord( msg, pos );
+	MSG_ReadVec3Coord( msg, pos );
 
 	if( flags & SND_SENTENCE )
 	{
@@ -284,6 +284,9 @@ void CL_ParseSoundPacket( sizebuf_t *msg, qboolean is_ambient )
 		handle = S_RegisterSound( sentenceName );
 	}
 	else handle = cl.sound_index[sound];	// see precached sound
+
+	if( !cl.audio_prepped )
+		return; // too early
 
 	if( is_ambient )
 	{
@@ -311,22 +314,22 @@ void CL_ParseRestoreSoundPacket( sizebuf_t *msg )
 	int	wordIndex;
 	sound_t	handle = 0;
 
-	flags = BF_ReadWord( msg );
+	flags = MSG_ReadWord( msg );
 	if( flags & SND_LARGE_INDEX )
-		sound = BF_ReadWord( msg );
-	else sound = BF_ReadByte( msg );
-	chan = BF_ReadByte( msg );
+		sound = MSG_ReadWord( msg );
+	else sound = MSG_ReadByte( msg );
+	chan = MSG_ReadByte( msg );
 
 	if( flags & SND_VOLUME )
-		volume = (float)BF_ReadByte( msg ) / 255.0f;
+		volume = (float)MSG_ReadByte( msg ) / 255.0f;
 	else volume = VOL_NORM;
 
 	if( flags & SND_ATTENUATION )
-		attn = (float)BF_ReadByte( msg ) / 64.0f;
+		attn = (float)MSG_ReadByte( msg ) / 64.0f;
 	else attn = ATTN_NONE;	
 
 	if( flags & SND_PITCH )
-		pitch = BF_ReadByte( msg );
+		pitch = MSG_ReadByte( msg );
 	else pitch = PITCH_NORM;
 
 	if( flags & SND_SENTENCE )
@@ -339,17 +342,29 @@ void CL_ParseRestoreSoundPacket( sizebuf_t *msg )
 	else handle = cl.sound_index[sound]; // see precached sound
 
 	// entity reletive
-	entnum = BF_ReadWord( msg ); 
+	entnum = MSG_ReadWord( msg ); 
 
 	// positioned in space
-	BF_ReadVec3Coord( msg, pos );
-	wordIndex = BF_ReadByte( msg );
+	MSG_ReadVec3Coord( msg, pos );
+	wordIndex = MSG_ReadByte( msg );
 
 	// 16 bytes here
-	BF_ReadBytes( msg, &samplePos, sizeof( samplePos ));
-	BF_ReadBytes( msg, &forcedEnd, sizeof( forcedEnd ));
+	MSG_ReadBytes( msg, &samplePos, sizeof( samplePos ));
+	MSG_ReadBytes( msg, &forcedEnd, sizeof( forcedEnd ));
 
 	S_RestoreSound( pos, entnum, chan, handle, volume, attn, pitch, flags, samplePos, forcedEnd, wordIndex );
+}
+
+/*
+==================
+CL_ParseServerTime
+
+==================
+*/
+void CL_ParseServerTime( sizebuf_t *msg )
+{
+	cl.mtime[1] = cl.mtime[0];
+	cl.mtime[0] = MSG_ReadFloat( msg );
 }
 
 /*
@@ -368,7 +383,7 @@ void CL_ParseMovevars( sizebuf_t *msg )
 	if( Q_strcmp( clgame.oldmovevars.skyName, clgame.movevars.skyName ) && cl.video_prepped )
 		R_SetupSky( clgame.movevars.skyName );
 
-	Q_memcpy( &clgame.oldmovevars, &clgame.movevars, sizeof( movevars_t ));
+	memcpy( &clgame.oldmovevars, &clgame.movevars, sizeof( movevars_t ));
 	// keep features an actual!
 	clgame.oldmovevars.features = clgame.movevars.features = host.features;
 }
@@ -385,15 +400,15 @@ void CL_ParseParticles( sizebuf_t *msg )
 	int		i, count, color;
 	float		life;
 	
-	BF_ReadVec3Coord( msg, org );	
+	MSG_ReadVec3Coord( msg, org );	
 
 	for( i = 0; i < 3; i++ )
-		dir[i] = BF_ReadChar( msg ) * (1.0f / 16);
+		dir[i] = MSG_ReadChar( msg ) * (1.0f / 16);
 
-	count = BF_ReadByte( msg );
-	color = BF_ReadByte( msg );
+	count = MSG_ReadByte( msg );
+	color = MSG_ReadByte( msg );
 	if( count == 255 ) count = 1024;
-	life = BF_ReadByte( msg ) * 0.125f;
+	life = MSG_ReadByte( msg ) * 0.125f;
 
 	if( life != 0.0f && count == 1 )
 	{
@@ -425,29 +440,29 @@ void CL_ParseStaticEntity( sizebuf_t *msg )
 	cl_entity_t	*ent;
 	int		i;
 
-	Q_memset( &state, 0, sizeof( state ));
+	memset( &state, 0, sizeof( state ));
 
-	state.modelindex = BF_ReadShort( msg );
-	state.sequence = BF_ReadByte( msg );
-	state.frame = BF_ReadByte( msg );
-	state.colormap = BF_ReadWord( msg );
-	state.skin = BF_ReadByte( msg );
+	state.modelindex = MSG_ReadShort( msg );
+	state.sequence = MSG_ReadByte( msg );
+	state.frame = MSG_ReadByte( msg );
+	state.colormap = MSG_ReadWord( msg );
+	state.skin = MSG_ReadByte( msg );
 
 	for( i = 0; i < 3; i++ )
 	{
-		state.origin[i] = BF_ReadCoord( msg );
-		state.angles[i] = BF_ReadBitAngle( msg, 16 );
+		state.origin[i] = MSG_ReadCoord( msg );
+		state.angles[i] = MSG_ReadBitAngle( msg, 16 );
 	}
 
-	state.rendermode = BF_ReadByte( msg );
+	state.rendermode = MSG_ReadByte( msg );
 
 	if( state.rendermode != kRenderNormal )
 	{
-		state.renderamt = BF_ReadByte( msg );
-		state.rendercolor.r = BF_ReadByte( msg );
-		state.rendercolor.g = BF_ReadByte( msg );
-		state.rendercolor.b = BF_ReadByte( msg );
-		state.renderfx = BF_ReadByte( msg );
+		state.renderamt = MSG_ReadByte( msg );
+		state.rendercolor.r = MSG_ReadByte( msg );
+		state.rendercolor.g = MSG_ReadByte( msg );
+		state.rendercolor.b = MSG_ReadByte( msg );
+		state.renderfx = MSG_ReadByte( msg );
 	}
 
 	i = clgame.numStatics;
@@ -499,15 +514,15 @@ void CL_ParseStaticDecal( sizebuf_t *msg )
 	float		scale;
 	int		flags;
 
-	BF_ReadVec3Coord( msg, origin );
-	decalIndex = BF_ReadWord( msg );
-	entityIndex = BF_ReadShort( msg );
+	MSG_ReadVec3Coord( msg, origin );
+	decalIndex = MSG_ReadWord( msg );
+	entityIndex = MSG_ReadShort( msg );
 
 	if( entityIndex > 0 )
-		modelIndex = BF_ReadWord( msg );
+		modelIndex = MSG_ReadWord( msg );
 	else modelIndex = 0;
-	flags = BF_ReadByte( msg );
-	scale = (float)BF_ReadWord( msg ) / 4096.0f;
+	flags = MSG_ReadByte( msg );
+	scale = (float)MSG_ReadWord( msg ) / 4096.0f;
 
 	CL_FireCustomDecal( CL_DecalIndex( decalIndex ), entityIndex, modelIndex, origin, flags, scale );
 }
@@ -523,10 +538,10 @@ void CL_ParseSoundFade( sizebuf_t *msg )
 	float	fadePercent, fadeOutSeconds;
 	float	holdTime, fadeInSeconds;
 
-	fadePercent = (float)BF_ReadByte( msg );
-	holdTime = (float)BF_ReadByte( msg );
-	fadeOutSeconds = (float)BF_ReadByte( msg );
-	fadeInSeconds = (float)BF_ReadByte( msg );
+	fadePercent = (float)MSG_ReadByte( msg );
+	holdTime = (float)MSG_ReadByte( msg );
+	fadeOutSeconds = (float)MSG_ReadByte( msg );
+	fadeInSeconds = (float)MSG_ReadByte( msg );
 
 	S_FadeClientVolume( fadePercent, fadeOutSeconds, holdTime, fadeInSeconds );
 }
@@ -571,23 +586,23 @@ void CL_ParseServerData( sizebuf_t *msg )
 	cls.state = ca_connected;
 
 	// parse protocol version number
-	i = BF_ReadLong( msg );
+	i = MSG_ReadLong( msg );
 	cls.serverProtocol = i;
 
 	if( i != PROTOCOL_VERSION )
 		Host_Error( "Server use invalid protocol (%i should be %i)\n", i, PROTOCOL_VERSION );
 
-	cl.servercount = BF_ReadLong( msg );
-	cl.checksum = BF_ReadLong( msg );
-	cl.playernum = BF_ReadByte( msg );
-	cl.maxclients = BF_ReadByte( msg );
-	clgame.maxEntities = BF_ReadWord( msg );
+	cl.servercount = MSG_ReadLong( msg );
+	cl.checksum = MSG_ReadLong( msg );
+	cl.playernum = MSG_ReadByte( msg );
+	cl.maxclients = MSG_ReadByte( msg );
+	clgame.maxEntities = MSG_ReadWord( msg );
 	clgame.maxEntities = bound( 600, clgame.maxEntities, 4096 );
-	Q_strncpy( clgame.mapname, BF_ReadString( msg ), MAX_STRING );
-	Q_strncpy( clgame.maptitle, BF_ReadString( msg ), MAX_STRING );
-	background = BF_ReadOneBit( msg );
-	Q_strncpy( gamefolder, BF_ReadString( msg ), MAX_STRING );
-	host.features = (uint)BF_ReadLong( msg );
+	Q_strncpy( clgame.mapname, MSG_ReadString( msg ), MAX_STRING );
+	Q_strncpy( clgame.maptitle, MSG_ReadString( msg ), MAX_STRING );
+	background = MSG_ReadOneBit( msg );
+	Q_strncpy( gamefolder, MSG_ReadString( msg ), MAX_STRING );
+	host.features = (uint)MSG_ReadLong( msg );
 
 	if( cl.maxclients > 1 && host.developer < 1 )
 		host.developer++;
@@ -669,8 +684,8 @@ void CL_ParseServerData( sizebuf_t *msg )
 	cl.video_prepped = false;
 	cl.audio_prepped = false;
 
-	Q_memset( &clgame.movevars, 0, sizeof( clgame.movevars ));
-	Q_memset( &clgame.oldmovevars, 0, sizeof( clgame.oldmovevars ));
+	memset( &clgame.movevars, 0, sizeof( clgame.movevars ));
+	memset( &clgame.oldmovevars, 0, sizeof( clgame.oldmovevars ));
 }
 
 /*
@@ -779,9 +794,9 @@ void CL_ParseClientData( sizebuf_t *msg )
 	to_wd = frame->weapondata;
 
 	// clear to old value before delta parsing
-	if( BF_ReadOneBit( msg ))
+	if( MSG_ReadOneBit( msg ))
 	{
-		int	delta_sequence = BF_ReadByte( msg );
+		int	delta_sequence = MSG_ReadByte( msg );
 
 		from_cd = &cl.frames[delta_sequence & CL_UPDATE_MASK].client;
 		from_wd = cl.frames[delta_sequence & CL_UPDATE_MASK].weapondata;
@@ -799,10 +814,10 @@ void CL_ParseClientData( sizebuf_t *msg )
 	for( i = 0; i < 64; i++ )
 	{
 		// check for end of weapondata (and clientdata_t message)
-		if( !BF_ReadOneBit( msg )) break;
+		if( !MSG_ReadOneBit( msg )) break;
 
 		// read the weapon idx
-		idx = BF_ReadUBitLong( msg, MAX_WEAPON_BITS );
+		idx = MSG_ReadUBitLong( msg, MAX_WEAPON_BITS );
 
 		MSG_ReadWeaponData( msg, &from_wd[idx], &to_wd[idx], cl.mtime[0] );
 	}
@@ -821,13 +836,13 @@ void CL_ParseBaseline( sizebuf_t *msg )
 
 	Delta_InitClient ();	// finalize client delta's
 
-	newnum = BF_ReadWord( msg );
+	newnum = MSG_ReadWord( msg );
 
 	if( newnum < 0 ) Host_Error( "CL_SpawnEdict: invalid number %i\n", newnum );
 	if( newnum >= clgame.maxEntities ) Host_Error( "CL_AllocEdict: no free edicts\n" );
 
 	ent = CL_EDICT_NUM( newnum );
-	Q_memset( &ent->prevstate, 0, sizeof( ent->prevstate ));
+	memset( &ent->prevstate, 0, sizeof( ent->prevstate ));
 	ent->index = newnum;
 
 	if( cls.state == ca_active )
@@ -848,9 +863,9 @@ void CL_ParseLightStyle( sizebuf_t *msg )
 	const char	*s;
 	float		f;
 
-	style = BF_ReadByte( msg );
-	s = BF_ReadString( msg );
-	f = BF_ReadFloat( msg );
+	style = MSG_ReadByte( msg );
+	s = MSG_ReadString( msg );
+	f = MSG_ReadFloat( msg );
 
 	CL_SetLightstyle( style, s, f );
 }
@@ -864,9 +879,9 @@ set the view angle to this absolute value
 */
 void CL_ParseSetAngle( sizebuf_t *msg )
 {
-	cl.refdef.cl_viewangles[0] = BF_ReadBitAngle( msg, 16 );
-	cl.refdef.cl_viewangles[1] = BF_ReadBitAngle( msg, 16 );
-	cl.refdef.cl_viewangles[2] = BF_ReadBitAngle( msg, 16 );
+	cl.refdef.cl_viewangles[0] = MSG_ReadBitAngle( msg, 16 );
+	cl.refdef.cl_viewangles[1] = MSG_ReadBitAngle( msg, 16 );
+	cl.refdef.cl_viewangles[2] = MSG_ReadBitAngle( msg, 16 );
 }
 
 /*
@@ -880,7 +895,7 @@ void CL_ParseAddAngle( sizebuf_t *msg )
 {
 	float	add_angle;
 	
-	add_angle = BF_ReadBitAngle( msg, 16 );
+	add_angle = MSG_ReadBitAngle( msg, 16 );
 	cl.refdef.cl_viewangles[1] += add_angle;
 }
 
@@ -893,8 +908,8 @@ offset crosshair angles
 */
 void CL_ParseCrosshairAngle( sizebuf_t *msg )
 {
-	cl.refdef.crosshairangle[0] = BF_ReadChar( msg ) * 0.2f;
-	cl.refdef.crosshairangle[1] = BF_ReadChar( msg ) * 0.2f;
+	cl.refdef.crosshairangle[0] = MSG_ReadChar( msg ) * 0.2f;
+	cl.refdef.crosshairangle[1] = MSG_ReadChar( msg ) * 0.2f;
 	cl.refdef.crosshairangle[2] = 0.0f; // not used for screen space
 }
 
@@ -910,9 +925,9 @@ void CL_RegisterUserMessage( sizebuf_t *msg )
 	char	*pszName;
 	int	svc_num, size;
 	
-	svc_num = BF_ReadByte( msg );
-	size = BF_ReadByte( msg );
-	pszName = BF_ReadString( msg );
+	svc_num = MSG_ReadByte( msg );
+	size = MSG_ReadByte( msg );
+	pszName = MSG_ReadString( msg );
 
 	// important stuff
 	if( size == 0xFF ) size = -1;
@@ -934,25 +949,25 @@ void CL_UpdateUserinfo( sizebuf_t *msg )
 	qboolean		active;
 	player_info_t	*player;
 
-	slot = BF_ReadUBitLong( msg, MAX_CLIENT_BITS );
+	slot = MSG_ReadUBitLong( msg, MAX_CLIENT_BITS );
 
 	if( slot >= MAX_CLIENTS )
 		Host_Error( "CL_ParseServerMessage: svc_updateuserinfo > MAX_CLIENTS\n" );
 
 	player = &cl.players[slot];
-	active = BF_ReadOneBit( msg ) ? true : false;
+	active = MSG_ReadOneBit( msg ) ? true : false;
 
 	if( active )
 	{
-		Q_strncpy( player->userinfo, BF_ReadString( msg ), sizeof( player->userinfo ));
+		Q_strncpy( player->userinfo, MSG_ReadString( msg ), sizeof( player->userinfo ));
 		Q_strncpy( player->name, Info_ValueForKey( player->userinfo, "name" ), sizeof( player->name ));
 		Q_strncpy( player->model, Info_ValueForKey( player->userinfo, "model" ), sizeof( player->model ));
 		player->topcolor = Q_atoi( Info_ValueForKey( player->userinfo, "topcolor" ));
 		player->bottomcolor = Q_atoi( Info_ValueForKey( player->userinfo, "bottomcolor" ));
 
-		if( slot == cl.playernum ) Q_memcpy( &menu.playerinfo, player, sizeof( player_info_t ));
+		if( slot == cl.playernum ) memcpy( &menu.playerinfo, player, sizeof( player_info_t ));
 	}
-	else Q_memset( player, 0, sizeof( *player ));
+	else memset( player, 0, sizeof( *player ));
 }
 
 /*
@@ -966,12 +981,12 @@ void CL_PrecacheModel( sizebuf_t *msg )
 {
 	int	modelIndex;
 
-	modelIndex = BF_ReadUBitLong( msg, MAX_MODEL_BITS );
+	modelIndex = MSG_ReadUBitLong( msg, MAX_MODEL_BITS );
 
 	if( modelIndex < 0 || modelIndex >= MAX_MODELS )
 		Host_Error( "CL_PrecacheModel: bad modelindex %i\n", modelIndex );
 
-	Q_strncpy( cl.model_precache[modelIndex], BF_ReadString( msg ), sizeof( cl.model_precache[0] ));
+	Q_strncpy( cl.model_precache[modelIndex], MSG_ReadString( msg ), sizeof( cl.model_precache[0] ));
 
 	// when we loading map all resources is precached sequentially
 	if( !cl.video_prepped ) return;
@@ -990,12 +1005,12 @@ void CL_PrecacheSound( sizebuf_t *msg )
 {
 	int	soundIndex;
 
-	soundIndex = BF_ReadUBitLong( msg, MAX_SOUND_BITS );
+	soundIndex = MSG_ReadUBitLong( msg, MAX_SOUND_BITS );
 
 	if( soundIndex < 0 || soundIndex >= MAX_SOUNDS )
 		Host_Error( "CL_PrecacheSound: bad soundindex %i\n", soundIndex );
 
-	Q_strncpy( cl.sound_precache[soundIndex], BF_ReadString( msg ), sizeof( cl.sound_precache[0] ));
+	Q_strncpy( cl.sound_precache[soundIndex], MSG_ReadString( msg ), sizeof( cl.sound_precache[0] ));
 
 	// when we loading map all resources is precached sequentially
 	if( !cl.audio_prepped ) return;
@@ -1014,12 +1029,12 @@ void CL_PrecacheEvent( sizebuf_t *msg )
 {
 	int	eventIndex;
 
-	eventIndex = BF_ReadUBitLong( msg, MAX_EVENT_BITS );
+	eventIndex = MSG_ReadUBitLong( msg, MAX_EVENT_BITS );
 
 	if( eventIndex < 0 || eventIndex >= MAX_EVENTS )
 		Host_Error( "CL_PrecacheEvent: bad eventindex %i\n", eventIndex );
 
-	Q_strncpy( cl.event_precache[eventIndex], BF_ReadString( msg ), sizeof( cl.event_precache[0] ));
+	Q_strncpy( cl.event_precache[eventIndex], MSG_ReadString( msg ), sizeof( cl.event_precache[0] ));
 
 	// can be set now
 	CL_SetEventIndex( cl.event_precache[eventIndex], eventIndex );
@@ -1039,16 +1054,16 @@ void CL_UpdateUserPings( sizebuf_t *msg )
 	
 	for( i = 0; i < MAX_CLIENTS; i++ )
 	{
-		if( !BF_ReadOneBit( msg )) break; // end of message
+		if( !MSG_ReadOneBit( msg )) break; // end of message
 
-		slot = BF_ReadUBitLong( msg, MAX_CLIENT_BITS );
+		slot = MSG_ReadUBitLong( msg, MAX_CLIENT_BITS );
 
 		if( slot >= MAX_CLIENTS )
 			Host_Error( "CL_ParseServerMessage: svc_updatepings > MAX_CLIENTS\n" );
 
 		player = &cl.players[slot];
-		player->ping = BF_ReadUBitLong( msg, 12 );
-		player->packet_loss = BF_ReadUBitLong( msg, 7 );
+		player->ping = MSG_ReadUBitLong( msg, 12 );
+		player->packet_loss = MSG_ReadUBitLong( msg, 7 );
 	}
 }
 
@@ -1063,8 +1078,8 @@ void CL_ServerInfo( sizebuf_t *msg )
 {
 	string	key, value;
 
-	Q_strncpy( key, BF_ReadString( msg ), sizeof( key ));
-	Q_strncpy( value, BF_ReadString( msg ), sizeof( value ));
+	Q_strncpy( key, MSG_ReadString( msg ), sizeof( key ));
+	Q_strncpy( value, MSG_ReadString( msg ), sizeof( value ));
 	Info_SetValueForKey( cl.serverinfo, key, value );
 }
 
@@ -1088,15 +1103,15 @@ void CL_CheckingResFile( char *pResFileName )
 
 	if( cls.state == ca_disconnected ) return;
 
-	BF_Init( &buf, "ClientPacket", data, sizeof( data ));
-	BF_WriteByte( &buf, clc_resourcelist );
-	BF_WriteString( &buf, pResFileName );
+	MSG_Init( &buf, "ClientPacket", data, sizeof( data ));
+	MSG_WriteByte( &buf, clc_resourcelist );
+	MSG_WriteString( &buf, pResFileName );
 
 	if( !cls.netchan.remote_address.type )	// download in singleplayer ???
 		cls.netchan.remote_address.type = NA_LOOPBACK;
 
 	// make sure message will be delivered
-	Netchan_Transmit( &cls.netchan, BF_GetNumBytesWritten( &buf ), BF_GetData( &buf ));
+	Netchan_Transmit( &cls.netchan, MSG_GetNumBytesWritten( &buf ), MSG_GetData( &buf ));
 
 }
 
@@ -1124,14 +1139,14 @@ void CL_ParseResourceList( sizebuf_t *msg )
 {
 	int	i = 0;
 
-	Q_memset( &reslist, 0, sizeof( resourcelist_t ));
+	memset( &reslist, 0, sizeof( resourcelist_t ));
 
-	reslist.rescount = BF_ReadWord( msg ) - 1;
+	reslist.rescount = MSG_ReadWord( msg ) - 1;
 
 	for( i = 0; i < reslist.rescount; i++ )
 	{
-		reslist.restype[i] = BF_ReadWord( msg );
-		Q_strncpy( reslist.resnames[i], BF_ReadString( msg ), CS_SIZE );
+		reslist.restype[i] = MSG_ReadWord( msg );
+		Q_strncpy( reslist.resnames[i], MSG_ReadString( msg ), CS_SIZE );
 	}
 
 	cls.downloadcount = 0;
@@ -1145,8 +1160,8 @@ void CL_ParseResourceList( sizebuf_t *msg )
 
 	if( !cls.downloadcount )
 	{
-		BF_WriteByte( &cls.netchan.message, clc_stringcmd );
-		BF_WriteString( &cls.netchan.message, "continueloading" );
+		MSG_WriteByte( &cls.netchan.message, clc_stringcmd );
+		MSG_WriteString( &cls.netchan.message, "continueloading" );
 	}
 }
 
@@ -1160,10 +1175,10 @@ spectator message (hltv)
 void CL_ParseDirector( sizebuf_t *msg )
 {
 	byte	pbuf[256];
-	int	iSize = BF_ReadByte( msg );
+	int	iSize = MSG_ReadByte( msg );
 
 	// parse user message into buffer
-	BF_ReadBytes( msg, pbuf, iSize );
+	MSG_ReadBytes( msg, pbuf, iSize );
 	clgame.dllFuncs.pfnDirectorMessage( iSize, pbuf );
 }
 
@@ -1183,23 +1198,23 @@ void CL_ParseStudioDecal( sizebuf_t *msg )
 	int		modelIndex = 0;
 	int		flags;
 
-	BF_ReadVec3Coord( msg, pos );
-	BF_ReadVec3Coord( msg, start );
-	decalIndex = BF_ReadWord( msg );
-	entityIndex = BF_ReadWord( msg );
-	flags = BF_ReadByte( msg );
+	MSG_ReadVec3Coord( msg, pos );
+	MSG_ReadVec3Coord( msg, start );
+	decalIndex = MSG_ReadWord( msg );
+	entityIndex = MSG_ReadWord( msg );
+	flags = MSG_ReadByte( msg );
 
-	state.sequence = BF_ReadShort( msg );
-	state.frame = BF_ReadShort( msg );
-	state.blending[0] = BF_ReadByte( msg );
-	state.blending[1] = BF_ReadByte( msg );
-	state.controller[0] = BF_ReadByte( msg );
-	state.controller[1] = BF_ReadByte( msg );
-	state.controller[2] = BF_ReadByte( msg );
-	state.controller[3] = BF_ReadByte( msg );
-	modelIndex = BF_ReadWord( msg );
-	state.body = BF_ReadByte( msg );
-	state.skin = BF_ReadByte( msg );
+	state.sequence = MSG_ReadShort( msg );
+	state.frame = MSG_ReadShort( msg );
+	state.blending[0] = MSG_ReadByte( msg );
+	state.blending[1] = MSG_ReadByte( msg );
+	state.controller[0] = MSG_ReadByte( msg );
+	state.controller[1] = MSG_ReadByte( msg );
+	state.controller[2] = MSG_ReadByte( msg );
+	state.controller[3] = MSG_ReadByte( msg );
+	modelIndex = MSG_ReadWord( msg );
+	state.body = MSG_ReadByte( msg );
+	state.skin = MSG_ReadByte( msg );
 
 	if( clgame.drawFuncs.R_StudioDecalShoot != NULL )
 	{
@@ -1222,9 +1237,9 @@ Set screen shake
 */
 void CL_ParseScreenShake( sizebuf_t *msg )
 {
-	clgame.shake.amplitude = (float)(word)BF_ReadShort( msg ) * (1.0f / (float)(1<<12));
-	clgame.shake.duration = (float)(word)BF_ReadShort( msg ) * (1.0f / (float)(1<<12));
-	clgame.shake.frequency = (float)(word)BF_ReadShort( msg ) * (1.0f / (float)(1<<8));
+	clgame.shake.amplitude = (float)(word)MSG_ReadShort( msg ) * (1.0f / (float)(1<<12));
+	clgame.shake.duration = (float)(word)MSG_ReadShort( msg ) * (1.0f / (float)(1<<12));
+	clgame.shake.frequency = (float)(word)MSG_ReadShort( msg ) * (1.0f / (float)(1<<8));
 	clgame.shake.time = cl.time + max( clgame.shake.duration, 0.01f );
 	clgame.shake.next_shake = 0.0f; // apply immediately
 }
@@ -1241,14 +1256,14 @@ void CL_ParseScreenFade( sizebuf_t *msg )
 	float		duration, holdTime;
 	screenfade_t	*sf = &clgame.fade;
 
-	duration = (float)(word)BF_ReadShort( msg ) * (1.0f / (float)(1<<12));
-	holdTime = (float)(word)BF_ReadShort( msg ) * (1.0f / (float)(1<<12));
-	sf->fadeFlags = BF_ReadShort( msg );
+	duration = (float)(word)MSG_ReadShort( msg ) * (1.0f / (float)(1<<12));
+	holdTime = (float)(word)MSG_ReadShort( msg ) * (1.0f / (float)(1<<12));
+	sf->fadeFlags = MSG_ReadShort( msg );
 
-	sf->fader = BF_ReadByte( msg );
-	sf->fadeg = BF_ReadByte( msg );
-	sf->fadeb = BF_ReadByte( msg );
-	sf->fadealpha = BF_ReadByte( msg );
+	sf->fader = MSG_ReadByte( msg );
+	sf->fadeg = MSG_ReadByte( msg );
+	sf->fadeb = MSG_ReadByte( msg );
+	sf->fadealpha = MSG_ReadByte( msg );
 	sf->fadeSpeed = 0.0f;
 	sf->fadeEnd = duration;
 	sf->fadeReset = holdTime;
@@ -1289,12 +1304,12 @@ and sent it back to the server
 */
 void CL_ParseCvarValue( sizebuf_t *msg )
 {
-	const char *cvarName = BF_ReadString( msg );
+	const char *cvarName = MSG_ReadString( msg );
 	convar_t *cvar = Cvar_FindVar( cvarName );
 
 	// build the answer
-	BF_WriteByte( &cls.netchan.message, clc_requestcvarvalue );
-	BF_WriteString( &cls.netchan.message, cvar ? cvar->string : "Not Found" );
+	MSG_WriteByte( &cls.netchan.message, clc_requestcvarvalue );
+	MSG_WriteString( &cls.netchan.message, cvar ? cvar->string : "Not Found" );
 }
 
 /*
@@ -1307,15 +1322,15 @@ and sent it back to the server
 */
 void CL_ParseCvarValue2( sizebuf_t *msg )
 {
-	int requestID = BF_ReadLong( msg );
-	const char *cvarName = BF_ReadString( msg );
+	int requestID = MSG_ReadLong( msg );
+	const char *cvarName = MSG_ReadString( msg );
 	convar_t *cvar = Cvar_FindVar( cvarName );
 
 	// build the answer
-	BF_WriteByte( &cls.netchan.message, clc_requestcvarvalue2 );
-	BF_WriteLong( &cls.netchan.message, requestID );
-	BF_WriteString( &cls.netchan.message, cvarName );
-	BF_WriteString( &cls.netchan.message, cvar ? cvar->string : "Not Found" );
+	MSG_WriteByte( &cls.netchan.message, clc_requestcvarvalue2 );
+	MSG_WriteLong( &cls.netchan.message, requestID );
+	MSG_WriteString( &cls.netchan.message, cvarName );
+	MSG_WriteString( &cls.netchan.message, cvar ? cvar->string : "Not Found" );
 }
 
 /*
@@ -1402,10 +1417,10 @@ void CL_ParseUserMessage( sizebuf_t *msg, int svc_num )
 	iSize = clgame.msg[i].size;
 
 	// message with variable sizes receive an actual size as first byte
-	if( iSize == -1 ) iSize = BF_ReadByte( msg );
+	if( iSize == -1 ) iSize = MSG_ReadByte( msg );
 
 	// parse user message into buffer
-	BF_ReadBytes( msg, pbuf, iSize );
+	MSG_ReadBytes( msg, pbuf, iSize );
 
 	if( clgame.msg[i].func )
 	{
@@ -1447,25 +1462,25 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 	int	bufStart;
 
 	cls_message_debug.parsing = true;		// begin parsing
-	starting_count = BF_GetNumBytesRead( msg );	// updates each frame
+	starting_count = MSG_GetNumBytesRead( msg );	// updates each frame
 	
 	// parse the message
 	while( 1 )
 	{
-		if( BF_CheckOverflow( msg ))
+		if( MSG_CheckOverflow( msg ))
 		{
 			Host_Error( "CL_ParseServerMessage: overflow!\n" );
 			return;
 		}
 
 		// mark start position
-		bufStart = BF_GetNumBytesRead( msg );
+		bufStart = MSG_GetNumBytesRead( msg );
 
 		// end of message
-		if( BF_GetNumBitsLeft( msg ) < 8 )
+		if( MSG_GetNumBitsLeft( msg ) < 8 )
 			break;		
 
-		cmd = BF_ReadByte( msg );
+		cmd = MSG_ReadByte( msg );
 
 		// record command for debugging spew on parse problem
 		CL_Parse_RecordCommand( cmd, bufStart );
@@ -1484,7 +1499,7 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 			Host_AbortCurrentFrame ();
 			break;
 		case svc_changing:
-			if( BF_ReadOneBit( msg ))
+			if( MSG_ReadOneBit( msg ))
 			{
 				cls.changelevel = true;
 				S_StopAllSounds();
@@ -1509,7 +1524,7 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 			cls.connect_time = MAX_HEARTBEAT; // CL_CheckForResend() will fire immediately
 			break;
 		case svc_setview:
-			cl.refdef.viewentity = BF_ReadWord( msg );
+			cl.refdef.viewentity = MSG_ReadWord( msg );
 			break;
 		case svc_sound:
 			CL_ParseSoundPacket( msg, false );
@@ -1517,15 +1532,15 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 		case svc_time:
 			// shuffle timestamps
 			cl.mtime[1] = cl.mtime[0];
-			cl.mtime[0] = BF_ReadFloat( msg );			
+			cl.mtime[0] = MSG_ReadFloat( msg );			
 			break;
 		case svc_print:
-			i = BF_ReadByte( msg );
-			MsgDev( D_INFO, "^6%s", BF_ReadString( msg ));
+			i = MSG_ReadByte( msg );
+			MsgDev( D_INFO, "^6%s", MSG_ReadString( msg ));
 			if( i == PRINT_CHAT ) S_StartLocalSound( "common/menu2.wav", VOL_NORM, false );
 			break;
 		case svc_stufftext:
-			s = BF_ReadString( msg );
+			s = MSG_ReadString( msg );
 			Cbuf_AddText( s );
 			break;
 		case svc_lightstyle:
@@ -1578,7 +1593,7 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 			CL_ParseTempEntity( msg );
 			break;
 		case svc_setpause:
-			cl.refdef.paused = ( BF_ReadOneBit( msg ) != 0 );
+			cl.refdef.paused = ( MSG_ReadOneBit( msg ) != 0 );
 			break;
 		case svc_deltamovevars:
 			CL_ParseMovevars( msg );
@@ -1587,7 +1602,7 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 			CL_ParseCustomization( msg );
 			break;
 		case svc_centerprint:
-			CL_CenterPrint( BF_ReadString( msg ), 0.25f );
+			CL_CenterPrint( MSG_ReadString( msg ), 0.25f );
 			break;
 		case svc_event:
 			CL_ParseEvent( msg );
@@ -1611,9 +1626,9 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 			CL_ParseSoundFade( msg );
 			break;
 		case svc_cdtrack:
-			param1 = BF_ReadByte( msg );
+			param1 = MSG_ReadByte( msg );
 			param1 = bound( 1, param1, MAX_CDTRACKS ); // tracknum
-			param2 = BF_ReadByte( msg );
+			param2 = MSG_ReadByte( msg );
 			param2 = bound( 1, param2, MAX_CDTRACKS ); // loopnum
 			S_StartBackgroundTrack( clgame.cdtracks[param1-1], clgame.cdtracks[param2-1], 0 );
 			break;
@@ -1627,19 +1642,19 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 			Delta_ParseTableField( msg );
 			break;
 		case svc_weaponanim:
-			param1 = BF_ReadByte( msg );	// iAnim
-			param2 = BF_ReadByte( msg );	// body
+			param1 = MSG_ReadByte( msg );	// iAnim
+			param2 = MSG_ReadByte( msg );	// body
 			CL_WeaponAnim( param1, param2 );
 			break;
 		case svc_bspdecal:
 			CL_ParseStaticDecal( msg );
 			break;
 		case svc_roomtype:
-			param1 = BF_ReadShort( msg );
+			param1 = MSG_ReadShort( msg );
 			Cvar_SetFloat( "room_type", param1 );
 			break;
 		case svc_chokecount:
-			i = BF_ReadByte( msg );
+			i = MSG_ReadByte( msg );
 			j = cls.netchan.incoming_acknowledged - 1;
 			for( ; i > 0 && j > cls.netchan.outgoing_sequence - CL_UPDATE_BACKUP; j-- )
 			{

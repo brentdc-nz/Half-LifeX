@@ -119,7 +119,7 @@ qboolean Sound_LoadMPG( const char *name, const byte *buffer, size_t filesize )
 			outsize = ( sound.size - bytesWrite );
 		else outsize = mpeg.outsize;
 
-		Q_memcpy( &sound.wav[bytesWrite], mpeg.out, outsize );
+		memcpy( &sound.wav[bytesWrite], mpeg.out, outsize );
 		bytesWrite += outsize;
 	}
 
@@ -262,7 +262,7 @@ long Stream_ReadMPG( stream_t *stream, long needBytes, void *buffer )
 
 		// copy raw sample to output buffer
 		data = (byte *)buffer + bytesWritten;
-		Q_memcpy( data, &mpg->out[stream->buffsize], outsize );
+		memcpy( data, &mpg->out[stream->buffsize], outsize );
 		bytesWritten += outsize;
 		mpg->outsize -= outsize;
 		stream->buffsize += outsize;

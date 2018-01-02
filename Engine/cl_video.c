@@ -59,14 +59,17 @@ qboolean SCR_NextMovie( void ) //MARTY FIXME WIP
 {
 /*	string	str;
 
-	S_StopAllSounds();
-	SCR_StopCinematic();
-
 	if( cls.movienum == -1 )
+	{
+		S_StopAllSounds();
+		SCR_StopCinematic();
 		return false; // don't play movies
+	}
 
 	if( !cls.movies[cls.movienum][0] || cls.movienum == MAX_MOVIES )
 	{
+		S_StopAllSounds();
+		SCR_StopCinematic();
 		cls.movienum = -1;
 		return false;
 	}
@@ -99,7 +102,7 @@ void SCR_CheckStartupVids( void ) //MARTY FIXME WIP
 /*	int	c = 0;
 	char	*afile, *pfile;
 	string	token;
-*/		
+*/
 	if( /*Sys_CheckParm( "-nointro" )*/1 || host.developer >= 2 ) //MARTY FIXME WIP
 	{
 		// don't run movies where we in developer-mode
@@ -148,7 +151,10 @@ void SCR_RunCinematic( void ) //MARTY FIXME WIP
 		return;
 
 	if( !AVI_IsActive( cin_state ))
+	{
+		SCR_NextMovie( );
 		return;
+	}
 
 	if( UI_IsVisible( ))
 	{
@@ -183,10 +189,10 @@ SCR_DrawCinematic
 Returns true if a cinematic is active, meaning the view rendering
 should be skipped
 ==================
-*//*
-qboolean SCR_DrawCinematic( void )  //MARTY FIXME WIP
+*/
+qboolean SCR_DrawCinematic( void ) //MARTY FIXME WIPs
 {
-	static int	last_frame = -1;
+/*	static int	last_frame = -1;
 	qboolean		redraw = false;
 	byte		*frame = NULL;
 
@@ -201,9 +207,9 @@ qboolean SCR_DrawCinematic( void )  //MARTY FIXME WIP
 	}
 
 	R_DrawStretchRaw( 0, 0, scr_width->integer, scr_height->integer, xres, yres, frame, redraw );
-
+*/
 	return true;
-}*/
+}
   
 /*
 ==================

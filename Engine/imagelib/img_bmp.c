@@ -89,11 +89,13 @@ qboolean Image_LoadBMP( const char *name, const byte *buffer, size_t filesize )
 	bhdr.colors = *(long *)buf_p;		buf_p += 4;
 	bhdr.importantColors = *(long *)buf_p;	buf_p += 4;
 
+#if 0 //MARTY FIXME ASAP! - Fix our bogus header been written in savegame bmp function below
 	// bogus file header check
 	if( bhdr.reserved0 != 0 ) return false;
+#endif
 	if( bhdr.planes != 1 ) return false;
 
-	if( Q_memcmp( bhdr.id, "BM", 2 ))
+	if( memcmp( bhdr.id, "BM", 2 ))
 	{
 		MsgDev( D_ERROR, "Image_LoadBMP: only Windows-style BMP files supported (%s)\n", name );
 		return false;
@@ -110,7 +112,7 @@ qboolean Image_LoadBMP( const char *name, const byte *buffer, size_t filesize )
 	{
 		// Sweet Half-Life issues. splash.bmp have bogus filesize
 		MsgDev( D_WARN, "Image_LoadBMP: %s have incorrect file size %i should be %i\n", name, filesize, bhdr.fileSize );
-          }
+	}
           
 	// bogus compression?  Only non-compressed supported.
 	if( bhdr.compression != BI_RGB ) 
@@ -148,7 +150,7 @@ qboolean Image_LoadBMP( const char *name, const byte *buffer, size_t filesize )
 		else cbPalBytes = bhdr.colors * sizeof( RGBQUAD );
 	}
 
-	Q_memcpy( palette, buf_p, cbPalBytes );
+	memcpy( palette, buf_p, cbPalBytes );
 
 	if( host.overview_loading && bhdr.bitsPerPixel == 8 )
 	{
@@ -331,6 +333,91 @@ qboolean Image_LoadBMP( const char *name, const byte *buffer, size_t filesize )
 	return true;
 }
 
+//MARTY -	Temp bmp save function until the Xash3D function is fixed.
+//			This is writing a bogus header, disabled the check above 
+//			for now as it still works..
+#if 1
+qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
+{
+	file_t		*pfile = NULL;
+	BITMAPFILEHEADER	bmfh;
+	BITMAPINFOHEADER	bmih;
+	dword		cbBmpBits;
+	dword		cbPalBytes = 0;
+	dword		biTrueWidth;
+	int		pixel_size;
+
+	if( FS_FileExists( name, false ) && !Image_CheckFlag( IL_ALLOW_OVERWRITE ))
+		return false; // already existed
+
+	// bogus parameter check
+	if( !pix->buffer )
+		return false;
+
+	// get image description
+	switch( pix->type )
+	{
+	case PF_INDEXED_24:
+	case PF_INDEXED_32:
+		pixel_size = 1;
+		break;
+	case PF_RGB_24:
+		pixel_size = 3;
+		break;
+	case PF_RGBA_32:
+		pixel_size = 4;
+		break;	
+	default:
+		MsgDev( D_ERROR, "Image_SaveBMP: unsupported image type %s\n", PFDesc[pix->type].name );
+		return false;
+	}
+
+	pfile = FS_Open( name, "wb", false );
+	if( !pfile ) return false;
+
+	// NOTE: align transparency column will sucessfully removed
+	// after create sprite or lump image, it's just standard requiriments 
+	biTrueWidth = ((pix->width + 3) & ~3);
+	cbBmpBits = biTrueWidth * pix->height * pixel_size;
+	if( pixel_size == 1 ) cbPalBytes = 256 * sizeof( RGBQUAD );
+
+	bmfh.bfType = MAKEWORD( 'B', 'M' );
+	bmfh.bfSize = sizeof( bmfh ) + sizeof( bmih ) + cbBmpBits + cbPalBytes;
+	bmfh.bfReserved1 = 0;
+	bmfh.bfReserved2 = 0;
+	bmfh.bfOffBits = sizeof( bmfh ) + sizeof( bmih ) + cbPalBytes;
+
+	// BMP Structures   
+	bmih.biSize = sizeof(bmih);
+	bmih.biWidth = biTrueWidth;
+	bmih.biHeight = pix->height;
+	bmih.biPlanes = 1;
+	bmih.biBitCount = pixel_size * 8;
+	bmih.biCompression = BI_RGB;
+	bmih.biSizeImage = cbBmpBits;
+	bmih.biXPelsPerMeter = 0;
+	bmih.biYPelsPerMeter = 0;
+	bmih.biClrUsed = ( pixel_size == 1 ) ? 256 : 0;
+	bmih.biClrImportant = 0;   
+
+	// BMP Compress
+	FS_Write( pfile, &bmfh, 8 );
+	FS_Write( pfile, &bmfh.bfReserved2, sizeof(bmfh.bfReserved2) ); 
+	FS_Write( pfile, &bmfh.bfOffBits, sizeof(bmfh.bfOffBits) ); 
+	FS_Write( pfile, &bmih, sizeof(bmih) );
+	FS_Write( pfile, pix->buffer, cbBmpBits );
+
+	FS_Close( pfile );
+
+	return true;
+}
+#endif
+
+//MARTY FIXME WIP - The below function is broken, using the above for now
+//					although it's writing a bogus header atm, disabled the 
+//					check above for now..
+
+#if 0
 qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
 {
 	file_t		*pfile = NULL;
@@ -433,7 +520,7 @@ qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
 #ifndef _XBOX //MARTY
 	if( host.write_to_clipboard )
 	{
-		Q_memcpy( clipbuf + cur_size, &bmih, sizeof( bmih ));
+		memcpy( clipbuf + cur_size, &bmih, sizeof( bmih ));
 		cur_size += sizeof( bmih );
 	}
 	else
@@ -468,7 +555,7 @@ qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
 #ifndef _XBOX //MARTY
 		if( host.write_to_clipboard )
 		{
-			Q_memcpy( clipbuf + cur_size, rgrgbPalette, cbPalBytes );
+			memcpy( clipbuf + cur_size, rgrgbPalette, cbPalBytes );
 			cur_size += cbPalBytes;
 		}
 		else
@@ -513,7 +600,7 @@ qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
 #ifndef _XBOX //MARTY
 	if( host.write_to_clipboard )
 	{
-		Q_memcpy( clipbuf + cur_size, pbBmpBits, cbBmpBits );
+		memcpy( clipbuf + cur_size, pbBmpBits, cbBmpBits );
 		cur_size += cbBmpBits;
 		Sys_SetClipboardData( clipbuf, total_size );
 		Z_Free( clipbuf );
@@ -532,3 +619,4 @@ qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
 
 	return true;
 }
+#endif

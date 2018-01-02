@@ -70,7 +70,8 @@ void CL_PlayCDTrack_f( void )
 	if( Cmd_Argc() < 2 ) return;
 	command = Cmd_Argv( 1 );
 
-	if( !enabled && Q_stricmp( command, "on" )) return; // CD-player is disabled
+	if( !enabled && Q_stricmp( command, "on" ))
+		return; // CD-player is disabled
 
 	if( !Q_stricmp( command, "play" ))
 	{
@@ -135,15 +136,14 @@ void CL_PlayCDTrack_f( void )
 CL_ScreenshotGetName
 ================== 
 */  
-void CL_ScreenshotGetName( int lastnum, char *filename )
+qboolean CL_ScreenshotGetName( int lastnum, char *filename )
 {
 	int	a, b, c, d;
 
 	if( lastnum < 0 || lastnum > 9999 )
 	{
-		// bound
-		Q_sprintf( filename, "scrshots\\%s\\!error.bmp", clgame.mapname );
-		return;
+		MsgDev( D_ERROR, "unable to write screenshot\n" );
+		return false;
 	}
 
 	a = lastnum / 1000;
@@ -155,6 +155,8 @@ void CL_ScreenshotGetName( int lastnum, char *filename )
 	d = lastnum;
 
 	Q_sprintf( filename, "scrshots\\%s\\shot%i%i%i%i.bmp", clgame.mapname, a, b, c, d );
+
+	return true;
 }
 
 /* 
@@ -216,7 +218,9 @@ void CL_ScreenShot_f( void )
 		// scan for a free filename
 		for( i = 0; i < 9999; i++ )
 		{
-			CL_ScreenshotGetName( i, checkname );
+			if( !CL_ScreenshotGetName( i, checkname ))
+				return;	// no namespace
+
 			if( !FS_FileExists( checkname, false ))
 				break;
 		}
@@ -329,7 +333,7 @@ void CL_LevelShot_f( void ) //MARTY FIXME WIP
 	// check for exist
 /*	Q_sprintf( cls.shotname, "levelshots/%s.bmp", clgame.mapname ); //MARTY FIXME WIP
 
-	// make sure what entity patch is never than bsp
+	// make sure what levelshot is newer than demo
 	ft1 = FS_FileTime( cl.worldmodel->name, false );
 	ft2 = FS_FileTime( cls.shotname, true );
 

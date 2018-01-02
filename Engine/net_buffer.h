@@ -45,80 +45,81 @@ typedef struct sizebuf_s
 	int		nDataBits;
 } sizebuf_t;
 
-#define BF_WriteUBitLong( bf, data, bits )	BF_WriteUBitLongExt( bf, data, bits, true );
-#define BF_StartReading			BF_StartWriting
-#define BF_GetNumBytesRead			BF_GetNumBytesWritten
-#define BF_GetRealBytesRead			BF_GetRealBytesWritten
-#define BF_GetNumBitsRead			BF_GetNumBitsWritten
-#define BF_ReadBitAngles			BF_ReadBitVec3Coord
-#define BF_ReadString( bf )			BF_ReadStringExt( bf, false )
-#define BF_ReadStringLine( bf )		BF_ReadStringExt( bf, true )
-#define BF_ReadAngle( bf )			(float)(BF_ReadChar( bf ) * ( 360.0f / 256.0f ))
-#define BF_Init( bf, name, data, bytes )	BF_InitExt( bf, name, data, bytes, -1 )
+#define MSG_StartReading			MSG_StartWriting
+#define MSG_GetNumBytesRead			MSG_GetNumBytesWritten
+#define MSG_GetRealBytesRead			MSG_GetRealBytesWritten
+#define MSG_GetNumBitsRead			MSG_GetNumBitsWritten
+#define MSG_ReadBitAngles			MSG_ReadBitVec3Coord
+#define MSG_ReadString( sb )			MSG_ReadStringExt( sb, false )
+#define MSG_ReadStringLine( sb )		MSG_ReadStringExt( sb, true )
+#define MSG_ReadAngle( sb )			(float)(MSG_ReadChar( sb ) * ( 360.0f / 256.0f ))
+#define MSG_Init( sb, name, data, bytes )	MSG_InitExt( sb, name, data, bytes, -1 )
 
 // common functions
-void BF_InitExt( sizebuf_t *bf, const char *pDebugName, void *pData, int nBytes, int nMaxBits );
-void BF_InitMasks( void );	// called once at startup engine
-void BF_SeekToBit( sizebuf_t *bf, int bitPos );
-void BF_SeekToByte( sizebuf_t *bf, int bytePos );
-void BF_ExciseBits( sizebuf_t *bf, int startbit, int bitstoremove );
-qboolean BF_CheckOverflow( sizebuf_t *bf );
-short BF_BigShort( short swap );
+void MSG_InitExt( sizebuf_t *sb, const char *pDebugName, void *pData, int nBytes, int nMaxBits );
+void MSG_InitMasks( void );	// called once at startup engine
+void MSG_SeekToBit( sizebuf_t *sb, int bitPos );
+void MSG_SeekToByte( sizebuf_t *sb, int bytePos );
+void MSG_ExciseBits( sizebuf_t *sb, int startbit, int bitstoremove );
+qboolean MSG_CheckOverflow( sizebuf_t *sb );
+short MSG_BigShort( short swap );
 
 // init writing
-void BF_StartWriting( sizebuf_t *bf, void *pData, int nBytes, int iStartBit, int nBits );
-void BF_Clear( sizebuf_t *bf );
+void MSG_StartWriting( sizebuf_t *sb, void *pData, int nBytes, int iStartBit, int nBits );
+void MSG_Clear( sizebuf_t *sb );
 
 // Bit-write functions
-void BF_WriteOneBit( sizebuf_t *bf, int nValue );
-void BF_WriteUBitLongExt( sizebuf_t *bf, uint curData, int numbits, qboolean bCheckRange );
-void BF_WriteSBitLong( sizebuf_t *bf, int data, int numbits );
-void BF_WriteBitLong( sizebuf_t *bf, uint data, int numbits, qboolean bSigned );
-qboolean BF_WriteBits( sizebuf_t *bf, const void *pData, int nBits );
-void BF_WriteBitAngle( sizebuf_t *bf, float fAngle, int numbits );
-void BF_WriteBitFloat( sizebuf_t *bf, float val );
+void MSG_WriteOneBit( sizebuf_t *sb, int nValue );
+void MSG_WriteUBitLong( sizebuf_t *sb, uint curData, int numbits );
+void MSG_WriteSBitLong( sizebuf_t *sb, int data, int numbits );
+void MSG_WriteBitLong( sizebuf_t *sb, uint data, int numbits, qboolean bSigned );
+qboolean MSG_WriteBits( sizebuf_t *sb, const void *pData, int nBits );
+void MSG_WriteBitAngle( sizebuf_t *sb, float fAngle, int numbits );
+void MSG_WriteBitFloat( sizebuf_t *sb, float val );
 
 // Byte-write functions
-void BF_WriteChar( sizebuf_t *bf, int val );
-void BF_WriteByte( sizebuf_t *bf, int val );
-void BF_WriteShort( sizebuf_t *bf, int val );
-void BF_WriteWord( sizebuf_t *bf, int val );
-void BF_WriteLong( sizebuf_t *bf, long val );
-void BF_WriteCoord( sizebuf_t *bf, float val );
-void BF_WriteFloat( sizebuf_t *bf, float val );
-void BF_WriteVec3Coord( sizebuf_t *bf, const float *fa );
-qboolean BF_WriteBytes( sizebuf_t *bf, const void *pBuf, int nBytes );	// same as MSG_WriteData
-qboolean BF_WriteString( sizebuf_t *bf, const char *pStr );		// returns false if it overflows the buffer.
+void MSG_WriteChar( sizebuf_t *sb, int val );
+void MSG_WriteByte( sizebuf_t *sb, int val );
+void MSG_WriteShort( sizebuf_t *sb, int val );
+void MSG_WriteWord( sizebuf_t *sb, int val );
+void MSG_WriteLong( sizebuf_t *sb, long val );
+void MSG_WriteDword( sizebuf_t *sb, dword val );
+void MSG_WriteCoord( sizebuf_t *sb, float val );
+void MSG_WriteFloat( sizebuf_t *sb, float val );
+void MSG_WriteVec3Coord( sizebuf_t *sb, const float *fa );
+qboolean MSG_WriteBytes( sizebuf_t *sb, const void *pBuf, int nBytes );	// same as MSG_WriteData
+qboolean MSG_WriteString( sizebuf_t *sb, const char *pStr );		// returns false if it overflows the buffer.
 
 // helper functions
-_inline int BF_GetNumBytesWritten( sizebuf_t *bf ) { return BitByte( bf->iCurBit ); }
-_inline int BF_GetRealBytesWritten( sizebuf_t *bf ) { return bf->iCurBit >> 3; }	// unpadded
-_inline int BF_GetNumBitsWritten( sizebuf_t *bf ) { return bf->iCurBit; }
-_inline int BF_GetMaxBits( sizebuf_t *bf ) { return bf->nDataBits; }
-_inline int BF_GetMaxBytes( sizebuf_t *bf ) { return bf->nDataBits >> 3; }
-_inline int BF_GetNumBitsLeft( sizebuf_t *bf ) { return bf->nDataBits - bf->iCurBit; }
-_inline int BF_GetNumBytesLeft( sizebuf_t *bf ) { return BF_GetNumBitsLeft( bf ) >> 3; }
-_inline byte *BF_GetData( sizebuf_t *bf ) { return bf->pData; }
+_inline int MSG_GetNumBytesWritten( sizebuf_t *sb ) { return BitByte( sb->iCurBit ); }
+_inline int MSG_GetRealBytesWritten( sizebuf_t *sb ) { return sb->iCurBit >> 3; }	// unpadded
+_inline int MSG_GetNumBitsWritten( sizebuf_t *sb ) { return sb->iCurBit; }
+_inline int MSG_GetMaxBits( sizebuf_t *sb ) { return sb->nDataBits; }
+_inline int MSG_GetMaxBytes( sizebuf_t *sb ) { return sb->nDataBits >> 3; }
+_inline int MSG_GetNumBitsLeft( sizebuf_t *sb ) { return sb->nDataBits - sb->iCurBit; }
+_inline int MSG_GetNumBytesLeft( sizebuf_t *sb ) { return MSG_GetNumBitsLeft( sb ) >> 3; }
+_inline byte *MSG_GetData( sizebuf_t *sb ) { return sb->pData; }
 
 // Bit-read functions
-int BF_ReadOneBit( sizebuf_t *bf );
-float BF_ReadBitFloat( sizebuf_t *bf );
-qboolean BF_ReadBits( sizebuf_t *bf, void *pOutData, int nBits );
-float BF_ReadBitAngle( sizebuf_t *bf, int numbits );
-int BF_ReadSBitLong( sizebuf_t *bf, int numbits );
-uint BF_ReadUBitLong( sizebuf_t *bf, int numbits );
-uint BF_ReadBitLong( sizebuf_t *bf, int numbits, qboolean bSigned );
+int MSG_ReadOneBit( sizebuf_t *sb );
+float MSG_ReadBitFloat( sizebuf_t *sb );
+qboolean MSG_ReadBits( sizebuf_t *sb, void *pOutData, int nBits );
+float MSG_ReadBitAngle( sizebuf_t *sb, int numbits );
+int MSG_ReadSBitLong( sizebuf_t *sb, int numbits );
+uint MSG_ReadUBitLong( sizebuf_t *sb, int numbits );
+uint MSG_ReadBitLong( sizebuf_t *sb, int numbits, qboolean bSigned );
 
 // Byte-read functions
-int BF_ReadChar( sizebuf_t *bf );
-int BF_ReadByte( sizebuf_t *bf );
-int BF_ReadShort( sizebuf_t *bf );
-int BF_ReadWord( sizebuf_t *bf );
-long BF_ReadLong( sizebuf_t *bf );
-float BF_ReadCoord( sizebuf_t *bf );
-float BF_ReadFloat( sizebuf_t *bf );
-void BF_ReadVec3Coord( sizebuf_t *bf, vec3_t fa );
-qboolean BF_ReadBytes( sizebuf_t *bf, void *pOut, int nBytes );
-char *BF_ReadStringExt( sizebuf_t *bf, qboolean bLine );
+int MSG_ReadChar( sizebuf_t *sb );
+int MSG_ReadByte( sizebuf_t *sb );
+int MSG_ReadShort( sizebuf_t *sb );
+int MSG_ReadWord( sizebuf_t *sb );
+long MSG_ReadLong( sizebuf_t *sb );
+dword MSG_ReadDword( sizebuf_t *sb );
+float MSG_ReadCoord( sizebuf_t *sb );
+float MSG_ReadFloat( sizebuf_t *sb );
+void MSG_ReadVec3Coord( sizebuf_t *sb, vec3_t fa );
+qboolean MSG_ReadBytes( sizebuf_t *sb, void *pOut, int nBytes );
+char *MSG_ReadStringExt( sizebuf_t *sb, qboolean bLine );
 					
 #endif//NET_BUFFER_H

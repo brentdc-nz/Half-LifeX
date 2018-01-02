@@ -73,9 +73,9 @@ infotable	dlumpinfo_t[dwadinfo_t->numlumps]
 
 typedef struct
 {
-	int		ident;		// should be IWAD, WAD2 or WAD3
+	int		ident;		// should be WAD3
 	int		numlumps;		// num files
-	int		infotableofs;
+	int		infotableofs;	// LUT offset
 } dwadinfo_t;
 
 typedef struct

@@ -104,7 +104,7 @@ ClearStudioCache
 */
 void Mod_ClearStudioCache( void )
 {
-	Q_memset( cache_studio, 0, sizeof( cache_studio ));
+	memset( cache_studio, 0, sizeof( cache_studio ));
 	cache_current_hull = cache_current_plane = 0;
 
 	cache_current = 0;
@@ -131,16 +131,16 @@ void Mod_AddToStudioCache( float frame, int sequence, vec3_t angles, vec3_t orig
 	VectorCopy( origin, pCache->origin );
 	VectorCopy( size, pCache->size );
 
-	Q_memcpy( pCache->controler, pcontroller, 4 );
-	Q_memcpy( pCache->blending, pblending, 2 );
+	memcpy( pCache->controler, pcontroller, 4 );
+	memcpy( pCache->blending, pblending, 2 );
 
 	pCache->model = model;
 	pCache->current_hull = cache_current_hull;
 	pCache->current_plane = cache_current_plane;
 
-	Q_memcpy( &cache_hull[cache_current_hull], hull, numhitboxes * sizeof( hull_t ));
-	Q_memcpy( &cache_planes[cache_current_plane], studio_planes, numhitboxes * sizeof( mplane_t ) * 6 );
-	Q_memcpy( &cache_hull_hitgroup[cache_current_hull], studio_hull_hitgroup, numhitboxes * sizeof( uint ));
+	memcpy( &cache_hull[cache_current_hull], hull, numhitboxes * sizeof( hull_t ));
+	memcpy( &cache_planes[cache_current_plane], studio_planes, numhitboxes * sizeof( mplane_t ) * 6 );
+	memcpy( &cache_hull_hitgroup[cache_current_hull], studio_hull_hitgroup, numhitboxes * sizeof( uint ));
 
 	cache_current_hull += numhitboxes;
 	cache_current_plane += numhitboxes * 6;
@@ -163,7 +163,7 @@ mstudiocache_t *Mod_CheckStudioCache( model_t *model, float frame, int sequence,
 
 		if( pCache->model == model && pCache->frame == frame && pCache->sequence == sequence &&
 		VectorCompare( angles, pCache->angles ) && VectorCompare( origin, pCache->origin ) && VectorCompare( size, pCache->size ) &&
-		!Q_memcmp( pCache->controler, pcontroller, 4 ) && !Q_memcmp( pCache->blending, pblending, 2 ))
+		!memcmp( pCache->controler, pcontroller, 4 ) && !memcmp( pCache->blending, pblending, 2 ))
 		{
 			return pCache;
 		}
@@ -208,8 +208,6 @@ hull_t *Mod_HullForStudio( model_t *model, float frame, int sequence, vec3_t ang
 	mstudiobbox_t	*phitbox;
 	int		i, j;
 
-	ASSERT( numhitboxes );
-
 	*numhitboxes = 0; // assume error
 
 	if( mod_studiocache->integer )
@@ -218,9 +216,9 @@ hull_t *Mod_HullForStudio( model_t *model, float frame, int sequence, vec3_t ang
 
 		if( bonecache != NULL )
 		{
-			Q_memcpy( studio_planes, &cache_planes[bonecache->current_plane], bonecache->numhitboxes * sizeof( mplane_t ) * 6 );
-			Q_memcpy( studio_hull_hitgroup, &cache_hull_hitgroup[bonecache->current_hull], bonecache->numhitboxes * sizeof( uint ));
-			Q_memcpy( studio_hull, &cache_hull[bonecache->current_hull], bonecache->numhitboxes * sizeof( hull_t ));
+			memcpy( studio_planes, &cache_planes[bonecache->current_plane], bonecache->numhitboxes * sizeof( mplane_t ) * 6 );
+			memcpy( studio_hull_hitgroup, &cache_hull_hitgroup[bonecache->current_hull], bonecache->numhitboxes * sizeof( uint ));
+			memcpy( studio_hull, &cache_hull[bonecache->current_hull], bonecache->numhitboxes * sizeof( hull_t ));
 
 			*numhitboxes = bonecache->numhitboxes;
 			return studio_hull;
@@ -229,8 +227,6 @@ hull_t *Mod_HullForStudio( model_t *model, float frame, int sequence, vec3_t ang
 
 	mod_studiohdr = Mod_Extradata( model );
 	if( !mod_studiohdr ) return NULL; // probably not a studiomodel
-
-	ASSERT( pBlendAPI != NULL );
 
 	VectorCopy( angles, angles2 );
 
@@ -623,7 +619,7 @@ static mstudioanim_t *Mod_StudioGetAnim( model_t *m_pSubModel, mstudioseqdesc_t 
 		MsgDev( D_INFO, "loading: %s\n", filepath );
 
 		paSequences[pseqdesc->seqgroup].data = Mem_Alloc( com_studiocache, filesize );
-		Q_memcpy( paSequences[pseqdesc->seqgroup].data, buf, filesize );
+		memcpy( paSequences[pseqdesc->seqgroup].data, buf, filesize );
 		Mem_Free( buf );
 	}
 	return (mstudioanim_t *)((byte *)paSequences[pseqdesc->seqgroup].data + pseqdesc->animindex);
@@ -745,8 +741,6 @@ void Mod_StudioGetAttachment( const edict_t *e, int iAttachment, float *origin, 
 	if( mod_studiohdr->numattachments <= 0 )
 		return;
 
-	ASSERT( pBlendAPI != NULL );
-
 	if( mod_studiohdr->numattachments > MAXSTUDIOATTACHMENTS )
 	{
 		mod_studiohdr->numattachments = MAXSTUDIOATTACHMENTS; // reduce it
@@ -793,8 +787,6 @@ void Mod_GetBonePosition( const edict_t *e, int iBone, float *origin, float *ang
 	mod = Mod_Handle( e->v.modelindex );
 	mod_studiohdr = (studiohdr_t *)Mod_Extradata( mod );
 	if( !mod_studiohdr ) return;
-
-	ASSERT( pBlendAPI != NULL );
 
 	pBlendAPI->SV_StudioSetupBones( mod, e->v.frame, e->v.sequence, e->v.angles, e->v.origin,
 		e->v.controller, e->v.blending, iBone, e );
@@ -988,7 +980,7 @@ void Mod_InitStudioAPI( void )
 	pBlendIface = (STUDIOAPI)Com_GetProcAddress( svgame.hInstance, "Server_GetBlendingInterface" );
 	if( pBlendIface && pBlendIface( SV_BLENDING_INTERFACE_VERSION, &pBlendAPI, &gStudioAPI, &studio_transform, &studio_bones ))
 	{
-		MsgDev( D_AICONSOLE, "SV_LoadProgs: ^2initailized Server Blending interface ^7ver. %i\n", SV_BLENDING_INTERFACE_VERSION );
+		MsgDev( D_REPORT, "SV_LoadProgs: ^2initailized Server Blending interface ^7ver. %i\n", SV_BLENDING_INTERFACE_VERSION );
 		return;
 	}
 

@@ -35,7 +35,7 @@ float S_SimpleSpline( float value )
 	float	valueSquared = value * value;
 
 	// nice little ease-in, ease-out spline-like curve
-	return (3 * valueSquared - 2 * valueSquared * value);
+	return (3.0f * valueSquared - 2.0f * valueSquared * value);
 }
 
 //-----------------------------------------------------------------------------

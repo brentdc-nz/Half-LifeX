@@ -30,6 +30,7 @@ GNU General Public License for more details.
 #include "vgui_draw.h"
 #include "sound.h"		// SND_STOP_LOOPING
 
+#define MAX_LINELENGTH	80
 #define MAX_TEXTCHANNELS	8		// must be power of two (GoldSrc uses 4 channels)
 
 #ifdef _HARDLINKED //MARTY
@@ -627,7 +628,7 @@ void CL_DrawCenterPrint( void )
 	char	*pText;
 	int	i, j, x, y;
 	int	width, lineLength;
-	byte	*colorDefault, line[80];
+	byte	*colorDefault, line[MAX_LINELENGTH];
 	int	charWidth, charHeight;
 
 	if( !clgame.centerPrint.time )
@@ -697,7 +698,7 @@ void CL_DrawScreenFade( void )
 	// all done?
 	if(( cl.time > sf->fadeReset ) && ( cl.time > sf->fadeEnd ))
 	{
-		Q_memset( &clgame.fade, 0, sizeof( clgame.fade ));
+		memset( &clgame.fade, 0, sizeof( clgame.fade ));
 		return;
 	}
 
@@ -772,7 +773,7 @@ void CL_ParseTextMessage( sizebuf_t *msg )
 	int			channel;
 
 	// read channel ( 0 - auto)
-	channel = BF_ReadByte( msg );
+	channel = MSG_ReadByte( msg );
 
 	if( channel <= 0 || channel > ( MAX_TEXTCHANNELS - 1 ))
 	{
@@ -785,27 +786,27 @@ void CL_ParseTextMessage( sizebuf_t *msg )
 	// grab message channel
 	text = &cl_textmessage[channel];
 
-	text->x = (float)(BF_ReadShort( msg ) / 8192.0f);
-	text->y = (float)(BF_ReadShort( msg ) / 8192.0f);
-	text->effect = BF_ReadByte( msg );
-	text->r1 = BF_ReadByte( msg );
-	text->g1 = BF_ReadByte( msg );
-	text->b1 = BF_ReadByte( msg );
-	text->a1 = BF_ReadByte( msg );
-	text->r2 = BF_ReadByte( msg );
-	text->g2 = BF_ReadByte( msg );
-	text->b2 = BF_ReadByte( msg );
-	text->a2 = BF_ReadByte( msg );
-	text->fadein = (float)(BF_ReadShort( msg ) / 256.0f );
-	text->fadeout = (float)(BF_ReadShort( msg ) / 256.0f );
-	text->holdtime = (float)(BF_ReadShort( msg ) / 256.0f );
+	text->x = (float)(MSG_ReadShort( msg ) / 8192.0f);
+	text->y = (float)(MSG_ReadShort( msg ) / 8192.0f);
+	text->effect = MSG_ReadByte( msg );
+	text->r1 = MSG_ReadByte( msg );
+	text->g1 = MSG_ReadByte( msg );
+	text->b1 = MSG_ReadByte( msg );
+	text->a1 = MSG_ReadByte( msg );
+	text->r2 = MSG_ReadByte( msg );
+	text->g2 = MSG_ReadByte( msg );
+	text->b2 = MSG_ReadByte( msg );
+	text->a2 = MSG_ReadByte( msg );
+	text->fadein = (float)(MSG_ReadShort( msg ) / 256.0f );
+	text->fadeout = (float)(MSG_ReadShort( msg ) / 256.0f );
+	text->holdtime = (float)(MSG_ReadShort( msg ) / 256.0f );
 
 	if( text->effect == 2 )
-		text->fxtime = (float)(BF_ReadShort( msg ) / 256.0f );
+		text->fxtime = (float)(MSG_ReadShort( msg ) / 256.0f );
 	else text->fxtime = 0.0f;
 
 	// to prevent grab too long messages
-	Q_strncpy( (char *)text->pMessage, BF_ReadString( msg ), 512 ); 		
+	Q_strncpy( (char *)text->pMessage, MSG_ReadString( msg ), 512 ); 		
 
 	// NOTE: a "HudText" message contain only 'string' with message name, so we
 	// don't needs to use MSG_ routines here, just directly write msgname into netbuffer
@@ -1528,7 +1529,7 @@ static int pfnGetScreenInfo( SCREENINFO *pscrinfo )
 		clgame.scrInfo.iSize = pscrinfo->iSize;
 
 	// copy screeninfo out
-	Q_memcpy( pscrinfo, &clgame.scrInfo, clgame.scrInfo.iSize );
+	memcpy( pscrinfo, &clgame.scrInfo, clgame.scrInfo.iSize );
 
 	return 1;
 }
@@ -1637,7 +1638,7 @@ static void pfnGetPlayerInfo( int ent_num, hud_player_info_t *pinfo )
 
 	if( ent_num >= cl.maxclients || ent_num < 0 || !cl.players[ent_num].name[0] )
 	{
-		Q_memset( pinfo, 0, sizeof( *pinfo ));
+		memset( pinfo, 0, sizeof( *pinfo ));
 		return;
 	}
 
@@ -1994,7 +1995,7 @@ void pfnCalcShake( void )
 
 	if(( cl.time > clgame.shake.time ) || clgame.shake.amplitude <= 0 || clgame.shake.frequency <= 0 )
 	{
-		Q_memset( &clgame.shake, 0, sizeof( clgame.shake ));
+		memset( &clgame.shake, 0, sizeof( clgame.shake ));
 		return;
 	}
 
@@ -2154,7 +2155,7 @@ static void pfnHookEvent( const char *filename, pfnEventHook pfn )
 
 		if( !Q_stricmp( name, ev->name ) && ev->func != NULL )
 		{
-			MsgDev( D_WARN, "CL_HookEvent: %s already hooked!\n" );
+			MsgDev( D_WARN, "CL_HookEvent: %s already hooked!\n", name );
 			return;
 		}
 	}
@@ -2737,8 +2738,8 @@ int pfnServerCmdUnreliable( char *szCmdString )
 	if( !szCmdString || !szCmdString[0] )
 		return 0;
 
-	BF_WriteByte( &cls.datagram, clc_stringcmd );
-	BF_WriteString( &cls.datagram, szCmdString );
+	MSG_WriteByte( &cls.datagram, clc_stringcmd );
+	MSG_WriteString( &cls.datagram, szCmdString );
 
 	return 1;
 }
@@ -3406,7 +3407,8 @@ TriForParams
 */
 void TriFogParams( float flDensity, int iFogSkybox )
 {
-	// TODO: implement
+	RI.fogDensity = flDensity;
+	RI.fogCustom = iFogSkybox;
 }
 
 /*
@@ -3489,7 +3491,7 @@ void NetAPI_Status( net_status_t *status )
 	status->connected = NET_IsLocalAddress( cls.netchan.remote_address ) ? false : true;
 	status->connection_time = host.realtime - cls.netchan.connect_time;
 	status->remote_address = cls.netchan.remote_address;
-	status->packet_loss = cls.packet_loss / 100; // percent
+	status->packet_loss = cls.packet_loss / 100.0; // percent
 	status->latency = cl.frame.latency;
 	status->local_address = net_local;
 	status->rate = cls.netchan.rate;
@@ -3525,7 +3527,7 @@ void NetAPI_SendRequest( int context, int request, int flags, double timeout, ne
 	{
 		double	max_timeout = 0;
 
-		// no free requests? use older
+		// no free requests? use oldest
 		for( i = 0, nr = NULL; i < MAX_REQUESTS; i++ )
 		{
 			if(( host.realtime - clgame.net_requests[i].timesend ) > max_timeout )
@@ -3539,7 +3541,7 @@ void NetAPI_SendRequest( int context, int request, int flags, double timeout, ne
 	ASSERT( nr != NULL );
 
 	// clear slot
-	Q_memset( nr, 0, sizeof( *nr ));
+	memset( nr, 0, sizeof( *nr ));
 
 	// create a new request
 	nr->timesend = host.realtime;
@@ -3556,7 +3558,7 @@ void NetAPI_SendRequest( int context, int request, int flags, double timeout, ne
 	}
 	else
 	{
-		// send request over the net
+		// local servers request
 		Q_snprintf( req, sizeof( req ), "netinfo %i %i %i", PROTOCOL_VERSION, context, request );
 		Netchan_OutOfBandPrint( NS_CLIENT, nr->resp.remote_address, req );
 	}
@@ -3578,7 +3580,7 @@ void NetAPI_CancelRequest( int context )
 		if( clgame.net_requests[i].resp.context == context )
 		{
 			MsgDev( D_NOTE, "Request with context %i cancelled\n", context );
-			Q_memset( &clgame.net_requests[i], 0, sizeof( net_request_t ));
+			memset( &clgame.net_requests[i], 0, sizeof( net_request_t ));
 			break;
 		}
 	}
@@ -3592,7 +3594,7 @@ NetAPI_CancelAllRequests
 */
 void NetAPI_CancelAllRequests( void )
 {
-	Q_memset( clgame.net_requests, 0, sizeof( clgame.net_requests ));
+	memset( clgame.net_requests, 0, sizeof( clgame.net_requests ));
 }
 
 /*
@@ -4044,7 +4046,7 @@ void CL_UnloadProgs( void )
 	Com_FreeLibrary( clgame.hInstance );
 	Mem_FreePool( &cls.mempool );
 	Mem_FreePool( &clgame.mempool );
-	Q_memset( &clgame, 0, sizeof( clgame ));
+	memset( &clgame, 0, sizeof( clgame ));
 
 	Cvar_Unlink();
 	Cmd_Unlink( CMD_CLIENTDLL );
@@ -4170,7 +4172,7 @@ qboolean CL_LoadProgs( const char *name )
 		return false;
 	}
 
-	Cvar_Get( "cl_nopred", "1", CVAR_ARCHIVE|CVAR_USERINFO, "disable client movement predicting" );
+	Cvar_Get( "cl_nopred", "1", CVAR_ARCHIVE, "disable client movement predicting" );
 	Cvar_Get( "cl_lw", "0", CVAR_ARCHIVE|CVAR_USERINFO, "enable client weapon predicting" );
 	Cvar_Get( "cl_lc", "0", CVAR_ARCHIVE|CVAR_USERINFO, "enable lag compensation" );
 	Cvar_FullSet( "host_clientloaded", "1", CVAR_INIT );
@@ -4183,13 +4185,12 @@ qboolean CL_LoadProgs( const char *name )
 	CL_InitParticles ();
 	CL_InitViewBeams ();
 	CL_InitTempEnts ();
-	CL_InitEdicts ();	// initailize local player and world
-	CL_InitClientMove(); // initialize pm_shared
 
 	if( !R_InitRenderAPI())	// Xash3D extension
-	{
 		MsgDev( D_WARN, "CL_LoadProgs: couldn't get render API\n" );
-	}
+
+	CL_InitEdicts ();		// initailize local player and world
+	CL_InitClientMove();	// initialize pm_shared
 
 	// initialize game
 	clgame.dllFuncs.pfnInit();

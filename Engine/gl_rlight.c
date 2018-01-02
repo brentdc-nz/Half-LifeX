@@ -29,11 +29,11 @@ DYNAMIC LIGHTS
 */
 /*
 ==================
-R_AnimateLight
+CL_RunLightStyles
 
 ==================
 */
-void R_AnimateLight( void )
+void CL_RunLightStyles( void )
 {
 	int		i, k, flight, clight;
 	float		l, c, lerpfrac, backlerp;
@@ -59,8 +59,8 @@ void R_AnimateLight( void )
 		if( !RI.refdef.paused && RI.refdef.frametime <= 0.1f )
 			ls->time += RI.refdef.frametime; // evaluate local time
 
-		flight = (int)floor( ls->time * 10 );
-		clight = (int)ceil( ls->time * 10 );
+		flight = (int)Q_floor( ls->time * 10 );
+		clight = (int)Q_ceil( ls->time * 10 );
 		lerpfrac = ( ls->time * 10 ) - flight;
 		backlerp = 1.0f - lerpfrac;
 

@@ -38,7 +38,7 @@ char		modelname[64];		// short model name (without path and ext)
 convar_t		*mod_studiocache;
 convar_t		*mod_allow_materials;
 static wadlist_t	wadlist;
-	
+
 model_t		*loadmodel;
 model_t		*worldmodel;
 
@@ -196,8 +196,8 @@ Mod_SetupHulls
 */
 void Mod_SetupHulls( vec3_t mins[MAX_MAP_HULLS], vec3_t maxs[MAX_MAP_HULLS] )
 {
-	Q_memcpy( mins, cm_hullmins, sizeof( cm_hullmins ));
-	Q_memcpy( maxs, cm_hullmaxs, sizeof( cm_hullmaxs ));
+	memcpy( mins, cm_hullmins, sizeof( cm_hullmins ));
+	memcpy( maxs, cm_hullmaxs, sizeof( cm_hullmaxs ));
 }
 
 /*
@@ -362,7 +362,7 @@ LEAF LISTING
 static void Mod_BoxLeafnums_r( leaflist_t *ll, mnode_t *node )
 {
 	mplane_t	*plane;
-	int	s;
+	int	sides;
 
 	while( 1 )
 	{
@@ -385,13 +385,13 @@ static void Mod_BoxLeafnums_r( leaflist_t *ll, mnode_t *node )
 		}
 	
 		plane = node->plane;
-		s = BOX_ON_PLANE_SIDE( ll->mins, ll->maxs, plane );
+		sides = BOX_ON_PLANE_SIDE( ll->mins, ll->maxs, plane );
 
-		if( s == 1 )
+		if( sides == 1 )
 		{
 			node = node->children[0];
 		}
-		else if( s == 2 )
+		else if( sides == 2 )
 		{
 			node = node->children[1];
 		}
@@ -419,11 +419,12 @@ int Mod_BoxLeafnums( const vec3_t mins, const vec3_t maxs, short *list, int list
 
 	VectorCopy( mins, ll.mins );
 	VectorCopy( maxs, ll.maxs );
-	ll.count = 0;
+
 	ll.maxcount = listsize;
-	ll.list = list;
-	ll.topnode = -1;
 	ll.overflowed = false;
+	ll.topnode = -1;
+	ll.list = list;
+	ll.count = 0;
 
 	Mod_BoxLeafnums_r( &ll, worldmodel->nodes );
 
@@ -615,7 +616,7 @@ static void Mod_LoadSubmodels( const dlump_t *l )
 	{
 		for( j = 0; j < 3; j++ )
 		{
-			// spread the mins / maxs by a pixel
+			// spread the mins / maxs by a unit
 			out->mins[j] = in->mins[j] - 1.0f;
 			out->maxs[j] = in->maxs[j] + 1.0f;
 			out->origin[j] = in->origin[j];
@@ -637,7 +638,7 @@ static void Mod_LoadSubmodels( const dlump_t *l )
 			VectorAverage( out->mins, out->maxs, out->origin );
 		}
 
-		world.max_surfaces = max( world.max_surfaces, out->numfaces ); 
+		world.max_surfaces = Q_max( world.max_surfaces, out->numfaces ); 
 	}
 
 	if( world.loading )
@@ -937,11 +938,11 @@ load_wad_textures:
 			continue;
 
 		if( tx->anim_next )
-			continue;	// allready sequenced
+			continue;	// already sequenced
 
 		// find the number of frames in the animation
-		Q_memset( anims, 0, sizeof( anims ));
-		Q_memset( altanims, 0, sizeof( altanims ));
+		memset( anims, 0, sizeof( anims ));
+		memset( altanims, 0, sizeof( altanims ));
 
 		max = tx->name[1];
 		altmax = 0;
@@ -960,7 +961,7 @@ load_wad_textures:
 			altanims[altmax] = tx;
 			altmax++;
 		}
-		else Host_Error( "Mod_LoadTextures: bad animating texture %s\n", tx->name );
+		else MsgDev( D_ERROR, "Mod_LoadTextures: bad animating texture %s\n", tx->name );
 
 		for( j = i + 1; j < loadmodel->numtextures; j++ )
 		{
@@ -972,11 +973,12 @@ load_wad_textures:
 				continue;
 
 			num = tx2->name[1];
+
 			if( num >= '0' && num <= '9' )
 			{
 				num -= '0';
 				anims[num] = tx2;
-				if (num+1 > max)
+				if( num + 1 > max )
 					max = num + 1;
 			}
 			else if( num >= 'a' && num <= 'j' )
@@ -986,7 +988,7 @@ load_wad_textures:
 				if( num + 1 > altmax )
 					altmax = num + 1;
 			}
-			else Host_Error( "Mod_LoadTextures: bad animating texture %s\n", tx->name );
+			else MsgDev( D_ERROR, "Mod_LoadTextures: bad animating texture %s\n", tx->name );
 		}
 
 		// link them all together
@@ -1022,10 +1024,10 @@ load_wad_textures:
 			continue;
 
 		if( tx->anim_next )
-			continue;	// allready sequenced
+			continue;	// already sequenced
 
 		// find the number of frames in the sequence
-		Q_memset( anims, 0, sizeof( anims ));
+		memset( anims, 0, sizeof( anims ));
 
 		max = tx->name[1];
 
@@ -1035,7 +1037,7 @@ load_wad_textures:
 			anims[max] = tx;
 			max++;
 		}
-		else Host_Error( "Mod_LoadTextures: bad detail texture %s\n", tx->name );
+		else MsgDev( D_ERROR, "Mod_LoadTextures: bad detail texture %s\n", tx->name );
 
 		for( j = i + 1; j < loadmodel->numtextures; j++ )
 		{
@@ -1047,14 +1049,15 @@ load_wad_textures:
 				continue;
 
 			num = tx2->name[1];
+
 			if( num >= '0' && num <= '9' )
 			{
 				num -= '0';
 				anims[num] = tx2;
-				if( num+1 > max )
+				if( num + 1 > max )
 					max = num + 1;
 			}
-			else Host_Error( "Mod_LoadTextures: bad detail texture %s\n", tx->name );
+			else MsgDev( D_ERROR, "Mod_LoadTextures: bad detail texture %s\n", tx->name );
 		}
 
 		// link them all together
@@ -1162,7 +1165,7 @@ static void Mod_LoadLighting( const dlump_t *l )
 	case XTBSP_VERSION:
 		// load colored lighting
 		loadmodel->lightdata = Mem_Alloc( loadmodel->mempool, l->filelen );
-		Q_memcpy( loadmodel->lightdata, in, l->filelen );
+		memcpy( loadmodel->lightdata, in, l->filelen );
 		break;
 	}
 }
@@ -1213,7 +1216,7 @@ static void Mod_CalcSurfaceExtents( msurface_t *surf )
 		surf->texturemins[i] = bmins[i] * LM_SAMPLE_SIZE;
 		surf->extents[i] = (bmaxs[i] - bmins[i]) * LM_SAMPLE_SIZE;
 
-		if(!( tex->flags & TEX_SPECIAL ) && surf->extents[i] > 4096 )
+		if( !FBitSet( tex->flags, TEX_SPECIAL ) && surf->extents[i] > 4096 )
 			MsgDev( D_ERROR, "Bad surface extents %i\n", surf->extents[i] );
 	}
 }
@@ -1337,7 +1340,7 @@ static void Mod_BuildPolygon( mextrasurf_t *info, msurface_t *surf, int numVerts
 		out->lmcoord[1] = t;
 
 		// clear colors (it can be used for vertex lighting)
-		Q_memset( out->color, 0xFF, sizeof( out->color ));
+		memset( out->color, 0xFF, sizeof( out->color ));
 	}
 }
 
@@ -1513,7 +1516,7 @@ static void Mod_SubdividePolygon( mextrasurf_t *info, msurface_t *surf, int numV
 		totalLM[1] += t;
 
 		// clear colors (it can be used for vertex lighting)
-		Q_memset( out->color, 0xFF, sizeof( out->color ));
+		memset( out->color, 0xFF, sizeof( out->color ));
 	}
 
 	// vertex
@@ -1537,7 +1540,7 @@ static void Mod_SubdividePolygon( mextrasurf_t *info, msurface_t *surf, int numV
 	mesh->verts[0].lmcoord[1] = totalLM[1] * oneDivVerts;
 
 	// copy first vertex to last
-	Q_memcpy( &mesh->verts[i+1], &mesh->verts[1], sizeof( glvert_t ));
+	memcpy( &mesh->verts[i+1], &mesh->verts[1], sizeof( glvert_t ));
 
 	mesh->next = info->mesh;
 	mesh->surf = surf;	// NOTE: meshchains can be linked with one surface
@@ -1609,7 +1612,7 @@ static void Mod_ConvertSurface( mextrasurf_t *info, msurface_t *surf )
 			outElems[i*3+2] = numVerts + i + 2;
 		}
 
-		Q_memcpy( outVerts, poly->verts, sizeof( glvert_t ) * poly->numVerts );
+		memcpy( outVerts, poly->verts, sizeof( glvert_t ) * poly->numVerts );
 
 		numElems += (poly->numVerts - 2) * 3;
 		numVerts += poly->numVerts;
@@ -1926,7 +1929,7 @@ static void Mod_LoadSurfEdges( const dlump_t *l )
 	loadmodel->surfedges = Mem_Alloc( loadmodel->mempool, count * sizeof( dsurfedge_t ));
 	loadmodel->numsurfedges = count;
 
-	Q_memcpy( loadmodel->surfedges, in, count * sizeof( dsurfedge_t ));
+	memcpy( loadmodel->surfedges, in, count * sizeof( dsurfedge_t ));
 }
 
 /*
@@ -2102,6 +2105,9 @@ static void Mod_LoadPlanes( const dlump_t *l )
 				out->signbits |= 1<<j;
 		}
 
+		if( VectorIsNull( out->normal ))
+			Host_Error( "Mod_LoadPlanes: bad normal for plane #%i\n", i );
+
 		out->dist = in->dist;
 		out->type = in->type;
 	}
@@ -2126,7 +2132,7 @@ static void Mod_LoadVisibility( const dlump_t *l )
 	}
 
 	loadmodel->visdata = Mem_Alloc( loadmodel->mempool, l->filelen );
-	Q_memcpy( loadmodel->visdata, (void *)(mod_base + l->fileofs), l->filelen );
+	memcpy( loadmodel->visdata, (void *)(mod_base + l->fileofs), l->filelen );
 	world.visdatasize = l->filelen; // save it for PHS allocation
 }
 
@@ -2143,7 +2149,7 @@ static void Mod_LoadEntities( const dlump_t *l )
 
 	// make sure what we really has terminator
 	loadmodel->entities = Mem_Alloc( loadmodel->mempool, l->filelen + 1 );
-	Q_memcpy( loadmodel->entities, mod_base + l->fileofs, l->filelen );
+	memcpy( loadmodel->entities, mod_base + l->fileofs, l->filelen );
 	if( !world.loading ) return;
 
 	world.entdatasize = l->filelen;
@@ -2482,7 +2488,7 @@ void Mod_CalcPHS( void )
 	// uncompress pvs first
 	for( i = 0; i < num; i++, scan += rowbytes )
 	{
-		Q_memcpy( scan, Mod_LeafPVS( worldmodel->leafs + i, worldmodel ), rowbytes );
+		memcpy( scan, Mod_LeafPVS( worldmodel->leafs + i, worldmodel ), rowbytes );
 		if( i == 0 ) continue;
 
 		for( j = 0; j < num; j++ )
@@ -2499,7 +2505,7 @@ void Mod_CalcPHS( void )
 
 	for( i = 0; i < num; i++, dest += rowwords, scan += rowbytes )
 	{
-		Q_memcpy( dest, scan, rowbytes );
+		memcpy( dest, scan, rowbytes );
 
 		for( j = 0; j < rowbytes; j++ )
 		{
@@ -2531,7 +2537,7 @@ void Mod_CalcPHS( void )
 			Host_Error( "CalcPHS: vismap expansion overflow %s > %s\n", Q_memprint( total_size ), Q_memprint( phsdatasize ));
 		}
 
-		Q_memcpy( vismap_p, comp, rowsize );
+		memcpy( vismap_p, comp, rowsize );
 		vismap_p += rowsize; // move pointer
 
 		if( i == 0 ) continue;
@@ -2593,7 +2599,7 @@ void Mod_UnloadBrushModel( model_t *mod )
 		Mem_FreePool( &mod->mempool );
 	}
 
-	Q_memset( mod, 0, sizeof( *mod ));
+	memset( mod, 0, sizeof( *mod ));
 }
 
 /*
@@ -2603,11 +2609,11 @@ Mod_LoadBrushModel
 */
 static void Mod_LoadBrushModel( model_t *mod, const void *buffer, qboolean *loaded )
 {
-	int	i, j;
-	int	sample_size;
-	char	*ents;
-	dheader_t	*header;
-	dmodel_t 	*bm;
+	int		i, j;
+	int		sample_size;
+	char		*ents;
+	dheader_t		*header;
+	dmodel_t		*bm;
 
 	if( loaded ) *loaded = false;	
 	header = (dheader_t *)buffer;
@@ -2668,6 +2674,7 @@ static void Mod_LoadBrushModel( model_t *mod, const void *buffer, qboolean *load
 	if( world.version <= 29 && world.mapversion == 220 && (header->lumps[LUMP_LIGHTING].filelen % 3) == 0 )
 		world.version = bmodel_version = HLBSP_VERSION;
 
+	Mod_LoadSubmodels( &header->lumps[LUMP_MODELS] );
 	Mod_LoadVertexes( &header->lumps[LUMP_VERTEXES] );
 	Mod_LoadEdges( &header->lumps[LUMP_EDGES] );
 	Mod_LoadSurfEdges( &header->lumps[LUMP_SURFEDGES] );
@@ -2683,10 +2690,9 @@ static void Mod_LoadBrushModel( model_t *mod, const void *buffer, qboolean *load
 	if( bmodel_version == XTBSP_VERSION )
 		Mod_LoadClipnodes31( &header->lumps[LUMP_CLIPNODES], &header->lumps[LUMP_CLIPNODES2], &header->lumps[LUMP_CLIPNODES3] );
 	else Mod_LoadClipnodes( &header->lumps[LUMP_CLIPNODES] );
-	Mod_LoadSubmodels( &header->lumps[LUMP_MODELS] );
 
 	Mod_MakeHull0 ();
-	
+
 	loadmodel->numframes = 2;	// regular and alternate animation
 	ents = loadmodel->entities;
 	
@@ -2715,12 +2721,14 @@ static void Mod_LoadBrushModel( model_t *mod, const void *buffer, qboolean *load
 		if( i != 0 )
 		{
 			// HACKHACK: c2a1 issues
-			if( !bm->origin[0] && !bm->origin[1] ) mod->flags |= MODEL_HAS_ORIGIN;
+			if( !bm->origin[0] && !bm->origin[1] )
+				SetBits( mod->flags, MODEL_HAS_ORIGIN );
 
 			Mod_FindModelOrigin( ents, va( "*%i", i ), bm->origin );
 
 			// flag 2 is indicated model with origin brush!
-			if( !VectorIsNull( bm->origin )) mod->flags |= MODEL_HAS_ORIGIN;
+			if( !VectorIsNull( bm->origin ))
+				SetBits( mod->flags, MODEL_HAS_ORIGIN );
 		}
 
 		for( j = 0; i != 0 && j < mod->nummodelsurfaces; j++ )
@@ -2739,7 +2747,7 @@ static void Mod_LoadBrushModel( model_t *mod, const void *buffer, qboolean *load
 				if( surf->plane->type == PLANE_Z )
 				{
 					// kill bottom plane too
-					if( info->mins[2] == bm->mins[2] + 1 )
+					if( info->mins[2] == bm->mins[2] + 1.0f )
 						surf->flags |= SURF_WATERCSG;
 				}
 				else
@@ -2849,7 +2857,7 @@ model_t *Mod_LoadModel( model_t *mod, qboolean crash )
 
 	if( !buf )
 	{
-		Q_memset( mod, 0, sizeof( model_t ));
+		memset( mod, 0, sizeof( model_t ));
 
 		if( crash ) Host_Error( "Mod_ForName: %s couldn't load\n", tempname );
 		else MsgDev( D_ERROR, "Mod_ForName: %s couldn't load\n", tempname );
@@ -2933,8 +2941,7 @@ void Mod_LoadWorld( const char *name, uint *checksum, qboolean multiplayer )
 	int	i;
 
 	// now replacement table is invalidate
-	Q_memset( com_models, 0, sizeof( com_models ));
-
+	memset( com_models, 0, sizeof( com_models ));
 	com_models[1] = cm_models; // make link to world
 
 	// update the lightmap blocksize
@@ -2955,7 +2962,6 @@ void Mod_LoadWorld( const char *name, uint *checksum, qboolean multiplayer )
 	}
 
 	// clear all studio submodels on restart
-	// HACKHACK: throw all external BSP-models to refresh their lightmaps properly
 	for( i = 1; i < cm_nummodels; i++ )
 	{
 		if( cm_models[i].type == mod_studio )
@@ -3116,7 +3122,7 @@ void Mod_LoadCacheFile( const char *filename, cache_user_t *cu )
 	buf = FS_LoadFile( name, &size, false );
 	if( !buf || !size ) Host_Error( "LoadCacheFile: ^1can't load %s^7\n", filename );
 	cu->data = Mem_Alloc( com_studiocache, size );
-	Q_memcpy( cu->data, buf, size );
+	memcpy( cu->data, buf, size );
 	Mem_Free( buf );
 }
 

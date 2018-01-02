@@ -39,6 +39,9 @@ extern "C" {
 #define MAX_MODS		512	// environment games that engine can keep visible
 #define EXPORT		__declspec( dllexport )
 #define BIT( n )		(1<<( n ))
+#define SetBits( iBitVector, bits )	((iBitVector) = (iBitVector) | (bits))
+#define ClearBits( iBitVector, bits )	((iBitVector) = (iBitVector) & ~(bits))
+#define FBitSet( iBitVector, bit )	((iBitVector) & (bit))
 
 #ifndef __cplusplus
 #define NULL		((void *)0)
@@ -49,7 +52,7 @@ extern "C" {
 #define AngleVectors     _HL_XBE_AngleVectors
 #define VectorAngles     _HL_XBE_VectorAngles
 #define vec3_origin      _HL_XBE_vec3_origin
-#endif // _HARDLINKED
+#endif //_HARDLINKED
 
 // color strings
 #define IsColorString( p )	( p && *( p ) == '^' && *(( p ) + 1) && *(( p ) + 1) >= '0' && *(( p ) + 1 ) <= '9' )
@@ -77,7 +80,7 @@ enum
 	D_INFO = 1,	// "-dev 1", shows various system messages
 	D_WARN,		// "-dev 2", shows not critical system warnings
 	D_ERROR,		// "-dev 3", shows critical warnings 
-	D_AICONSOLE,	// "-dev 4", special case for game aiconsole
+	D_REPORT,		// "-dev 4", special case for game reports
 	D_NOTE		// "-dev 5", show system notifications for engine developers
 };
 
@@ -131,7 +134,7 @@ typedef enum
 
 #ifdef _DEBUG
 void DBG_AssertFunction( qboolean fExpr, const char* szExpr, const char* szFile, int szLine, const char* szMessage );
-#define Assert( f )		DBG_AssertFunction( f, #f, __FILE__, __LINE__, NULL )
+#define Assert( f )	ASSERT(f)//DBG_AssertFunction( f, #f, __FILE__, __LINE__, NULL )
 #else
 #define Assert( f )
 #endif
@@ -223,7 +226,6 @@ typedef enum
 	HOST_ERR_FATAL,	// sys error
 	HOST_SLEEP,	// sleeped by different reason, e.g. minimize window
 	HOST_NOFOCUS,	// same as HOST_FRAME, but disable mouse
-	HOST_RESTART,	// during the changes video mode
 	HOST_CRASHED	// an exception handler called
 } host_state;
 
@@ -328,6 +330,7 @@ typedef struct host_parm_s
 	qboolean		key_overstrike;	// key overstrike mode
 	qboolean		stuffcmdsrun;	// execute stuff commands
 	qboolean		con_showalways;	// show console always (developer and dedicated)
+	qboolean		com_handlecolon;	// allow COM_ParseFile to handle colon as single char
 	qboolean		change_game;	// initialize when game is changed
 	qboolean		mouse_visible;	// vgui override cursor control
 	qboolean		input_enabled;	// vgui override mouse & keyboard input
@@ -376,7 +379,7 @@ void FS_LoadGameInfo( const char *rootfolder );
 void FS_FileBase( const char *in, char *out );
 const char *FS_FileExtension( const char *in );
 void FS_DefaultExtension( char *path, const char *extension );
-void FS_ExtractFilePath( const char* const path, char* dest );
+void FS_ExtractFilePath( const char *path, char *dest );
 const char *FS_GetDiskPath( const char *name, qboolean gamedironly );
 const char *FS_FileWithoutPath( const char *in );
 wfile_t *W_Open( const char *filename, const char *mode );
@@ -654,6 +657,7 @@ void pfnDrawSetTextColor( float r, float g, float b );
 void pfnDrawConsoleStringLen( const char *pText, int *length, int *height );
 int pfnAddClientCommand( const char *cmd_name, xcommand_t func );
 void *Cache_Check( byte *mempool, struct cache_user_s *c );
+void COM_TrimSpace( const char *source, char *dest );
 edict_t* pfnPEntityOfEntIndex( int iEntIndex );
 void pfnGetModelBounds( model_t *mod, float *mins, float *maxs );
 void pfnGetGameDir( char *szGetGameDir );
@@ -832,7 +836,7 @@ qboolean Cmd_CheckMapsList( qboolean fRefresh );
 void Cmd_AutoComplete( char *complete_string );
 long Com_RandomLong( long lMin, long lMax );
 float Com_RandomFloat( float fMin, float fMax );
-void TrimSpace( const char *source, char *dest );
+
 void GL_FreeImage( const char *name );
 void VID_RestoreGamma( void );
 void UI_SetActiveMenu( qboolean fActive );

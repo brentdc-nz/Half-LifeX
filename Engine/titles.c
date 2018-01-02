@@ -121,32 +121,6 @@ static int ParseFloats( const char *pText, float *pFloat, int count )
 	return 0;
 }
 
-// trims all whitespace from the front and end of a string
-void TrimSpace( const char *source, char *dest )
-{
-	int start, end, length;
-
-	start = 0;
-	end = Q_strlen( source );
-
-	while( source[start] && IsWhiteSpace( source[start] ))
-		start++;
-
-	end--;
-	while( end > 0 && IsWhiteSpace( source[end] ))
-		end--;
-
-	end++;
-
-	length = end - start;
-	if( length > 0 )
-		Q_memcpy( dest, source + start, length );
-	else length = 0;
-
-	// terminate the dest string
-	dest[length] = 0;
-}
-
 static int IsToken( const char *pText, const char *pTokenName )
 {
 	if( !pText || !pTokenName )
@@ -253,7 +227,7 @@ void CL_TextMessageParse( byte *pMemFile, int fileSize )
 
 	while( COM_MemFgets( pMemFile, fileSize, &filePos, buf, 512 ) != NULL )
 	{
-		TrimSpace( buf, trim );
+		COM_TrimSpace( buf, trim );
 
 		switch( mode )
 		{
@@ -346,11 +320,11 @@ void CL_TextMessageParse( byte *pMemFile, int fileSize )
 	clgame.titles = (client_textmessage_t *)Mem_Alloc( cls.mempool, textHeapSize + nameHeapSize + messageSize );
 	
 	// copy table over
-	Q_memcpy( clgame.titles, textMessages, messageSize );
+	memcpy( clgame.titles, textMessages, messageSize );
 	
 	// copy Name heap
 	pNameHeap = ((char *)clgame.titles) + messageSize;
-	Q_memcpy( pNameHeap, nameHeap, nameHeapSize );
+	memcpy( pNameHeap, nameHeap, nameHeapSize );
 	nameOffset = pNameHeap - clgame.titles[0].pName;
 
 	// copy text & fixup pointers

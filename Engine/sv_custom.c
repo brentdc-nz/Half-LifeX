@@ -158,7 +158,7 @@ void SV_CreateCustomizationList( sv_client_t *cl )
 
 		for( pCust = cl->customization.pNext; pCust != NULL; pCust = pCust->pNext )
 		{
-			if( !Q_memcmp( pCust->resource.rgucMD5_hash, pRes->rgucMD5_hash, 16 ))
+			if( !memcmp( pCust->resource.rgucMD5_hash, pRes->rgucMD5_hash, 16 ))
 			{
 				duplicated = true;
 				break;
@@ -279,13 +279,13 @@ int SV_TransferConsistencyInfo( void )
 					Host_Error( "Mod_GetStudioBounds: couldn't get bounds for %s\n", filepath );
 
 				res->rguc_reserved[0x00] = check->force_state;
-				Q_memcpy( &res->rguc_reserved[0x01], mins, sizeof( mins ));
-				Q_memcpy( &res->rguc_reserved[0x0D], maxs, sizeof( maxs ));
+				memcpy( &res->rguc_reserved[0x01], mins, sizeof( mins ));
+				memcpy( &res->rguc_reserved[0x0D], maxs, sizeof( maxs ));
 				break;
 			case force_model_specifybounds:
 				res->rguc_reserved[0x00] = check->force_state;
-				Q_memcpy( &res->rguc_reserved[0x01], check->mins, sizeof( check->mins ));
-				Q_memcpy( &res->rguc_reserved[0x0D], check->maxs, sizeof( check->maxs ));
+				memcpy( &res->rguc_reserved[0x01], check->mins, sizeof( check->mins ));
+				memcpy( &res->rguc_reserved[0x0D], check->maxs, sizeof( check->maxs ));
 				break;
 			}
 		}
@@ -302,10 +302,10 @@ void SV_SendConsistencyList( sizebuf_t *msg )
 	int		lastIndex;
 	int		i;
 
-	if( mp_consistency->integer && ( sv.num_consistency_resources > 0 ) && !svs.currentPlayer->hltv_proxy )
+	if( mp_consistency->integer && ( sv.num_consistency_resources > 0 ) && !FBitSet( svs.currentPlayer->flags, FCL_HLTV_PROXY ))
 	{
 		lastIndex = 0;
-		BF_WriteOneBit( msg, 1 );
+		MSG_WriteOneBit( msg, 1 );
 
 		for( i = 0; i < sv.num_resources; i++ )
 		{
@@ -315,14 +315,14 @@ void SV_SendConsistencyList( sizebuf_t *msg )
 				continue;
 
 			resIndex = (i - lastIndex);
-			BF_WriteOneBit( msg, 1 );
-			BF_WriteSBitLong( msg, resIndex, MAX_MODEL_BITS );
+			MSG_WriteOneBit( msg, 1 );
+			MSG_WriteSBitLong( msg, resIndex, MAX_MODEL_BITS );
 			lastIndex = i;
 		}
 	}
 
 	// write end of the list
-	BF_WriteOneBit( msg, 0 );
+	MSG_WriteOneBit( msg, 0 );
 }
    
 void SV_SendResources( sizebuf_t *msg )
@@ -330,36 +330,36 @@ void SV_SendResources( sizebuf_t *msg )
 	byte	nullrguc[32];
 	int	i;
 
-	Q_memset( nullrguc, 0, sizeof( nullrguc ));
+	memset( nullrguc, 0, sizeof( nullrguc ));
 
-	BF_WriteByte( msg, svc_customization );
-	BF_WriteLong( msg, svs.spawncount );
+	MSG_WriteByte( msg, svc_customization );
+	MSG_WriteLong( msg, svs.spawncount );
 
 	// g-cont. This is more than HL limit but unmatched with GoldSrc protocol
-	BF_WriteSBitLong( msg, sv.num_resources, MAX_MODEL_BITS );
+	MSG_WriteSBitLong( msg, sv.num_resources, MAX_MODEL_BITS );
 
 	for( i = 0; i < sv.num_resources; i++ )
 	{
-		BF_WriteSBitLong( msg, sv.resources[i].type, 4 );
-		BF_WriteString( msg, sv.resources[i].szFileName );
-		BF_WriteSBitLong( msg, sv.resources[i].nIndex, MAX_MODEL_BITS );
-		BF_WriteSBitLong( msg, sv.resources[i].nDownloadSize, 24 );	// prevent to download a very big files?
-		BF_WriteSBitLong( msg, sv.resources[i].ucFlags, 3 );	// g-cont. why only first three flags?
+		MSG_WriteSBitLong( msg, sv.resources[i].type, 4 );
+		MSG_WriteString( msg, sv.resources[i].szFileName );
+		MSG_WriteSBitLong( msg, sv.resources[i].nIndex, MAX_MODEL_BITS );
+		MSG_WriteSBitLong( msg, sv.resources[i].nDownloadSize, 24 );	// prevent to download a very big files?
+		MSG_WriteSBitLong( msg, sv.resources[i].ucFlags, 3 );	// g-cont. why only first three flags?
 
 		if( sv.resources[i].ucFlags & RES_CUSTOM )
 		{
-			BF_WriteBits( msg, sv.resources[i].rgucMD5_hash, sizeof( sv.resources[i].rgucMD5_hash ));
+			MSG_WriteBits( msg, sv.resources[i].rgucMD5_hash, sizeof( sv.resources[i].rgucMD5_hash ));
 		}
 
-		if( Q_memcmp( nullrguc, sv.resources[i].rguc_reserved, sizeof( nullrguc )))
+		if( memcmp( nullrguc, sv.resources[i].rguc_reserved, sizeof( nullrguc )))
 		{
-			BF_WriteOneBit( msg, 1 );
-			BF_WriteBits( msg, sv.resources[i].rguc_reserved, sizeof( sv.resources[i].rguc_reserved ));
+			MSG_WriteOneBit( msg, 1 );
+			MSG_WriteBits( msg, sv.resources[i].rguc_reserved, sizeof( sv.resources[i].rguc_reserved ));
 
 		}
 		else
 		{
-			BF_WriteOneBit( msg, 0 );
+			MSG_WriteOneBit( msg, 0 );
 		}
 	}
 

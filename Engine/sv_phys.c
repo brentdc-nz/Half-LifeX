@@ -226,21 +226,23 @@ qboolean SV_PlayerRunThink( edict_t *ent, float frametime, double time )
 {
 	float	thinktime;
 
-	if(!( ent->v.flags & (FL_KILLME|FL_DORMANT )))
+	if( !FBitSet( ent->v.flags, FL_KILLME|FL_DORMANT ))
 	{
 		thinktime = ent->v.nextthink;
 		if( thinktime <= 0.0f || thinktime > time + frametime )
 			return true;
 
 		if( thinktime > time )
-			thinktime = time;
+			thinktime = time;	// don't let things stay in the past.
+					// it is possible to start that way
+					// by a trigger with a local time.
 
 		ent->v.nextthink = 0.0f;
 		svgame.globals->time = thinktime;
 		svgame.dllFuncs.pfnThink( ent );
 	}
 
-	if( ent->v.flags & FL_KILLME )
+	if( FBitSet( ent->v.flags, FL_KILLME ))
 		SV_FreeEdict( ent );
 
 	return !ent->free;
@@ -1959,7 +1961,7 @@ qboolean SV_InitPhysicsAPI( void )
 	{
 		if( pPhysIface( SV_PHYSICS_INTERFACE_VERSION, &gPhysicsAPI, &svgame.physFuncs ))
 		{
-			MsgDev( D_AICONSOLE, "SV_LoadProgs: ^2initailized extended PhysicAPI ^7ver. %i\n", SV_PHYSICS_INTERFACE_VERSION );
+			MsgDev( D_REPORT, "SV_LoadProgs: ^2initailized extended PhysicAPI ^7ver. %i\n", SV_PHYSICS_INTERFACE_VERSION );
 
 			if( svgame.physFuncs.SV_CheckFeatures != NULL )
 			{
@@ -1971,7 +1973,7 @@ qboolean SV_InitPhysicsAPI( void )
 		}
 
 		// make sure what physic functions is cleared
-		Q_memset( &svgame.physFuncs, 0, sizeof( svgame.physFuncs ));
+		memset( &svgame.physFuncs, 0, sizeof( svgame.physFuncs ));
 
 		return false; // just tell user about problems
 	}
