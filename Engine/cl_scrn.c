@@ -212,11 +212,11 @@ void SCR_MakeScreenShot( void ) //MARTY TODO
 	case scrshot_plaque:
 		iRet = VID_ScreenShot( cls.shotname, VID_LEVELSHOT );
 		break;
-*/	case scrshot_savegame:
+	case scrshot_savegame:
 	case scrshot_demoshot:
 		iRet = VID_ScreenShot( cls.shotname, VID_MINISHOT );
 		break;
-/*	case scrshot_envshot:
+	case scrshot_envshot:
 		iRet = VID_CubemapShot( cls.shotname, viewsize, cls.envshot_vieworg, false );
 		break;
 	case scrshot_skyshot:

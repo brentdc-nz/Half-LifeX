@@ -89,10 +89,8 @@ qboolean Image_LoadBMP( const char *name, const byte *buffer, size_t filesize )
 	bhdr.colors = *(long *)buf_p;		buf_p += 4;
 	bhdr.importantColors = *(long *)buf_p;	buf_p += 4;
 
-#if 0 //MARTY FIXME ASAP! - Fix our bogus header been written in savegame bmp function below
 	// bogus file header check
 	if( bhdr.reserved0 != 0 ) return false;
-#endif
 	if( bhdr.planes != 1 ) return false;
 
 	if( memcmp( bhdr.id, "BM", 2 ))
