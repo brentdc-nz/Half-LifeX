@@ -1161,16 +1161,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="HelperFuncs"
-				Filter="">
-				<File
-					RelativePath=".\xbox\utils.cpp">
-				</File>
-				<File
-					RelativePath=".\xbox\utils.h">
-				</File>
-			</Filter>
-			<Filter
 				Name="Launcher"
 				Filter="">
 				<File

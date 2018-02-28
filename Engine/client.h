@@ -715,6 +715,9 @@ void SCR_MakeLevelShot( void );
 void SCR_NetSpeeds( void );
 void SCR_RSpeeds( void );
 void SCR_DrawFPS( void );
+#if defined(_XBOX) && defined(_DEBUG) //MARTY
+void SCR_DrawMemory( void );
+#endif
 
 //
 // cl_view.c

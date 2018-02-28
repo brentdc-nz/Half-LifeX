@@ -103,6 +103,37 @@ void SCR_DrawFPS( void )
 	Con_DrawString( scr_width->integer - offset - 3, 4, fpsstring, color );
 }
 
+#if defined(_XBOX) && defined(_DEBUG) //MARTY
+void SCR_DrawMemory( void )
+{
+	rgba_t		color;
+	char		strMemory[64];
+	int			offset;
+	MEMORYSTATUS stat;
+	
+	if( cls.state != ca_active || cl.background )
+		return; 
+
+	switch( cls.scrshot_action )
+	{
+	case scrshot_normal:
+	case scrshot_snapshot:
+	case scrshot_inactive:
+		break;
+	default: return;
+	}
+
+	// Get the memory status.
+	GlobalMemoryStatus( &stat );
+
+	Q_snprintf( strMemory, sizeof( strMemory ), "%4d mb free", stat.dwAvailPhys / (1024*1024) );
+	MakeRGBA( color, 255, 255, 255, 255 );
+    
+	Con_DrawStringLen( strMemory, &offset, NULL );
+	Con_DrawString( scr_width->integer - offset - 3, 20, strMemory, color );
+}
+#endif
+
 /*
 ==============
 SCR_NetSpeeds
