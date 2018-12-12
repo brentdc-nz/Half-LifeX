@@ -1097,13 +1097,6 @@ void SV_PutClientInServer( edict_t *ent )
 			SetBits( ent->v.flags, FL_GODMODE|FL_NOTARGET );
 
 		client->pViewEntity = NULL; // reset pViewEntity
-
-		if( svgame.globals->cdAudioTrack )
-		{
-			MSG_WriteByte( &client->netchan.message, svc_stufftext );
-			MSG_WriteString( &client->netchan.message, va( "cd loop %3d\n", svgame.globals->cdAudioTrack ));
-			svgame.globals->cdAudioTrack = 0;
-		}
 	}
 	else
 	{
@@ -1224,6 +1217,14 @@ void SV_New_f( sv_client_t *cl )
 	MSG_WriteOneBit( &cl->netchan.message, sv.background ); // tell client about background map
 	MSG_WriteString( &cl->netchan.message, GI->gamefolder );
 	MSG_WriteLong( &cl->netchan.message, host.features );
+
+	// Send audio track info
+	if( svgame.globals->cdAudioTrack )
+	{
+		MSG_WriteByte( &cl->netchan.message, svc_stufftext );
+		MSG_WriteString( &cl->netchan.message, va( "cd loop %3d\n", svgame.globals->cdAudioTrack ));
+		svgame.globals->cdAudioTrack = 0;
+	}
 
 	// refresh userinfo on spawn
 	SV_RefreshUserinfo();
