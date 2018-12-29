@@ -179,7 +179,7 @@ typedef struct cl_enginefuncs_s
 	float	(*GetClientMaxspeed)( void );
 	int	(*CheckParm)( char *parm, char **ppnext );
 
-	void	(*Key_Event)( int key, int down );
+	void	(*Key_Event)( int key, qboolean down );
 	void	(*GetMousePosition)( int *mx, int *my );
 	int	(*IsNoClipping)( void );
 
@@ -207,7 +207,7 @@ typedef struct cl_enginefuncs_s
 	float	(*pfnRandomFloat)( float flLow, float flHigh );	
 	long	(*pfnRandomLong)( long lLow, long lHigh );
 	void	(*pfnHookEvent)( char *name, void ( *pfnEvent )( struct event_args_s *args ));
-	int	(*Con_IsVisible) ();
+	qboolean (*Con_IsVisible) ();
 	const char *(*pfnGetGameDirectory)( void );
 	struct cvar_s *(*pfnGetCvarPointer)( const char *szName );
 	const char *(*Key_LookupBinding)( const char *pBinding );

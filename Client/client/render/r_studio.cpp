@@ -2333,11 +2333,10 @@ void CStudioModelRenderer::StudioDynamicLight( cl_entity_t *ent, alight_t *light
 
 	lightinfo->plightvec = m_pLightInfo->lightVec;
 
-	color24 ambient;
+	color24 ambient = {0,0,0}; // Stop compiler warning
 
 	// setup ambient lighting
 	bool invLight = (ent->curstate.effects & EF_INVLIGHT) ? true : false;
-
 
 	m_pLightInfo->lightColor[0] = ambient.r * (1.0f / 255.0f);
 	m_pLightInfo->lightColor[1] = ambient.g * (1.0f / 255.0f);

@@ -80,6 +80,9 @@ typedef struct dll_info_s
 } dll_info_t;
 
 void Sys_Sleep( int msec );
+#ifdef _XBOX
+qboolean Sys_CreateDirectory(const char* strPath, LPSECURITY_ATTRIBUTES Attributes);
+#endif
 double Sys_DoubleTime( void );
 char *Sys_GetClipboardData( void );
 char *Sys_GetCurrentUser( void );

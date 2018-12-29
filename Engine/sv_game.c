@@ -5554,6 +5554,9 @@ static enginefuncs_t gEngfuncs =
 	pfnVoice_GetClientListening,
 	pfnVoice_SetClientListening,
 	pfnGetPlayerAuthId,
+#ifdef _XBOX
+	Sys_CreateDirectory, // Needed on Xbox to allow server lib to create directories
+#endif
 //MARTY - Extensions
 	pfnSequenceGet,
 	pfnSequencePickSentence,

@@ -24,6 +24,14 @@
 #include <stdio.h>
 #include "custom.h"
 #include "cvardef.h"
+
+#if 1 //def _XBOX
+#include "wtypes.h"
+#ifdef  SERVER_EXECUTE
+#undef  SERVER_EXECUTE // To avoid Win32 name mangling
+#endif
+#endif
+
 //
 // Defines entity interface between engine and DLLs.
 // This header file included by engine files and DLL files.
@@ -260,6 +268,9 @@ typedef struct enginefuncs_s
 	qboolean	(*pfnVoice_SetClientListening)(int iReceiver, int iSender, qboolean bListen);
 
 	const char *(*pfnGetPlayerAuthId)		( edict_t *e );
+#if 1 //def _XBOX
+	qboolean (*pfnSysCreateDirectory)(const char* strPath, LPSECURITY_ATTRIBUTES Attributes);
+#endif
 } enginefuncs_t;
 // ONLY ADD NEW FUNCTIONS TO THE END OF THIS STRUCT.  INTERFACE VERSION IS FROZEN AT 138
 

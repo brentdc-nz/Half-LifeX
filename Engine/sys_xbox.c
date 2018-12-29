@@ -130,6 +130,18 @@ void Sys_Sleep( int msec )
 
 /*
 ================
+Sys_CreateDirectory
+================
+*/
+#ifdef _XBOX
+qboolean Sys_CreateDirectory(const char* strPath, LPSECURITY_ATTRIBUTES Attributes)
+{
+	return CreateDirectory(strPath, Attributes);
+}
+#endif
+
+/*
+================
 Sys_GetCurrentUser
 
 returns username for current profile

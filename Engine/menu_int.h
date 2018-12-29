@@ -108,12 +108,12 @@ typedef struct ui_enginefuncs_s
 
 	// misc handlers
 	void	(*pfnHostError)( const char *szFmt, ... );
-	int	(*pfnFileExists)( const char *filename, int gamedironly );
+	qboolean (*pfnFileExists)( const char *filename, qboolean gamedironly );
 	void	(*pfnGetGameDir)( char *szGetGameDir );
 
 	// gameinfo handlers
-	int	(*pfnCreateMapsList)( int fRefresh );
-	int	(*pfnClientInGame)( void );
+	qboolean (*pfnCreateMapsList)( qboolean fRefresh );
+	qboolean (*pfnClientInGame)( void );
 	void	(*pfnClientJoin)( const struct netadr_s adr );
 	
 	// parse txt files
@@ -127,7 +127,7 @@ typedef struct ui_enginefuncs_s
 	const char *(*pfnKeynumToString)( int keynum );
 	const char *(*pfnKeyGetBinding)( int keynum );
 	void	(*pfnKeySetBinding)( int keynum, const char *binding );
-	int	(*pfnKeyIsDown)( int keynum );
+	qboolean (*pfnKeyIsDown)( int keynum );
 	int	(*pfnKeyGetOverstrikeMode)( void );
 	void	(*pfnKeySetOverstrikeMode)( int fActive );
 	void	*(*pfnKeyGetState)( const char *name );			// for mlook, klook etc
@@ -140,13 +140,13 @@ typedef struct ui_enginefuncs_s
 	int	(*pfnGetGameInfo)( GAMEINFO *pgameinfo );
 	GAMEINFO	**(*pfnGetGamesList)( int *numGames );			// collect info about all mods
 	char 	**(*pfnGetFilesList)( const char *pattern, int *numFiles, int gamedironly );	// find in files
-	int 	(*pfnGetSaveComment)( const char *savename, char *comment );
-	int	(*pfnGetDemoComment)( const char *demoname, char *comment );
+	qboolean (*pfnGetSaveComment)( const char *savename, char *comment );
+	qboolean	(*pfnGetDemoComment)( const char *demoname, char *comment );
 	int	(*pfnCheckGameDll)( void );				// returns false if hl.dll is missed or invalid
 	char	*(*pfnGetClipboardData)( void );
 
 	// engine launcher
-	void	(*pfnShellExecute)( const char *name, const char *args, int closeEngine );
+	void	(*pfnShellExecute)( const char *name, const char *args, qboolean closeEngine );
 	void	(*pfnWriteServerConfig)( const char *name );
 	void	(*pfnChangeInstance)( const char *newInstance, const char *szFinalMessage );
 	void	(*pfnPlayBackgroundTrack)( const char *introName, const char *loopName );

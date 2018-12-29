@@ -44,6 +44,12 @@ LINK_ENTITY_TO_CLASS( info_node_air, CNodeEnt );
 #include <unistd.h>
 #define CreateDirectory(p, n) mkdir(p, 0777)
 #endif
+
+#if 1 //def _XBOX
+#undef CreateDirectory
+#define CreateDirectory(p, n) CREATEDIRECTORY(p, n)
+#endif 
+
 //=========================================================
 // CGraph - InitGraph - prepares the graph for use. Frees any
 // memory currently in use by the world graph, NULLs 
@@ -51,7 +57,6 @@ LINK_ENTITY_TO_CLASS( info_node_air, CNodeEnt );
 //=========================================================
 void CGraph :: InitGraph( void)
 {
-
 	// Make the graph unavailable
 	//
 	m_fGraphPresent = FALSE;

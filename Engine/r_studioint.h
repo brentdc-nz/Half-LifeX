@@ -28,7 +28,7 @@ typedef struct engine_studio_api_s
 	// Load file into cache ( can be swapped out on demand )
 	void		( *LoadCacheFile )( char *path, struct cache_user_s *cu );
 	// Retrieve model pointer for the named model
-	struct model_s	*( *Mod_ForName )( const char *name, int crash_if_missing );
+	struct model_s	*( *Mod_ForName )( const char *name, qboolean crash_if_missing );
 	// Retrieve pointer to studio model data block from a model
 	void		*( *Mod_Extradata )( struct model_s *mod );
 	// Retrieve indexed model from client side model precache list

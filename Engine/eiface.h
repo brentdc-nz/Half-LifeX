@@ -258,6 +258,9 @@ typedef struct enginefuncs_s
 	qboolean	(*pfnVoice_SetClientListening)(int iReceiver, int iSender, qboolean bListen);
 
 	const char *(*pfnGetPlayerAuthId)		( edict_t *e );
+#ifdef _XBOX
+	qboolean (*pfnSysCreateDirectory)(const char* strPath, LPSECURITY_ATTRIBUTES Attributes);
+#endif
 //MARTY - Extensions
 	void	*(*pfnSequenceGet)( const char *fileName, const char *entryName );
 	void	*(*pfnSequencePickSentence)( const char *groupName, int pickMethod, int *picked );
