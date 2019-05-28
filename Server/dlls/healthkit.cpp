@@ -26,7 +26,7 @@ extern int gmsgItemPickup;
 
 class CHealthKit : public CItem
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -44,7 +44,7 @@ class CHealthKit : public CItem
 
 LINK_ENTITY_TO_CLASS( item_healthkit, CHealthKit );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CHealthKit )
 
@@ -117,7 +117,7 @@ BOOL CHealthKit::MyTouch( CBasePlayer *pPlayer )
 class CWallHealth : public CBaseToggle
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( );
 	void Precache( void );
@@ -151,7 +151,7 @@ IMPLEMENT_SAVERESTORE( CWallHealth, CBaseEntity );
 
 LINK_ENTITY_TO_CLASS(func_healthcharger, CWallHealth);
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CWallHealth )
 

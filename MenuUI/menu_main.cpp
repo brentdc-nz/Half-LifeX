@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ART_CLOSEBTN_N	"gfx\\shell\\cls_n"
 #define ART_CLOSEBTN_F	"gfx\\shell\\cls_f"
 #define ART_CLOSEBTN_D	"gfx\\shell\\cls_d"
-//MARTY END
 
 #define ID_BACKGROUND	0
 #define ID_CONSOLE		1
@@ -67,7 +66,7 @@ typedef struct
 	menuPicButton_s	credits;
 	menuPicButton_s	quit;
 
-#ifndef _XBOX //MARTY - Remove mouse close and exit buttons
+#ifndef _XBOX // Remove mouse close and exit buttons
 	menuBitmap_s	minimizeBtn;
 	menuBitmap_s	quitButton;
 #endif
@@ -104,7 +103,7 @@ static void UI_Background_Ownerdraw( void *self )
 	menuCommon_s	*item = (menuCommon_s *)self;
 
 	// map has background
-	if( CVAR_GET_FLOAT( "sv_background" ))
+	if( CVAR_GET_FLOAT( "cl_background" ))
 		return;
 
 	UI_DrawBackground_Callback( self );
@@ -235,6 +234,8 @@ static void UI_Main_HazardCourse( void )
 	CVAR_SET_FLOAT( "teamplay", 0.0f );
 	CVAR_SET_FLOAT( "pausable", 1.0f ); // singleplayer is always allowing pause
 	CVAR_SET_FLOAT( "coop", 0.0f );
+
+	BACKGROUND_TRACK( NULL, NULL );
 
 	CLIENT_COMMAND( FALSE, "hazardcourse\n" );
 }
@@ -502,7 +503,7 @@ static void UI_Main_Init( void )
 
 	UI_UtilSetupPicButton( &uiMain.quit, PC_QUIT );
 
-#ifndef _XBOX //MARTY - Remove mouse close and exit buttons
+#ifndef _XBOX // Remove mouse close and exit buttons
 	uiMain.minimizeBtn.generic.id = ID_MINIMIZE;
 	uiMain.minimizeBtn.generic.type = QMTYPE_BITMAP;
 	uiMain.minimizeBtn.generic.flags = QMF_HIGHLIGHTIFFOCUS|QMF_MOUSEONLY|QMF_ACT_ONRELEASE;
@@ -611,7 +612,7 @@ UI_Main_Precache
 */
 void UI_Main_Precache( void )
 {
-#ifdef _XBOX_NOAVILOGO //MARTY
+#ifdef _XBOX_NOAVILOGO
 	PIC_Load( ART_BACKGROUNDLOGO );
 #endif
 	PIC_Load( ART_BACKGROUND );
@@ -637,4 +638,4 @@ void UI_Main_Menu( void )
 	UI_Main_Init();
 
 	UI_PushMenu( &uiMain.menu );
-}        
+}

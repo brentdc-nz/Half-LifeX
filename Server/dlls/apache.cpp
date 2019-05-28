@@ -29,7 +29,7 @@ extern DLL_GLOBAL int		g_iSkillLevel;
 
 class CApache : public CBaseMonster
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	int		Save( CSave &save );
 	int		Restore( CRestore &restore );
@@ -93,7 +93,7 @@ class CApache : public CBaseMonster
 
 LINK_ENTITY_TO_CLASS( monster_apache, CApache );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CApache )
 
@@ -956,7 +956,7 @@ void CApache::TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir
 
 class CApacheHVR : public CGrenade
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -973,7 +973,7 @@ class CApacheHVR : public CGrenade
 
 LINK_ENTITY_TO_CLASS( hvr_rocket, CApacheHVR );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CApacheHVR )
 

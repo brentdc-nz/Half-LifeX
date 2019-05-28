@@ -33,17 +33,18 @@ typedef unsigned short word;
 #include "..\engine\keydefs.h"
 #endif
 
-/*typedef int (*pfnUserMsgHook)( const char *pszName, int iSize, void *pbuf );
-typedef int (*cmpfunc)( const void *a, const void *b );
+//typedef int (*pfnUserMsgHook)( const char *pszName, int iSize, void *pbuf );
+//typedef int (*cmpfunc)( const void *a, const void *b );
 
-extern int pause;*/
+//extern int pause;
 extern int developer_level;
 extern int r_currentMessageNum;
-extern float v_idlescale;/*
+extern float v_idlescale;
 
-extern int g_iXashEngineBuildNumber;*/
-extern BOOL g_fRenderInitialized;/*
+//extern int g_iXashEngineBuildNumber;
+extern BOOL g_fRenderInitialized;
 
+#ifndef _XBOX
 typedef HMODULE dllhandle_t;
 
 typedef struct dllfunc_s
@@ -51,8 +52,9 @@ typedef struct dllfunc_s
 	const char *name;
 	void	**func;
 } dllfunc_t;
+#endif
 
-*/client_sprite_t *GetSpriteList( client_sprite_t *pList, const char *psz, int iRes, int iCount );/*
+client_sprite_t *GetSpriteList( client_sprite_t *pList, const char *psz, int iRes, int iCount );/*
 extern void DrawQuad( float xmin, float ymin, float xmax, float ymax );*/
 extern void ALERT( ALERT_TYPE level, char *szFmt, ... );/*
 
@@ -71,8 +73,8 @@ void Sys_FreeLibrary( dllhandle_t *handle );*/
 #define YRES( y )		((int)(float( y ) * ((float)ScreenHeight / 480.0f) + 0.5f))
 
 // use this to project world coordinates to screen coordinates
-/*#define XPROJECT( x )	(( 1.0f + (x)) * ScreenWidth * 0.5f )
-#define YPROJECT( y )	(( 1.0f - (y)) * ScreenHeight * 0.5f )*/
+//#define XPROJECT( x )	(( 1.0f + (x)) * ScreenWidth * 0.5f )
+//#define YPROJECT( y )	(( 1.0f - (y)) * ScreenHeight * 0.5f )
 
 inline int ConsoleStringLen( const char *string )
 {
@@ -103,27 +105,27 @@ typedef struct leaflist_s
 } leaflist_t;
 
 struct mleaf_s *Mod_PointInLeaf( Vector p, struct mnode_s *node );
-bool Mod_BoxVisible( const Vector mins, const Vector maxs, const byte *visbits );/*
-bool Mod_CheckEntityPVS( cl_entity_t *ent );
-bool Mod_CheckTempEntityPVS( struct tempent_s *pTemp );*/
-bool Mod_CheckEntityLeafPVS( const Vector &absmin, const Vector &absmax, struct mleaf_s *leaf );/*
-void Mod_GetFrames( int modelIndex, int &numFrames );
-int Mod_GetType( int modelIndex );*/
+bool Mod_BoxVisible( const Vector mins, const Vector maxs, const byte *visbits );
+//bool Mod_CheckEntityPVS( cl_entity_t *ent );
+//bool Mod_CheckTempEntityPVS( struct tempent_s *pTemp );
+bool Mod_CheckEntityLeafPVS( const Vector &absmin, const Vector &absmax, struct mleaf_s *leaf );
+//void Mod_GetFrames( int modelIndex, int &numFrames );
+//int Mod_GetType( int modelIndex );
 
 bool UTIL_IsPlayer( int idx );
 bool UTIL_IsLocal( int idx );
 
-extern "C" void StaticHUD_StudioEvent( const struct mstudioevent_s *event, const struct cl_entity_s *entity ); //MARTY - Renamed Static
-extern "C" void StaticHUD_TempEntUpdate( double frametime, double client_time, double cl_gravity, struct tempent_s **ppTempEntFree, //MARTY - Renamed Static
+extern "C" void StaticHUD_StudioEvent( const struct mstudioevent_s *event, const struct cl_entity_s *entity );
+extern "C" void StaticHUD_TempEntUpdate( double frametime, double client_time, double cl_gravity, struct tempent_s **ppTempEntFree,
 struct tempent_s **ppTempEntActive, int ( *Callback_AddVisibleEntity )( struct cl_entity_s *pEntity ),
 void ( *Callback_TempEntPlaySound )( struct tempent_s *pTemp, float damp ));
 
-extern "C" int StaticHUD_AddEntity( int type, struct cl_entity_s *ent, const char *modelname ); //MARTY - Renamed Static
-extern "C" void StaticHUD_TxferLocalOverrides( struct entity_state_s *state, const struct clientdata_s *client ); //MARTY - Renamed Static
-extern "C" void StaticHUD_ProcessPlayerState( struct entity_state_s *dst, const struct entity_state_s *src );  //MARTY - Renamed Static
-extern "C" void StaticHUD_TxferPredictionData( entity_state_t *ps, const entity_state_t *pps, clientdata_t *pcd, const clientdata_t *ppcd, weapon_data_t *wd, const weapon_data_t *pwd ); //MARTY - Renamed Static
-extern "C" void StaticHUD_StudioEvent( const struct mstudioevent_s *event, const struct cl_entity_s *entity );  //MARTY - Renamed Static
-extern "C" void StaticHUD_CreateEntities( void ); //MARTY - Renamed Static
+extern "C" int StaticHUD_AddEntity( int type, struct cl_entity_s *ent, const char *modelname );
+extern "C" void StaticHUD_TxferLocalOverrides( struct entity_state_s *state, const struct clientdata_s *client );
+extern "C" void StaticHUD_ProcessPlayerState( struct entity_state_s *dst, const struct entity_state_s *src );
+extern "C" void StaticHUD_TxferPredictionData( entity_state_t *ps, const entity_state_t *pps, clientdata_t *pcd, const clientdata_t *ppcd, weapon_data_t *wd, const weapon_data_t *pwd );
+extern "C" void StaticHUD_StudioEvent( const struct mstudioevent_s *event, const struct cl_entity_s *entity );
+extern "C" void StaticHUD_CreateEntities( void );
 
 extern int CL_ButtonBits( int );
 extern void CL_ResetButtonBits( int bits );
@@ -134,43 +136,43 @@ extern void IN_Init( void );
 extern void IN_Move( float frametime, struct usercmd_s *cmd );
 extern void IN_Shutdown( void );
 
-extern "C" void StaticIN_ActivateMouse( void ); //MARTY - Renamed Static
-extern "C" void StaticIN_DeactivateMouse( void ); //MARTY - Renamed Static
-extern "C" void StaticIN_MouseEvent( int mstate ); //MARTY - Renamed Static
-extern "C" void StaticIN_Accumulate( void ); //MARTY - Renamed Static
-extern "C" void StaticIN_ClearStates( void ); //MARTY - Renamed Static
-extern "C" void *StaticKB_Find( const char *name ); //MARTY - Renamed Static
-extern "C" void StaticCL_CreateMove( float frametime, struct usercmd_s *cmd, int active ); //MARTY - Renamed Static
+extern "C" void StaticIN_ActivateMouse( void );
+extern "C" void StaticIN_DeactivateMouse( void );
+extern "C" void StaticIN_MouseEvent( int mstate );
+extern "C" void StaticIN_Accumulate( void );
+extern "C" void StaticIN_ClearStates( void );
+extern "C" void *StaticKB_Find( const char *name );
+extern "C" void StaticCL_CreateMove( float frametime, struct usercmd_s *cmd, int active );
 
-#ifdef _XBOX //MARTY - Custom XBox only call to pump gamepad key messages.
+#ifdef _XBOX // MARTY - Custom Xbox only call to pump gamepad key messages.
 extern "C" int /*DLLEXPORT*/ StaticIN_XBoxGamepadButtons( XBGamepadButtons_t *pGamepadButtons );
-#endif //_XBOX
+#endif
 
-/*extern "C" int HUD_GetRenderInterface( int version, render_api_t *renderfuncs, render_interface_t *callback );
-*/extern "C" int StaticHUD_GetStudioModelInterface( int version, struct r_studio_interface_s **ppinterface, struct engine_studio_api_s *pstudio ); //MARTY - Renamed Static
+//extern "C" int HUD_GetRenderInterface( int version, render_api_t *renderfuncs, render_interface_t *callback );
+extern "C" int StaticHUD_GetStudioModelInterface( int version, struct r_studio_interface_s **ppinterface, struct engine_studio_api_s *pstudio );
 
 extern void PM_Init( struct playermove_s *ppmove );
 extern void PM_Move( struct playermove_s *ppmove, int server );
 extern char PM_FindTextureType( char *name );
-extern "C" void StaticV_CalcRefdef( struct ref_params_s *pparams ); //MARTY - Static rename
+extern "C" void StaticV_CalcRefdef( struct ref_params_s *pparams );
 
-/*void UTIL_CreateAurora( cl_entity_t *ent, const char *file, int attachment, float lifetime = 0.0f );
-void UTIL_RemoveAurora( cl_entity_t *ent );*/
+//void UTIL_CreateAurora( cl_entity_t *ent, const char *file, int attachment, float lifetime = 0.0f );
+//void UTIL_RemoveAurora( cl_entity_t *ent );
 extern int PM_GetPhysEntInfo( int ent );
 
-extern "C" void StaticCAM_Think( void );  //MARTY - Renamed Static
-extern "C" void StaticCL_CameraOffset( float *ofs );  //MARTY - Renamed Static
+extern "C" void StaticCAM_Think( void );
+extern "C" void StaticCL_CameraOffset( float *ofs );
 extern "C" int StaticCL_IsThirdPerson( void );
 
 // xxx need client dll function to get and clear impuse
 //extern cvar_t *in_joystick;
 extern int g_weaponselect;
 
-/*void ClearLink( link_t *l );
-void RemoveLink( link_t *l );
-void InsertLinkBefore( link_t *l, link_t *before );
+//void ClearLink( link_t *l );
+//void RemoveLink( link_t *l );
+//void InsertLinkBefore( link_t *l, link_t *before );
 
-extern float noise( float vx, float vy, float vz );
-extern void init_noise( void );*/
+//extern float noise( float vx, float vy, float vz );
+//extern void init_noise( void );
    
 #endif // UTILS_H

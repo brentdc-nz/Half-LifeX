@@ -319,6 +319,13 @@ void UI_NewGame_Menu( void )
 
 	if( !CheckGameDll( )) return;
 
+	// FIXME: show prompt dialog
+	if( gMenu.m_gameinfo.flags & GFL_NOSKILLS )
+	{
+		UI_NewGame_StartGame( 1.0f );
+		return;
+	}
+
 	UI_NewGame_Precache();
 	UI_NewGame_Init();
 

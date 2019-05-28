@@ -28,7 +28,7 @@
 
 LINK_ENTITY_TO_CLASS( weapon_crowbar, CCrowbar );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CCrowbar )
 

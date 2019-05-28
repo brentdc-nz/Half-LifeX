@@ -66,7 +66,7 @@ enum
 class CScientist : public CTalkMonster
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -117,7 +117,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( monster_scientist, CScientist );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CScientist )
 
@@ -1116,7 +1116,7 @@ int CScientist::FriendNumber( int arrayNumber )
 class CDeadScientist : public CBaseMonster
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	int	Classify ( void ) { return	CLASS_HUMAN_PASSIVE; }
@@ -1139,7 +1139,7 @@ void CDeadScientist::KeyValue( KeyValueData *pkvd )
 }
 LINK_ENTITY_TO_CLASS( monster_scientist_dead, CDeadScientist );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CDeadScientist )
 
@@ -1192,7 +1192,7 @@ void CDeadScientist :: Spawn( )
 class CSittingScientist : public CScientist // kdb: changed from public CBaseMonster so he can speak
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void  Precache( void );
@@ -1214,7 +1214,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( monster_sitting_scientist, CSittingScientist );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CSittingScientist )
 

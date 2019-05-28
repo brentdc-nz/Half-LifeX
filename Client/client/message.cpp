@@ -186,7 +186,7 @@ void CHudMessage::MessageScanNextChar( void )
 
 	blend = bound( 0, blend, 255 );
 
-//MARTY FIXME WIP - Why is this not a problem in release mode? :/ 
+//MARTY FIXME - Why is this not a problem in release mode? :/ 
 #ifdef _DEBUG
 	destRed = 0;
 	destGreen = 0;

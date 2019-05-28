@@ -515,7 +515,7 @@ void CFuncPlat :: Blocked( CBaseEntity *pOther )
 class CFuncPlatRot : public CFuncPlat
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void SetupRotation( void );
@@ -534,7 +534,7 @@ public:
 };
 LINK_ENTITY_TO_CLASS( func_platrot, CFuncPlatRot );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CFuncPlatRot )
 
@@ -644,7 +644,7 @@ void CFuncPlatRot :: RotMove( Vector &destAngle, float time )
 class CFuncTrain : public CBasePlatTrain
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -669,7 +669,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( func_train, CFuncTrain );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CFuncTrain )
 
@@ -985,7 +985,7 @@ TYPEDESCRIPTION	CFuncTrackTrain::m_SaveData[] =
 IMPLEMENT_SAVERESTORE( CFuncTrackTrain, CBaseEntity );
 LINK_ENTITY_TO_CLASS( func_tracktrain, CFuncTrackTrain );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CFuncTrackTrain )
 
@@ -1596,7 +1596,7 @@ void CFuncTrackTrain :: Precache( void )
 class CFuncTrainControls : public CBaseEntity
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	virtual int	ObjectCaps( void ) { return CBaseEntity :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 	void Spawn( void );
@@ -1605,7 +1605,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( func_traincontrols, CFuncTrainControls );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CFuncTrainControls )
 
@@ -1674,7 +1674,7 @@ typedef enum { TRAIN_SAFE, TRAIN_BLOCKING, TRAIN_FOLLOWING } TRAIN_CODE;
 class CFuncTrackChange : public CFuncPlatRot
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -1719,7 +1719,7 @@ public:
 };
 LINK_ENTITY_TO_CLASS( func_trackchange, CFuncTrackChange );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CFuncTrackChange )
 
@@ -2085,7 +2085,7 @@ void CFuncTrackChange :: HitTop( void )
 class CFuncTrackAuto : public CFuncTrackChange
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void			Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	virtual void	UpdateAutoTargets( int toggleState );
@@ -2093,7 +2093,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( func_trackautochange, CFuncTrackAuto );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CFuncTrackAuto )
 
@@ -2220,7 +2220,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( func_guntarget, CGunTarget );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CGunTarget )
 

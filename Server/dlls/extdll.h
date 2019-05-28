@@ -15,12 +15,13 @@
 #ifndef EXTDLL_H
 #define EXTDLL_H
 
+
 //
 // Global header file for extension DLLs
 //
 
 // Allow "DEBUG" in addition to default "_DEBUG"
-#ifdef _DEBUG_ //MARTY
+#ifdef _DEBUG_ // MARTY
 #define DEBUG 1
 #endif
 

@@ -100,7 +100,7 @@ void Force_CenterView_f( void )
 IN_ActivateMouse
 ===========
 */
-void StaticIN_ActivateMouse( void ) //MARTY - Renamed Static
+void StaticIN_ActivateMouse( void )
 {
 	if( mouseinitialized )
 	{
@@ -118,7 +118,7 @@ void StaticIN_ActivateMouse( void ) //MARTY - Renamed Static
 IN_DeactivateMouse
 ===========
 */
-void StaticIN_DeactivateMouse( void ) //MARTY - Renamed Static
+void StaticIN_DeactivateMouse( void )
 {
 	if( mouseinitialized )
 	{
@@ -176,7 +176,7 @@ IN_Shutdown
 */
 void IN_Shutdown( void )
 {
-	StaticIN_DeactivateMouse(); //MARTY - Renamed Static
+	StaticIN_DeactivateMouse();
 }
 
 /*
@@ -210,7 +210,7 @@ void IN_ResetMouse( void )
 IN_MouseEvent
 ===========
 */
-void StaticIN_MouseEvent( int mstate ) //MARTY - Renamed Static
+void StaticIN_MouseEvent( int mstate )
 {
 	// perform button actions
 	for( int i = 0; i < mouse_buttons; i++ )
@@ -322,12 +322,12 @@ void IN_XBoxGamepadThumbs ( float frametime, usercmd_t *cmd ) //MARTY
 IN_XBoxGamepad
 ===========
 */
-int StaticIN_XBoxGamepadButtons ( XBGamepadButtons_t *pGamepadButtons ) //MARTY - Called every frame
+int StaticIN_XBoxGamepadButtons ( XBGamepadButtons_t *pGamepadButtons )
 {
-	//XBGamepadInfo_t gamepadInfo; //MARTY - Made global
+	//XBGamepadInfo_t gamepadInfo; // MARTY - Made global
 	UpdateGamepad(&g_gamepadInfo);
 	
-	//Put the button pointers into a button only struct
+	// Put the button pointers into a button only struct
 	if(pGamepadButtons)
 	{
 		pGamepadButtons->iKey = g_gamepadInfo.iKey;
@@ -450,7 +450,7 @@ void IN_MouseMove( float frametime, usercmd_t *cmd )
 IN_Accumulate
 ===========
 */
-void StaticIN_Accumulate( void ) //MARYY FIXME //MARTY - Renamed Static
+void StaticIN_Accumulate( void ) // TODO
 {
 /*	if( mouseactive )
 	{
@@ -476,7 +476,7 @@ void StaticIN_Accumulate( void ) //MARYY FIXME //MARTY - Renamed Static
 IN_ClearStates
 ===================
 */
-void StaticIN_ClearStates( void ) //MARTY - Renamed static
+void StaticIN_ClearStates( void )
 {
 	if( !mouseactive ) return;
 

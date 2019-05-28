@@ -78,7 +78,7 @@ class CTripmineGrenade : public CGrenade
 
 LINK_ENTITY_TO_CLASS( monster_tripmine, CTripmineGrenade );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CTripmineGrenade )
 
@@ -369,7 +369,7 @@ void CTripmineGrenade::DelayDeathThink( void )
 
 LINK_ENTITY_TO_CLASS( weapon_tripmine, CTripmine );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CTripmine )
 

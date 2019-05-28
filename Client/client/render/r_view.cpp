@@ -14,13 +14,13 @@
 #include "r_studio.h"
 #include "..\..\game_shared\mathlib.h"
 
-//#define min(a, b)  (((a) < (b)) ? (a) : (b))  //MARTY FIXME WIP
-//#define max(a, b) (a) > (b) ? (a) : (b)  //MARTY FIXME WIP
+//#define min(a, b)  (((a) < (b)) ? (a) : (b))  // MARTY FIXME
+//#define max(a, b) (a) > (b) ? (a) : (b)  // MARTY FIXME
 
 // thirdperson camera
-void StaticCAM_Think( void ) { R_ClearScene(); } //MARTY - Renamed Static
-void StaticCL_CameraOffset( float *ofs ) { g_vecZero.CopyToArray( ofs ); } //MARTY - Renamed Static
-int StaticCL_IsThirdPerson( void ){ return (gHUD.m_iCameraMode ? 1 : 0); } //MARTY - Renamed Static
+void StaticCAM_Think( void ) { R_ClearScene(); }
+void StaticCL_CameraOffset( float *ofs ) { g_vecZero.CopyToArray( ofs ); }
+int StaticCL_IsThirdPerson( void ){ return (gHUD.m_iCameraMode ? 1 : 0); }
 
 cl_entity_t *v_intermission_spot;
 float v_idlescale;

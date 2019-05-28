@@ -25,7 +25,7 @@
 				FavorSizeOrSpeed="1"
 				OptimizeForProcessor="2"
 				AdditionalIncludeDirectories="..\dlls,..\engine,..\common,..\pm_shared,..\game_shared"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_XBOX;QUIVER;VOXEL;QUAKE2;VALVE_DLL;CLIENT_WEAPONS"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;QUIVER;VOXEL;QUAKE2;VALVE_DLL;CLIENT_WEAPONS"
 				StringPooling="TRUE"
 				RuntimeLibrary="1"
 				EnableFunctionLevelLinking="TRUE"
@@ -140,8 +140,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\debughl"
-			IntermediateDirectory=".\debughl"
+			OutputDirectory=".\Debughl"
+			IntermediateDirectory=".\Debughl"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -150,7 +150,7 @@
 				Optimization="0"
 				OptimizeForProcessor="1"
 				AdditionalIncludeDirectories="..\dlls,..\engine,..\common,..\game_shared,..\pm_shared,..\"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_XBOX;QUIVER;VOXEL;QUAKE2;VALVE_DLL;CLIENT_WEAPONS"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;QUIVER;VOXEL;QUAKE2;VALVE_DLL;CLIENT_WEAPONS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\debughl/hl.pch"

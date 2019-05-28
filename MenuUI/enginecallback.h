@@ -31,7 +31,8 @@ GNU General Public License for more details.
 #define GetGameInfo		(*g_engfuncs.pfnGetGameInfo)
 #define CheckGameDll	(*g_engfuncs.pfnCheckGameDll)
 
-#define PIC_SetGamma( x, y )	(*g_engfuncs.pfnProcessImage)( x, y, 0, 0 )
+#define PIC_SetGamma( x, y )	(*g_engfuncs.pfnProcessImage)( x, y, -1, -1 )
+#define PIC_Remap( x, y, z )	(*g_engfuncs.pfnProcessImage)( x, -1.0f, y, z )
 
 #define DRAW_LOGO		(*g_engfuncs.pfnDrawLogo)
 #define PRECACHE_LOGO( x )	(*g_engfuncs.pfnDrawLogo)( x, 0, 0, 0, 0 )

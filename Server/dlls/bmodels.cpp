@@ -274,7 +274,7 @@ void CFuncMonsterClip::Spawn( void )
 class CFuncRotating : public CBaseEntity
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	// basic functions
 	void Spawn( void  );
@@ -314,7 +314,7 @@ IMPLEMENT_SAVERESTORE( CFuncRotating, CBaseEntity );
 
 LINK_ENTITY_TO_CLASS( func_rotating, CFuncRotating );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CFuncRotating )
 
@@ -743,7 +743,7 @@ void CFuncRotating :: Blocked( CBaseEntity *pOther )
 class CPendulum : public CBaseEntity
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void	Spawn ( void );
 	void	KeyValue( KeyValueData *pkvd );
@@ -771,7 +771,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( func_pendulum, CPendulum );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CPendulum )
 

@@ -200,7 +200,7 @@ void StreakSplash( const Vector &origin, const Vector &direction, int color, int
 class CGargantua : public CBaseMonster
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -276,7 +276,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( monster_gargantua, CGargantua );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CGargantua )
 

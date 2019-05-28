@@ -28,15 +28,6 @@ extern "C" {
 
 #include "const.h"
 
-#define MAX_ALIAS_NAME	32
-
-typedef struct cmdalias_s
-{
-	struct cmdalias_s	*next;
-	char		name[MAX_ALIAS_NAME];
-	char		*value;
-} cmdalias_t;
-
 // this file is included by both the engine and the client-dll,
 // so make sure engine declarations aren't done twice
 
@@ -105,8 +96,6 @@ typedef struct hud_player_info_s
 	char		*model;
 	short		topcolor;
 	short		bottomcolor;
-
-	unsigned __int64	m_nSteamID;
 } hud_player_info_t;
 
 typedef struct cl_enginefuncs_s
@@ -179,7 +168,7 @@ typedef struct cl_enginefuncs_s
 	float	(*GetClientMaxspeed)( void );
 	int	(*CheckParm)( char *parm, char **ppnext );
 
-	void	(*Key_Event)( int key, qboolean down );
+	void	(*Key_Event)( int key, /*int*/qboolean down );
 	void	(*GetMousePosition)( int *mx, int *my );
 	int	(*IsNoClipping)( void );
 
@@ -207,7 +196,7 @@ typedef struct cl_enginefuncs_s
 	float	(*pfnRandomFloat)( float flLow, float flHigh );	
 	long	(*pfnRandomLong)( long lLow, long lHigh );
 	void	(*pfnHookEvent)( char *name, void ( *pfnEvent )( struct event_args_s *args ));
-	qboolean (*Con_IsVisible) ();
+	/*int*/qboolean	(*Con_IsVisible) ();
 	const char *(*pfnGetGameDirectory)( void );
 	struct cvar_s *(*pfnGetCvarPointer)( const char *szName );
 	const char *(*Key_LookupBinding)( const char *pBinding );
@@ -259,80 +248,44 @@ typedef struct cl_enginefuncs_s
 	void	(*pfnGetMousePos)( struct tagPOINT *ppt );
 	void	(*pfnSetMousePos)( int x, int y );
 	void	(*pfnSetMouseEnable)( qboolean fEnable );
-
-	struct cvar_s* (*pfnGetCvarList)( void );
-	struct cmd_s* (*pfnGetCmdList)( void );
-	char*	(*pfnCvarName)( struct cvar_s* cvar );
-	char*	(*pfnCmdName)( struct cmd_s* cmd );
-
-	float	(*pfnGetServerTime)( void );
+	void	(*pfnUnused1)( void );
+	void	(*pfnUnused2)( void );
+	void	(*pfnUnused3)( void );
+	void	(*pfnUnused4)( void );
+	float	(*pfnGetClientOldTime)( void );
 	float	(*pfnGetGravity)( void );
-
-	const struct model_s* (*pfnPrecacheSprite)( HSPRITE spr );
-
-	// Appears to modifies hidden cvar gl_texsort.
-	void	(*pfnEnableTexSort)( int enable );
-
-	// Colour scaling values for screen.  Only works when gl_texsort is active.
-	void	(*pfnSetLightmapColor)( float red, float green, float blue );
-
-	// Final scaling factor for screen.  Only works when gl_texsort is active.
-	void	(*pfnSetLightmapScale)( float scale );
-
-	// Seems to be a client entry point to the pfnSequenceGet function introduced for CS:CZ
-	void*	(*pfnSequenceGet)( const char *fileName, const char *entryName );
-
-	// Draws a sprite on the screen - parameters are likely incorrect.
-	void	(*pfnSPR_DrawGeneric)( int frame, int x, int y, const wrect_t *prc, int blendsrc, int blenddst, int u3, int u4 );
-
-	// Seems to be a client entry point to the pfnSequencePickSentence function introduced for CS:CZ
-	void*	(*pfnSequencePickSentence)( const char *groupName, int pickMethod, int *picked );
-
-	// localizes hud string, uses Legacy font from skin def
-	// also supports unicode strings
-	int	(*pfnDrawLocalizedHudString)( int x, int y, const char* str, int r, int g, int b );
-
-	// i can't get this to work for some reason, don't use this
-	int	(*pfnDrawLocalizedConsoleString)( int x, int y, const char* str );
-
-	// gets keyvalue for local player, useful for querying vgui menus or autohelp
-	const char *(*LocalPlayerInfo_ValueForKey)( const char* key );
-
-	void	(*pfnDrawText)( int x, int y, const char* text, unsigned long font );
-	int	(*pfnDrawUnicodeCharacter)( int x, int y, short number, int r, int g, int b, unsigned long hfont );
-
-	// Seems to be a client entry point to the pfnGetApproxWavePlayLen function introduced for CS:CZ
-	unsigned int (*pfnGetApproxWavePlayLen)( char *filename );
-
-	// for condition zero, returns interface from GameUI
-	void*	(*GetCareerGameInterface)( void );	// g-cont. !!!! potential crash-point!
-
-	// Sets cvar value - why is this needed when Cvar_SetValue already exists?
+	struct model_s*(*pfnGetModelByIndex)( int index );
+	void	(*pfnUnused5)( void );
+	void	(*pfnUnused6)( void );
+	void	(*pfnUnused7)( void );
+	void	(*pfnUnused8)( void );
+	void	(*pfnUnused9)( void );
+	void	(*pfnUnused10)( void );
+	void	(*pfnUnused11)( void );
+	void	(*pfnUnused12)( void );
+	const char*(*LocalPlayerInfo_ValueForKey)( const char* key );
+	void	(*pfnUnused13)( void );
+	void	(*pfnUnused14)( void );
+	void	(*pfnUnused15)( void );
+	void	(*pfnUnused16)( void );
 	void	(*Cvar_Set)( char *name, char *value );
-
-	// Seems to be a client entry point to the pfnIsCareerMatch function introduced for CS:CZ
-	int	(*pfnIsCareerMatch)( void );
-
-	// passes pitch as param
-	void	(*pfnStartDynamicSound)( char *filename, float volume, float pitch );
-	void	(*pfnMP3_InitStream)( char *filename, int flags );
-
-	float	(*pfnSys_FloatTime)( void );
-
-	void	(*pfnProcessTutorMessageDecayBuffer)( int *buffer, int buflen );
-	void	(*pfnConstructTutorMessageDecayBuffer)( int *buffer, int buflen );
-	void	(*pfnResetTutorMessageDecayData)( void );
-
-	// Seems to be an exact copy of the previous StartDynamicSound function???
-	void	(*pfnStartDynamicSound2)( char *filename, float volume, float pitch );
-
-	// Same like pfnFillRGBA - with other mode (substractive)
-	void	(*pfnFillRGBA2)( int x, int y, int width, int height, int r, int g, int b, int a );
-
+	void	(*pfnUnused17)( void );
+	void	(*pfnUnused18)( void );
+	void	(*pfnUnused19)( void );
+	double	(*pfnSys_FloatTime)( void );
+	void	(*pfnUnused20)( void );
+	void	(*pfnUnused21)( void );
+	void	(*pfnUnused22)( void );
+	void	(*pfnUnused23)( void );
+	void	(*pfnFillRGBABlend)( int x, int y, int width, int height, int r, int g, int b, int a );
+	int	(*pfnGetAppID)( void );
+	void	(*pfnUnused24)( void );
+	void	(*pfnUnused25)( void );
 } cl_enginefunc_t;
 
 #define CLDLL_INTERFACE_VERSION	7
 
+#ifdef _HARDLINKED
 extern void ClientDLL_Init( void ); // from cdll_int.c
 extern void ClientDLL_Shutdown( void );
 extern void ClientDLL_HudInit( void );
@@ -377,6 +330,7 @@ extern void ClientDLL_TempEntUpdate( double ft, double ct, double grav, struct t
 extern struct cl_entity_s *ClientDLL_GetUserEntity( int index );
 extern void ClientDLL_VoiceStatus(int entindex, qboolean bTalking);
 extern void ClientDLL_DirectorMessage( int iSize, void *pbuf );
+#endif
 
 #ifdef __cplusplus
 }

@@ -173,7 +173,7 @@ void CItem::Materialize( void )
 
 class CItemSuit : public CItem
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void )
 	{ 
@@ -202,7 +202,7 @@ class CItemSuit : public CItem
 
 LINK_ENTITY_TO_CLASS(item_suit, CItemSuit);
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CItemSuit )
 
@@ -214,7 +214,7 @@ END_DATADESC()
 
 class CItemBattery : public CItem
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void )
 	{ 
@@ -269,7 +269,7 @@ class CItemBattery : public CItem
 
 LINK_ENTITY_TO_CLASS(item_battery, CItemBattery);
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CItemBattery )
 
@@ -364,7 +364,7 @@ class CItemLongJump : public CItem
 
 LINK_ENTITY_TO_CLASS( item_longjump, CItemLongJump );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CItemLongJump )
 

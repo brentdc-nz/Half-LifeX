@@ -26,7 +26,7 @@ CBaseEntity
 				CBaseGroup
 */
 
-#include "xbox\datamap.h" //MARTY
+#include "xbox\datamap.h" // MARTY
 
 #ifndef H_CBASEENT
 #define H_CBASEENT
@@ -286,7 +286,7 @@ public:
 	}
 
 	// Ugly code to lookup all functions to make sure they are exported when set.
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 	void FunctionCheck( void *pFunction, char *name ); //Moved to cbase.cpp // MARTY
 /*	{ 
 		if (pFunction && !NAME_FOR_FUNCTION((unsigned long)(pFunction)) )
@@ -371,21 +371,21 @@ public:
 // Normally it's illegal to cast a pointer to a member function of a derived class to a pointer to a 
 // member function of a base class.  static_cast is a sleezy way around that problem.
 
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 
 #define SetThink( a ) ThinkSet( static_cast <void (CBaseEntity::*)(void)> (a), #a )
 #define SetTouch( a ) TouchSet( static_cast <void (CBaseEntity::*)(CBaseEntity *)> (a), #a )
 #define SetUse( a ) UseSet( static_cast <void (CBaseEntity::*)(	CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )> (a), #a )
 #define SetBlocked( a ) BlockedSet( static_cast <void (CBaseEntity::*)(CBaseEntity *)> (a), #a )
 
-//MARTY Start
+// MARTY Start
 #define SetMoveDone( a ) \
 	do \
 	{ \
 		m_pfnMoveDone = static_cast <void (CBaseEntity::*)(void)> (a); \
 		FunctionCheck( (void *)*((int *)((char *)this + ( offsetof(CBaseEntity,m_pfnMoveDone)))), "BaseMoveFunc" ); \
 	} while ( 0 )
-///MARTY End
+/// MARTY End
 
 #else
 
@@ -393,17 +393,17 @@ public:
 #define SetTouch( a ) m_pfnTouch = static_cast <void (CBaseEntity::*)(CBaseEntity *)> (a)
 #define SetUse( a ) m_pfnUse = static_cast <void (CBaseEntity::*)( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )> (a)
 #define SetBlocked( a ) m_pfnBlocked = static_cast <void (CBaseEntity::*)(CBaseEntity *)> (a)
-#define SetMoveDone( a ) (void)(m_pfnMoveDone = static_cast <void (CBaseEntity::*)(void)> (a)) //MARTY
+#define SetMoveDone( a ) (void)(m_pfnMoveDone = static_cast <void (CBaseEntity::*)(void)> (a)) // MARTY
 
 #endif
 
-//MARTY Start
+// MARTY Start
 
 #define DEFINE_THINKFUNC( function ) DEFINE_FUNCTION_RAW( function, BASEPTR )
 #define DEFINE_USEFUNC( function ) DEFINE_FUNCTION_RAW( function, USEPTR )
 #define DEFINE_ENTITYFUNC( function ) DEFINE_FUNCTION_RAW( function, ENTITYFUNCPTR )
 
-//MARTY END
+// MARTY END
 
 class CPointEntity : public CBaseEntity
 {
@@ -442,7 +442,7 @@ void PlayLockSounds(entvars_t *pev, locksound_t *pls, int flocked, int fbutton);
 class CMultiSource : public CPointEntity
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( );
 	void KeyValue( KeyValueData *pkvd );
@@ -701,7 +701,7 @@ char *ButtonSound( int sound );				// get string of button sound number
 class CBaseButton : public CBaseToggle
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	virtual void Precache( void );

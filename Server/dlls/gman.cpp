@@ -29,7 +29,7 @@
 class CGMan : public CBaseMonster
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -55,7 +55,7 @@ public:
 };
 LINK_ENTITY_TO_CLASS( monster_gman, CGMan );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CGMan )
 

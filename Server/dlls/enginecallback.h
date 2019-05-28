@@ -71,7 +71,6 @@ extern enginefuncs_t g_engfuncs;
 #if 1 //def _XBOX
 #define CREATEDIRECTORY (*g_engfuncs.pfnSysCreateDirectory)
 #endif
-
 inline void MESSAGE_BEGIN( int msg_dest, int msg_type, const float *pOrigin = NULL, edict_t *ed = NULL ) {
 	(*g_engfuncs.pfnMessageBegin)(msg_dest, msg_type, pOrigin, ed);
 }

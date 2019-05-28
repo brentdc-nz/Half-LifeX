@@ -32,7 +32,7 @@
 
 LINK_ENTITY_TO_CLASS( grenade, CGrenade );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CGrenade )
 

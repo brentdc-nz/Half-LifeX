@@ -35,7 +35,7 @@ LINK_ENTITY_TO_CLASS( info_target, CPointEntity );
 class CBubbling : public CBaseEntity
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void	Spawn( void );
 	void	Precache( void );
@@ -57,7 +57,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( env_bubbles, CBubbling );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CBubbling )
 
@@ -383,7 +383,7 @@ void CBeam::DoSparks( const Vector &start, const Vector &end )
 class CLightning : public CBeam
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void	Spawn( void );
 	void	Precache( void );
@@ -430,7 +430,7 @@ public:
 LINK_ENTITY_TO_CLASS( env_lightning, CLightning );
 LINK_ENTITY_TO_CLASS( env_beam, CLightning );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CLightning )
 
@@ -444,7 +444,7 @@ END_DATADESC()
 //===================
 
 // UNDONE: Jay -- This is only a test
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 class CTripBeam : public CLightning
 {
 	void Spawn( void );
@@ -975,7 +975,7 @@ void CLightning::BeamUpdateVars( void )
 
 LINK_ENTITY_TO_CLASS( env_laser, CLaser );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CLaser )
 
@@ -1208,7 +1208,7 @@ void CGlow::Animate( float frames )
 
 LINK_ENTITY_TO_CLASS( env_sprite, CSprite );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CSprite )
 
@@ -1396,7 +1396,7 @@ void CSprite::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useTy
 class CGibShooter : public CBaseDelay
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void	Spawn( void );
 	void	Precache( void );
@@ -1433,7 +1433,7 @@ TYPEDESCRIPTION CGibShooter::m_SaveData[] =
 IMPLEMENT_SAVERESTORE( CGibShooter, CBaseDelay );
 LINK_ENTITY_TO_CLASS( gibshooter, CGibShooter );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CGibShooter )
 
@@ -1585,7 +1585,7 @@ void CGibShooter :: ShootThink ( void )
 
 class CEnvShooter : public CGibShooter
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void		Precache( void );
 	void		KeyValue( KeyValueData *pkvd );

@@ -41,6 +41,9 @@ GNU General Public License for more details.
 #include <math.h>
 
 #define bound( min, num, max )	((num) >= (min) ? ((num) < (max) ? (num) : (max)) : (min))
+#define SetBits( iBitVector, bits )	((iBitVector) = (iBitVector) | (bits))
+#define ClearBits( iBitVector, bits )	((iBitVector) = (iBitVector) & ~(bits))
+#define FBitSet( iBitVector, bit )	((iBitVector) & (bit))
 
 typedef int (*cmpfunc)( const void *a, const void *b );
 

@@ -125,7 +125,7 @@ void CBreakable::KeyValue( KeyValueData* pkvd )
 //
 LINK_ENTITY_TO_CLASS( func_breakable, CBreakable );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CBreakable )
 
@@ -790,7 +790,7 @@ int	CBreakable :: DamageDecal( int bitsDamageType )
 class CPushable : public CBreakable
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void	Spawn ( void );
 	void	Precache( void );
@@ -828,7 +828,7 @@ IMPLEMENT_SAVERESTORE( CPushable, CBreakable );
 
 LINK_ENTITY_TO_CLASS( func_pushable, CPushable );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CPushable )
 

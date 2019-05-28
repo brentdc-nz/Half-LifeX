@@ -57,7 +57,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( func_mortar_field, CFuncMortarField );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CFuncMortarField )
 
@@ -216,7 +216,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( monster_mortar, CMortar );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CMortar )
 

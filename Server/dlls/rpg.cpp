@@ -38,7 +38,7 @@ enum rpg_e {
 
 LINK_ENTITY_TO_CLASS( weapon_rpg, CRpg );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CRpg )
 
@@ -53,7 +53,7 @@ END_DATADESC()
 
 LINK_ENTITY_TO_CLASS( laser_spot, CLaserSpot );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CLaserSpot )
 
@@ -119,7 +119,7 @@ void CLaserSpot::Precache( void )
 
 LINK_ENTITY_TO_CLASS( rpg_rocket, CRpgRocket );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CRpgRocket )
 
@@ -649,7 +649,7 @@ class CRpgAmmo : public CBasePlayerAmmo
 
 LINK_ENTITY_TO_CLASS( ammo_rpgclip, CRpgAmmo );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CRpgAmmo )
 

@@ -22,8 +22,6 @@
 #include "utils.h"
 #include "parsemsg.h"
 
-
-
 DECLARE_MESSAGE( m_AmmoSecondary, SecAmmoVal );
 DECLARE_MESSAGE( m_AmmoSecondary, SecAmmoIcon );
 

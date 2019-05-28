@@ -31,7 +31,7 @@ int iHornetPuff;
 
 LINK_ENTITY_TO_CLASS( hornet, CHornet );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CHornet )
 

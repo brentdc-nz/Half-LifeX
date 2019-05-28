@@ -97,7 +97,7 @@ static DLL_FUNCTIONS gFunctionTable =
 
 static void SetObjectCollisionBox( entvars_t *pev );
 
-//#ifndef _WIN32 //MARTY
+//#ifndef _WIN32 // MARTY
 extern "C" {
 //#endif
 int StaticGetEntityAPI( DLL_FUNCTIONS *pFunctionTable, int interfaceVersion )
@@ -592,13 +592,13 @@ TYPEDESCRIPTION	CBaseEntity::m_SaveData[] =
 	DEFINE_FIELD( CBaseEntity, m_pfnTouch, FIELD_FUNCTION ),
 	DEFINE_FIELD( CBaseEntity, m_pfnUse, FIELD_FUNCTION ),
 	DEFINE_FIELD( CBaseEntity, m_pfnBlocked, FIELD_FUNCTION ),
-	DEFINE_FIELD( CBaseEntity, m_pfnMoveDone, FIELD_FUNCTION ), //MARTY
+	DEFINE_FIELD( CBaseEntity, m_pfnMoveDone, FIELD_FUNCTION ), // MARTY
 };
 
 int CBaseEntity::Save( CSave &save )
 {
 	if ( save.WriteEntVars( "ENTVARS", pev ) )
-		return save.WriteFields( "BASE", this, GetDataDescMap(), m_SaveData, ARRAYSIZE(m_SaveData) ); //MARTY - Updated
+		return save.WriteFields( "BASE", this, GetDataDescMap(), m_SaveData, ARRAYSIZE(m_SaveData) ); // MARTY - Updated
 
 	return 0;
 }
@@ -771,7 +771,7 @@ CBaseEntity * CBaseEntity::Create( char *szName, const Vector &vecOrigin, const 
 	return pEntity;
 }
 
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 
 void CBaseEntity::FunctionCheck( void *pFunction, char *name )
 {

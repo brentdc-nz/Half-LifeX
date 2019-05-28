@@ -24,9 +24,8 @@ typedef int		HIMAGE;		// handle to a graphic
 
 // flags for PIC_Load
 #define PIC_NEAREST		(1<<0)		// disable texfilter
-#define PIC_KEEP_RGBDATA	(1<<1)		// some images keep source
+#define PIC_KEEP_SOURCE	(1<<1)		// some images keep source
 #define PIC_NOFLIP_TGA	(1<<2)		// Steam background completely ignore tga attribute 0x20
-#define PIC_KEEP_8BIT	(1<<3)		// keep original 8-bit image (if present)
 
 typedef struct ui_globalvars_s
 {	
@@ -37,7 +36,7 @@ typedef struct ui_globalvars_s
 	int		scrHeight;
 
 	int		maxClients;
-	int		developer;
+	int		allow_console;
 	int		demoplayback;
 	int		demorecording;
 	char		demoname[64];	// name of currently playing demo
@@ -103,17 +102,17 @@ typedef struct ui_enginefuncs_s
 	struct cl_entity_s* (*pfnGetPlayerModel)( void );	// for drawing playermodel previews
 	void	(*pfnSetModel)( struct cl_entity_s *ed, const char *path );
 	void	(*pfnClearScene)( void );
-	void	(*pfnRenderScene)( const struct ref_params_s *fd );
+	void	(*pfnRenderScene)( const struct ref_viewpass_s *rvp );
 	int	(*CL_CreateVisibleEntity)( int type, struct cl_entity_s *ent );
 
 	// misc handlers
 	void	(*pfnHostError)( const char *szFmt, ... );
-	qboolean (*pfnFileExists)( const char *filename, qboolean gamedironly );
+	/*int*/qboolean	(*pfnFileExists)( const char *filename, /*int*/qboolean gamedironly );
 	void	(*pfnGetGameDir)( char *szGetGameDir );
 
 	// gameinfo handlers
-	qboolean (*pfnCreateMapsList)( qboolean fRefresh );
-	qboolean (*pfnClientInGame)( void );
+	/*int*/qboolean	(*pfnCreateMapsList)( /*int*/qboolean fRefresh );
+	/*int*/qboolean	(*pfnClientInGame)( void );
 	void	(*pfnClientJoin)( const struct netadr_s adr );
 	
 	// parse txt files
@@ -127,7 +126,7 @@ typedef struct ui_enginefuncs_s
 	const char *(*pfnKeynumToString)( int keynum );
 	const char *(*pfnKeyGetBinding)( int keynum );
 	void	(*pfnKeySetBinding)( int keynum, const char *binding );
-	qboolean (*pfnKeyIsDown)( int keynum );
+	/*int*/qboolean	(*pfnKeyIsDown)( int keynum );
 	int	(*pfnKeyGetOverstrikeMode)( void );
 	void	(*pfnKeySetOverstrikeMode)( int fActive );
 	void	*(*pfnKeyGetState)( const char *name );			// for mlook, klook etc
@@ -140,13 +139,13 @@ typedef struct ui_enginefuncs_s
 	int	(*pfnGetGameInfo)( GAMEINFO *pgameinfo );
 	GAMEINFO	**(*pfnGetGamesList)( int *numGames );			// collect info about all mods
 	char 	**(*pfnGetFilesList)( const char *pattern, int *numFiles, int gamedironly );	// find in files
-	qboolean (*pfnGetSaveComment)( const char *savename, char *comment );
-	qboolean	(*pfnGetDemoComment)( const char *demoname, char *comment );
+	/*int*/qboolean (*pfnGetSaveComment)( const char *savename, char *comment );
+	/*int*/qboolean	(*pfnGetDemoComment)( const char *demoname, char *comment );
 	int	(*pfnCheckGameDll)( void );				// returns false if hl.dll is missed or invalid
 	char	*(*pfnGetClipboardData)( void );
 
 	// engine launcher
-	void	(*pfnShellExecute)( const char *name, const char *args, qboolean closeEngine );
+	void	(*pfnShellExecute)( const char *name, const char *args, /*int*/qboolean closeEngine );
 	void	(*pfnWriteServerConfig)( const char *name );
 	void	(*pfnChangeInstance)( const char *newInstance, const char *szFinalMessage );
 	void	(*pfnPlayBackgroundTrack)( const char *introName, const char *loopName );
@@ -161,6 +160,10 @@ typedef struct ui_enginefuncs_s
 	int	(*pfnIsMapValid)( char *filename );
 	void	(*pfnProcessImage)( int texnum, float gamma, int topColor, int bottomColor );
 	int	(*pfnCompareFileTime)( char *filename1, char *filename2, int *iCompare );
+
+	const char *(*pfnGetModeString)( int vid_mode );
+	int	(*COM_SaveFile)( const char *filename, const void *data, long len );
+	/*int*/qboolean	(*COM_RemoveFile)( const char *filepath );
 } ui_enginefuncs_t;
 
 typedef struct

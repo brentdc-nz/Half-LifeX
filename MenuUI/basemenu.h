@@ -100,6 +100,8 @@ GNU General Public License for more details.
 
 #define ID_BACKGROUND		0	// catch warning on change this
 
+#define EMPTY_SAVE_PIC		"gfx\\lambda32"
+
 // Generic types
 typedef enum
 {

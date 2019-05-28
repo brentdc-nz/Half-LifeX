@@ -211,7 +211,7 @@ void FireTargets( const char *targetName, CBaseEntity *pActivator, CBaseEntity *
 
 LINK_ENTITY_TO_CLASS( DelayedUse, CBaseDelay );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CBaseDelay )
 

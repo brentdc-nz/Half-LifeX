@@ -105,7 +105,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( monster_alien_controller, CController );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CController )
 
@@ -1150,7 +1150,7 @@ void CController::MoveExecute( CBaseEntity *pTargetEnt, const Vector &vecDir, fl
 //=========================================================
 class CControllerHeadBall : public CBaseMonster
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -1167,7 +1167,7 @@ class CControllerHeadBall : public CBaseMonster
 
 LINK_ENTITY_TO_CLASS( controller_head_ball, CControllerHeadBall );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CControllerHeadBall )
 
@@ -1374,7 +1374,7 @@ class CControllerZapBall : public CBaseMonster
 
 LINK_ENTITY_TO_CLASS( controller_energy_ball, CControllerZapBall );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CControllerZapBall )
 

@@ -32,7 +32,7 @@ extern void SetMovedir(entvars_t* ev);
 class CBaseDoor : public CBaseToggle
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -273,7 +273,7 @@ touch or takedamage doors).
 
 LINK_ENTITY_TO_CLASS( func_door, CBaseDoor );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CBaseDoor )
 
@@ -824,7 +824,7 @@ button or trigger field activates the door.
 class CRotDoor : public CBaseDoor
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	virtual void SetToggleState( int state );
@@ -832,7 +832,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( func_door_rotating, CRotDoor );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CRotDoor )
 
@@ -929,7 +929,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( momentary_door, CMomentaryDoor );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CMomentaryDoor )
 

@@ -122,7 +122,7 @@ IMPLEMENT_SAVERESTORE( CCineMonster, CBaseMonster );
 
 LINK_ENTITY_TO_CLASS( scripted_sequence, CCineMonster );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CCineMonster )
 
@@ -932,7 +932,7 @@ BOOL CBaseMonster :: CineCleanup( )
 class CScriptedSentence : public CBaseToggle
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void KeyValue( KeyValueData *pkvd );
@@ -986,7 +986,7 @@ IMPLEMENT_SAVERESTORE( CScriptedSentence, CBaseToggle );
 
 LINK_ENTITY_TO_CLASS( scripted_sentence, CScriptedSentence );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CScriptedSentence )
 
@@ -1227,7 +1227,7 @@ BOOL CScriptedSentence :: StartSentence( CBaseMonster *pTarget )
 class CFurniture : public CBaseMonster
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn ( void );
 	void Die( void );
@@ -1238,7 +1238,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( monster_furniture, CFurniture );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CFurniture )
 

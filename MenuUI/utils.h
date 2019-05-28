@@ -104,13 +104,15 @@ inline int UnpackAlpha( unsigned int ulRGBA )
 	return ((ulRGBA & 0xFF000000) >> 24);	
 }
 
+// Remap a value in the range [A,B] to [C,D].
 inline float RemapVal( float val, float A, float B, float C, float D)
 {
+	if( A == B ) return val >= B ? D : C;
 	return C + (D - C) * (val - A) / (B - A);
 }
 
 extern int ColorStrlen( const char *str );	// returns string length without color symbols
-extern const int g_iColorTable[8];
+extern int g_iColorTable[8];
 extern void COM_FileBase( const char *in, char *out );		// ripped out from hlsdk 2.3
 extern int UI_FadeAlpha( int starttime, int endtime );
 extern void StringConcat( char *dst, const char *src, size_t size );	// strncat safe prototype

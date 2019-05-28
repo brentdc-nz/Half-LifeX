@@ -42,7 +42,7 @@ enum firemode_e
 
 LINK_ENTITY_TO_CLASS( weapon_hornetgun, CHgun );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CHgun )
 

@@ -51,7 +51,7 @@ enum egon_e {
 
 LINK_ENTITY_TO_CLASS( weapon_egon, CEgon );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CEgon )
 

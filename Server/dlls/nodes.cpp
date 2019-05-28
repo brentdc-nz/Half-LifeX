@@ -57,6 +57,7 @@ LINK_ENTITY_TO_CLASS( info_node_air, CNodeEnt );
 //=========================================================
 void CGraph :: InitGraph( void)
 {
+
 	// Make the graph unavailable
 	//
 	m_fGraphPresent = FALSE;

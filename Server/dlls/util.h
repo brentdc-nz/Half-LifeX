@@ -19,12 +19,12 @@
 #include "activity.h"
 #endif
 
-class CBaseEntity; //MARTY FIXME WIP - Move me
+class CBaseEntity; // MARTY FIXME WIP - Move me
 
 //
 // Function prototype for all input handlers.
 //
-typedef void (CBaseEntity::*inputfunc_t)(void); //MARTY FIXME WIP - Move me
+typedef void (CBaseEntity::*inputfunc_t)(void); // MARTY FIXME WIP - Move me
 
 #ifndef ENGINECALLBACK_H
 #include "enginecallback.h"
@@ -103,7 +103,7 @@ typedef int BOOL;
 //
 // Conversion among the three types of "entity", including identity-conversions.
 //
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 	extern edict_t *DBG_EntOfVars(const entvars_t *pev);
 	inline edict_t *ENT(const entvars_t *pev)	{ return DBG_EntOfVars(pev); }
 #else
@@ -114,7 +114,7 @@ inline edict_t *ENT(EOFFSET eoffset)			{ return (*g_engfuncs.pfnPEntityOfEntOffs
 inline EOFFSET OFFSET(EOFFSET eoffset)			{ return eoffset; }
 inline EOFFSET OFFSET(const edict_t *pent)	
 { 
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 	if ( !pent )
 		ALERT( at_error, "Bad ent in OFFSET()\n" );
 #endif
@@ -122,7 +122,7 @@ inline EOFFSET OFFSET(const edict_t *pent)
 }
 inline EOFFSET OFFSET(entvars_t *pev)				
 { 
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 	if ( !pev )
 		ALERT( at_error, "Bad pev in OFFSET()\n" );
 #endif
@@ -352,7 +352,7 @@ extern int BuildChangeList( LEVELLIST *pLevelList, int maxList );
 //
 // How did I ever live without ASSERT?
 //
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 void DBG_AssertFunction(BOOL fExpr, const char* szExpr, const char* szFile, int szLine, const char* szMessage);
 #define ASSERT(f)		DBG_AssertFunction(f, #f, __FILE__, __LINE__, NULL)
 #define ASSERTSZ(f, sz)	DBG_AssertFunction(f, #f, __FILE__, __LINE__, sz)

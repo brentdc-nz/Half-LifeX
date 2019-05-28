@@ -44,7 +44,7 @@ enum squeak_e {
 
 class CSqueakGrenade : public CGrenade
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -76,7 +76,7 @@ float CSqueakGrenade::m_flNextBounceSoundTime = 0;
 
 LINK_ENTITY_TO_CLASS( monster_snark, CSqueakGrenade );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CSqueakGrenade )
 
@@ -425,7 +425,7 @@ void CSqueakGrenade::SuperBounceTouch( CBaseEntity *pOther )
 
 LINK_ENTITY_TO_CLASS( weapon_snark, CSqueak );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CSqueak )
 

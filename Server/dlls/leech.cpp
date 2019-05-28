@@ -72,7 +72,7 @@
 class CLeech : public CBaseMonster
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -145,7 +145,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( monster_leech, CLeech );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CLeech )
 

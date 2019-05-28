@@ -30,7 +30,7 @@
 class CRecharge : public CBaseToggle
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( );
 	void Precache( void );
@@ -64,7 +64,7 @@ IMPLEMENT_SAVERESTORE( CRecharge, CBaseEntity );
 
 LINK_ENTITY_TO_CLASS(func_recharge, CRecharge);
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CRecharge )
 

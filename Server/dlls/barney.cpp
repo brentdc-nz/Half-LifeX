@@ -805,7 +805,7 @@ void CBarney::DeclineFollowing( void )
 class CDeadBarney : public CBaseMonster
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	int	Classify ( void ) { return	CLASS_PLAYER_ALLY; }
@@ -831,7 +831,7 @@ void CDeadBarney::KeyValue( KeyValueData *pkvd )
 
 LINK_ENTITY_TO_CLASS( monster_barney_dead, CDeadBarney );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CDeadBarney )
 

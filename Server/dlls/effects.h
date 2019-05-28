@@ -33,7 +33,7 @@
 class CSprite : public CPointEntity
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -187,7 +187,7 @@ public:
 class CLaser : public CBeam
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void	Spawn( void );
 	void	Precache( void );

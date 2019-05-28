@@ -29,7 +29,7 @@
 enginefuncs_t g_engfuncs;
 globalvars_t  *gpGlobals;
 
-/*#ifdef _WIN32 //MARTY
+/*#ifdef _WIN32 // MARTY
 
 // Required DLL entry point
 BOOL WINAPI DllMain(
@@ -57,7 +57,7 @@ void DLLEXPORT GiveFnptrsToDll(	enginefuncs_t* pengfuncsFromEngine, globalvars_t
 
 extern "C" {
 
-void StaticGiveFnptrsToDll(	enginefuncs_t* pengfuncsFromEngine, globalvars_t *pGlobals ) //MARTY - Renamed static
+void StaticGiveFnptrsToDll(	enginefuncs_t* pengfuncsFromEngine, globalvars_t *pGlobals ) // MARTY - Renamed static
 {
 	memcpy(&g_engfuncs, pengfuncsFromEngine, sizeof(enginefuncs_t));
 	gpGlobals = pGlobals;

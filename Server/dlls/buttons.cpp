@@ -142,7 +142,7 @@ IMPLEMENT_SAVERESTORE( CMultiSource, CBaseEntity );
 
 LINK_ENTITY_TO_CLASS( multisource, CMultiSource );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CMultiSource )
 
@@ -449,7 +449,7 @@ where it can be triggered again.
 */
 LINK_ENTITY_TO_CLASS( func_button, CBaseButton );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CBaseButton )
 
@@ -828,14 +828,14 @@ void CBaseButton::ButtonBackHome( void )
 class CRotButton : public CBaseButton
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 };
 
 LINK_ENTITY_TO_CLASS( func_rot_button, CRotButton );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CRotButton )
 
@@ -967,7 +967,7 @@ IMPLEMENT_SAVERESTORE( CMomentaryRotButton, CBaseToggle );
 
 LINK_ENTITY_TO_CLASS( momentary_rot_button, CMomentaryRotButton );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CMomentaryRotButton )
 
@@ -1176,7 +1176,7 @@ void CMomentaryRotButton::UpdateSelfReturn( float value )
 class CEnvSpark : public CBaseEntity
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void	Spawn(void);
 	void	Precache(void);
@@ -1204,7 +1204,7 @@ IMPLEMENT_SAVERESTORE( CEnvSpark, CBaseEntity );
 LINK_ENTITY_TO_CLASS(env_spark, CEnvSpark);
 LINK_ENTITY_TO_CLASS(env_debris, CEnvSpark);
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CEnvSpark )
 

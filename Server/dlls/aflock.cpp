@@ -110,7 +110,7 @@ public:
 };
 LINK_ENTITY_TO_CLASS( monster_flyer, CFlockingFlyer );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CFlockingFlyer )
 

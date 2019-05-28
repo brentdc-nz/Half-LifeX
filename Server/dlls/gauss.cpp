@@ -43,7 +43,7 @@ enum gauss_e {
 
 LINK_ENTITY_TO_CLASS( weapon_gauss, CGauss );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CGauss )
 
@@ -608,7 +608,7 @@ void CGauss::WeaponIdle( void )
 
 class CGaussAmmo : public CBasePlayerAmmo
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void )
 	{ 
@@ -634,7 +634,7 @@ class CGaussAmmo : public CBasePlayerAmmo
 
 LINK_ENTITY_TO_CLASS( ammo_gaussclip, CGaussAmmo );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CGaussAmmo )
 

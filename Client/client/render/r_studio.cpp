@@ -39,7 +39,7 @@ CStudioModelRenderer g_StudioRenderer;
 //			HUD_GetStudioModelInterface
 //	Export this function for the engine to use the studio renderer class to render objects.
 //================================================================================================
-int StaticHUD_GetStudioModelInterface( int version, struct r_studio_interface_s **ppinterface, struct engine_studio_api_s *pstudio ) //MARTY - Renamed Static
+int StaticHUD_GetStudioModelInterface( int version, struct r_studio_interface_s **ppinterface, struct engine_studio_api_s *pstudio )
 {
 	if( version != STUDIO_INTERFACE_VERSION )
 		return 0;
@@ -2333,7 +2333,7 @@ void CStudioModelRenderer::StudioDynamicLight( cl_entity_t *ent, alight_t *light
 
 	lightinfo->plightvec = m_pLightInfo->lightVec;
 
-	color24 ambient = {0,0,0}; // Stop compiler warning
+	color24 ambient = {0,0,0}; // keep compiler happy
 
 	// setup ambient lighting
 	bool invLight = (ent->curstate.effects & EF_INVLIGHT) ? true : false;
@@ -2527,7 +2527,7 @@ void CStudioModelRenderer::StudioClientEvents( void )
 			continue;
 
 		if( (float)pevent[i].frame > start && f >= (float)pevent[i].frame )
-			StaticHUD_StudioEvent( &pevent[i], m_pCurrentEntity ); //MARTY - Renamed Static
+			StaticHUD_StudioEvent( &pevent[i], m_pCurrentEntity );
 	}
 }
 

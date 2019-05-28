@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //CR
 #include "ui_title_anim.h"
 
-#ifdef _XBOX //MARTY
+#ifdef _XBOX
 static int iKeyCount = 0;
 #endif
 
@@ -41,7 +41,7 @@ cvar_t		*ui_showmodels;
 uiStatic_t	uiStatic;
 
 char		uiEmptyString[256];
- //MARTY - Fixed Slashes
+//MARTY - Fixed Slashes
 const char	*uiSoundIn	= "media\\launch_upmenu1.wav";
 const char	*uiSoundOut	= "media\\launch_dnmenu1.wav";
 const char	*uiSoundLaunch	= "media\\launch_select2.wav";
@@ -49,7 +49,7 @@ const char	*uiSoundGlow	= "media\\launch_glow1.wav";
 const char	*uiSoundBuzz	= "media\\launch_deny2.wav";
 const char	*uiSoundKey	= "media\\launch_select1.wav";
 const char	*uiSoundRemoveKey	= "media\\launch_deny1.wav";
-//MARTY END
+
 const char	*uiSoundMove	= "";		// Xash3D not use movesound
 const char	*uiSoundNull	= "";
 
@@ -66,7 +66,7 @@ int		uiColorBlack	= 0xFF000000;	//  0,   0,   0,  255	// some controls backgroun
 int		uiColorConsole	= 0xFFF0B418;	// just for reference 
 
 // color presets (this is nasty hack to allow color presets to part of text)
-const int g_iColorTable[8] =
+int g_iColorTable[8] =
 {
 0xFF000000, // black
 0xFFFF0000, // red
@@ -74,7 +74,7 @@ const int g_iColorTable[8] =
 0xFFFFFF00, // yellow
 0xFF0000FF, // blue
 0xFF00FFFF, // cyan
-0xFFF0B418, // dialog or button letters color
+0xFFF0B418, // INPUT_TEXT_COLOR
 0xFFFFFFFF, // white
 };
 
@@ -712,7 +712,7 @@ const char *UI_DefaultKey( menuFramework_s *menu, int key, int down )
 	int		cursorPrev;
 
 	// menu system key
-	if( down && key == K_ESCAPE || key == K_XBOX_B ) //MARTY
+	if( down && key == K_ESCAPE || key == K_XBOX_B ) // MARTY
 	{
 		UI_PopMenu();
 		return uiSoundOut;
@@ -1029,7 +1029,7 @@ void UI_UpdateMenu( float flTime )
 	uiStatic.realTime = flTime * 1000;
 	uiStatic.framecount++;
 
-	if( CVAR_GET_FLOAT( "sv_background" ) && !g_engfuncs.pfnClientInGame())
+	if( CVAR_GET_FLOAT( "cl_background" ) && !g_engfuncs.pfnClientInGame())
 		return;	// don't draw menu while level is loading
 
 	if( uiStatic.firstDraw )
@@ -1244,6 +1244,9 @@ void UI_SetActiveMenu( int fActive )
 	KEY_ClearStates();
 	uiStatic.framecount = 0;
 
+	if( fActive && uiStatic.visible )
+		return; // don't reset the menu
+
 	if( fActive )
 	{
 		KEY_SetDest( KEY_MENU );
@@ -1300,7 +1303,7 @@ int UI_IsVisible( void )
 
 void UI_GetCursorPos( int *pos_x, int *pos_y )
 {
-#ifndef _XBOX //MARTY
+#ifndef _XBOX
 	if( pos_x ) *pos_x = uiStatic.cursorX;
 	if( pos_y ) *pos_y = uiStatic.cursorY;
 #endif

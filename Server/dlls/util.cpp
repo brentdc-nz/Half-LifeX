@@ -311,7 +311,7 @@ TYPEDESCRIPTION	gEntvarsDescription[] =
 #define ENTVARS_COUNT		(sizeof(gEntvarsDescription)/sizeof(gEntvarsDescription[0]))
 
 
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 edict_t *DBG_EntOfVars( const entvars_t *pev )
 {
 	if (pev->pContainingEntity != NULL)
@@ -326,7 +326,7 @@ edict_t *DBG_EntOfVars( const entvars_t *pev )
 #endif //DEBUG
 
 
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 	void
 DBG_AssertFunction(
 	BOOL		fExpr,
@@ -1800,7 +1800,7 @@ unsigned short CSaveRestoreBuffer :: TokenHash( const char *pszToken )
 {
 	unsigned short	hash = (unsigned short)(HashString( pszToken ) % (unsigned)m_pdata->tokenCount );
 	
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 	static int tokensparsed = 0;
 	tokensparsed++;
 	if ( !m_pdata->tokenCount || !m_pdata->pTokens )
@@ -1809,7 +1809,7 @@ unsigned short CSaveRestoreBuffer :: TokenHash( const char *pszToken )
 
 	for ( int i=0; i<m_pdata->tokenCount; i++ )
 	{
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 		static qboolean beentheredonethat = FALSE;
 		if ( i > 50 && !beentheredonethat )
 		{
@@ -1968,15 +1968,15 @@ void CSave :: WriteFunction( datamap_t *pRootMap, const char *pname, inputfunc_t
 {
 	const char *functionName;
 
-	functionName = UTIL_FunctionToName( pRootMap, *data ); //NAME_FOR_FUNCTION( *data );  //MARTY
+	functionName = UTIL_FunctionToName( pRootMap, *data ); //NAME_FOR_FUNCTION( *data );  // MARTY
 	if ( functionName )
 	{
 		BufferField( pname, strlen(functionName) + 1, functionName );
-		ALERT( at_error, "____MARTY TEST ___ %s ____ FUNCTION FOUND AND WRITTEN!!!!!\n", functionName ); //MARTY - Remove me latter
+		ALERT( at_error, "____MARTY TEST ___ %s ____ FUNCTION FOUND AND WRITTEN!!!!!\n", functionName ); // MARTY - Remove me latter
 	}
 	else
-	//	ALERT( at_error, "Invalid function pointer in entity!\n"); //MARTY
-		ALERT( at_error, "Invalid function pointer in entity! : %s\n", pname);  //MARTY - New
+	//	ALERT( at_error, "Invalid function pointer in entity!\n"); // MARTY
+		ALERT( at_error, "Invalid function pointer in entity! : %s\n", pname);  // MARTY - New
 	
 }
 
@@ -2036,7 +2036,7 @@ int CSave :: WriteEntVars( const char *pname, entvars_t *pev )
 	return WriteFields( pname, pev, NULL, gEntvarsDescription, ENTVARS_COUNT );
 }
 
-int CSave :: WriteFields( const char *pname, void *pBaseData, datamap_t *pRootMap, TYPEDESCRIPTION *pFields, int fieldCount ) //MARTY - Updated
+int CSave :: WriteFields( const char *pname, void *pBaseData, datamap_t *pRootMap, TYPEDESCRIPTION *pFields, int fieldCount ) // MARTY - Updated
 {
 	int				i, j, actualCount, emptyCount;
 	TYPEDESCRIPTION	*pTest;
@@ -2135,7 +2135,7 @@ int CSave :: WriteFields( const char *pname, void *pBaseData, datamap_t *pRootMa
 
 		// For now, just write the address out, we're not going to change memory while doing this yet!
 		case FIELD_FUNCTION:
-			WriteFunction( pRootMap, pTest->fieldName, (inputfunc_t **)(char *)pOutputData, pTest->fieldSize ); //MARTY
+			WriteFunction( pRootMap, pTest->fieldName, (inputfunc_t **)(char *)pOutputData, pTest->fieldSize ); // MARTY
 		break;
 		default:
 			ALERT( at_error, "Bad field type\n" );
@@ -2352,7 +2352,7 @@ int CRestore::ReadField( datamap_t *pMap, void *pBaseData, TYPEDESCRIPTION *pFie
 						if ( strlen( (char *)pInputData ) == 0 )
 							*((int *)pOutputData) = 0;
 						else
-							*((int *)pOutputData) = (int)UTIL_FunctionFromName( pMap, (char *)pInputData ); // FUNCTION_FROM_NAME( (char *)pInputData ); //MARTY
+							*((int *)pOutputData) = (int)UTIL_FunctionFromName( pMap, (char *)pInputData ); // FUNCTION_FROM_NAME( (char *)pInputData ); // MARTY
 					break;
 
 					default:
@@ -2415,7 +2415,7 @@ int CRestore::ReadFields( datamap_t *pMap, const char *pname, void *pBaseData, T
 	for ( i = 0; i < fileCount; i++ )
 	{
 		BufferReadHeader( &header );
-		lastField = ReadField( pMap, pBaseData, pFields, fieldCount, lastField, header.size, m_pdata->pTokens[header.token], header.pData ); //MARTY
+		lastField = ReadField( pMap, pBaseData, pFields, fieldCount, lastField, header.size, m_pdata->pTokens[header.token], header.pData ); // MARTY
 		lastField++;
 	}
 	
@@ -2543,7 +2543,7 @@ int	CRestore::BufferCheckZString( const char *string )
 	return 0;
 }
 
-//MARTY START
+// MARTY START
 
 //-----------------------------------------------------------------------------
 // Purpose: Search this datamap for the name of this member function
@@ -2598,4 +2598,4 @@ inputfunc_t *UTIL_FunctionFromName( datamap_t *pMap, const char *pName )
 	return NULL;
 }
 
-//MARTY END
+// MARTY END

@@ -31,7 +31,7 @@
 class CGenericMonster : public CBaseMonster
 {
 public:
-	DECLARE_DATADESC(); //MARTY 
+	DECLARE_DATADESC(); // MARTY 
 
 	void Spawn( void );
 	void Precache( void );
@@ -42,7 +42,7 @@ public:
 };
 LINK_ENTITY_TO_CLASS( monster_generic, CGenericMonster );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CGenericMonster )
 

@@ -37,7 +37,7 @@ enum handgrenade_e {
 
 LINK_ENTITY_TO_CLASS( weapon_handgrenade, CHandGrenade );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CHandGrenade )
 

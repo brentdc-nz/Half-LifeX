@@ -98,7 +98,7 @@ HUD_AddEntity
 Return 0 to filter entity from visible list for rendering
 ========================
 */
-int StaticHUD_AddEntity( int type, struct cl_entity_s *ent, const char *modelname ) //MARTY - Renamed Static
+int StaticHUD_AddEntity( int type, struct cl_entity_s *ent, const char *modelname )
 {
 	return 1;
 }
@@ -112,7 +112,7 @@ playerstate update in entity_state_t.  In order for these overrides to eventuall
 structure, we need to copy them into the state structure at this point.
 =========================
 */
-void StaticHUD_TxferLocalOverrides( struct entity_state_s *state, const struct clientdata_s *client )  //MARTY - Renamed Static
+void StaticHUD_TxferLocalOverrides( struct entity_state_s *state, const struct clientdata_s *client )
 {
 	state->origin = client->origin;
 	state->velocity = client->velocity;
@@ -135,7 +135,7 @@ We have received entity_state_t for this player over the network.  We need to co
 playerstate structure
 =========================
 */
-void StaticHUD_ProcessPlayerState( struct entity_state_s *dst, const struct entity_state_s *src )   //MARTY - Renamed Static
+void StaticHUD_ProcessPlayerState( struct entity_state_s *dst, const struct entity_state_s *src )
 {
 	// Copy in network data
 	dst->origin	= src->origin;
@@ -196,7 +196,7 @@ Because we can predict an arbitrary number of frames before the server responds 
  update is occupying.
 =========================
 */
-void StaticHUD_TxferPredictionData( entity_state_t *ps, const entity_state_t *pps, clientdata_t *pcd, const clientdata_t *ppcd, weapon_data_t *wd, const weapon_data_t *pwd ) //MARTY - Renamed Static
+void StaticHUD_TxferPredictionData( entity_state_t *ps, const entity_state_t *pps, clientdata_t *pcd, const clientdata_t *ppcd, weapon_data_t *wd, const weapon_data_t *pwd )
 {
 	ps->oldbuttons	= pps->oldbuttons;
 	ps->flFallVelocity	= pps->flFallVelocity;
@@ -241,14 +241,14 @@ HUD_CreateEntities
 Gives us a chance to add additional entities to the render this frame
 =========================
 */
-void StaticHUD_CreateEntities( void ) //MARTY - Renamed Static
+void StaticHUD_CreateEntities( void )
 {
 	// e.g., create a persistent cl_entity_t somewhere.
 	// Load an appropriate model into it ( gEngfuncs.CL_LoadModel )
 	// Call gEngfuncs.CL_CreateVisibleEntity to add it to the visedicts list
 
 	if( tr.world_has_portals || tr.world_has_screens )
-		StaticHUD_AddEntity( ET_PLAYER, GET_LOCAL_PLAYER(), GET_LOCAL_PLAYER()->model->name ); //MARTY - Renamed Static
+		StaticHUD_AddEntity( ET_PLAYER, GET_LOCAL_PLAYER(), GET_LOCAL_PLAYER()->model->name );
 }
 
 //======================
@@ -320,7 +320,7 @@ The entity's studio model description indicated an event was
 fired during this frame, handle the event by it's tag ( e.g., muzzleflash, sound )
 =========================
 */
-void StaticHUD_StudioEvent( const struct mstudioevent_s *event, const struct cl_entity_s *entity ) //MARTY - Renamed Static 
+void StaticHUD_StudioEvent( const struct mstudioevent_s *event, const struct cl_entity_s *entity )
 {
 	switch( event->event )
 	{

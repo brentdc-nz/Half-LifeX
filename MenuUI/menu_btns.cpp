@@ -190,7 +190,7 @@ void UI_LoadBmpButtons( void )
 		
 		memcpy( &raw_img_buff[offset], img_data, cutted_img_sz );
 
-		// upload image into viedo memory
+		// upload image into video memory
 		uiStatic.buttonsPics[i] = PIC_Load( fname, raw_img_buff, CuttedBmpSize );
 
 		img_data -= cutted_img_sz;

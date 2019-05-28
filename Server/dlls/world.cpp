@@ -105,7 +105,7 @@ BODY QUE
 class CDecal : public CBaseEntity
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void	Spawn( void );
 	void	KeyValue( KeyValueData *pkvd );
@@ -115,7 +115,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( infodecal, CDecal );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CDecal )
 

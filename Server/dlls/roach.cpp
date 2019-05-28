@@ -61,7 +61,7 @@ public:
 };
 LINK_ENTITY_TO_CLASS( monster_cockroach, CRoach );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CRoach )
 

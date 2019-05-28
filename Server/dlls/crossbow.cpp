@@ -34,7 +34,7 @@
 // speed - the ideal magnitude of my velocity
 class CCrossbowBolt : public CBaseEntity
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -51,7 +51,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( crossbow_bolt, CCrossbowBolt );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CCrossbowBolt )
 
@@ -251,7 +251,7 @@ enum crossbow_e {
 
 LINK_ENTITY_TO_CLASS( weapon_crossbow, CCrossbow );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CCrossbow )
 
@@ -546,7 +546,7 @@ void CCrossbow::WeaponIdle( void )
 
 class CCrossbowAmmo : public CBasePlayerAmmo
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void )
 	{ 
@@ -571,7 +571,7 @@ class CCrossbowAmmo : public CBasePlayerAmmo
 };
 LINK_ENTITY_TO_CLASS( ammo_crossbow, CCrossbowAmmo );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CCrossbowAmmo )
 

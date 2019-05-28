@@ -198,7 +198,7 @@ KB_Find
 Allows the engine to get a kbutton_t directly ( so it can check +mlook state, etc ) for saving out to .cfg files
 ============
 */
-void *StaticKB_Find( const char *name ) //MARTY - Renamed static
+void *StaticKB_Find( const char *name )
 {
 	kblist_t *p;
 	p = g_kbkeys;
@@ -225,7 +225,7 @@ void KB_Add( const char *name, kbutton_t *pkb )
 	kblist_t *p;	
 	kbutton_t *kb;
 
-	kb = (kbutton_t *)StaticKB_Find( name ); //MARTY - Renamed static
+	kb = (kbutton_t *)StaticKB_Find( name );
 	
 	if( kb ) return;
 
@@ -552,7 +552,7 @@ if active == 1 then we are 1) not playing back demos ( where our commands are ig
 2 ) we have finished signing on to server
 ================
 */
-void StaticCL_CreateMove( float frametime, usercmd_t *cmd, int active ) //MARTY - Renamed static
+void StaticCL_CreateMove( float frametime, usercmd_t *cmd, int active )
 {	
 	float spd;
 	Vector viewangles;

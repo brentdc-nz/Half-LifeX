@@ -191,7 +191,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( monster_human_grunt, CHGrunt );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CHGrunt )
 
@@ -2477,7 +2477,7 @@ void CDeadHGrunt::KeyValue( KeyValueData *pkvd )
 
 LINK_ENTITY_TO_CLASS( monster_hgrunt_dead, CDeadHGrunt );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CDeadHGrunt )
 

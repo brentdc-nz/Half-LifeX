@@ -37,7 +37,7 @@ enum python_e {
 LINK_ENTITY_TO_CLASS( weapon_python, CPython );
 LINK_ENTITY_TO_CLASS( weapon_357, CPython );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CPython )
 
@@ -304,7 +304,7 @@ void CPython::WeaponIdle( void )
 
 class CPythonAmmo : public CBasePlayerAmmo
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void )
 	{ 
@@ -329,7 +329,7 @@ class CPythonAmmo : public CBasePlayerAmmo
 };
 LINK_ENTITY_TO_CLASS( ammo_357, CPythonAmmo );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CPythonAmmo  )
 

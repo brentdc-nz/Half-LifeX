@@ -261,21 +261,23 @@ typedef struct enginefuncs_s
 #ifdef _XBOX
 	qboolean (*pfnSysCreateDirectory)(const char* strPath, LPSECURITY_ATTRIBUTES Attributes);
 #endif
-//MARTY - Extensions
-	void	*(*pfnSequenceGet)( const char *fileName, const char *entryName );
-	void	*(*pfnSequencePickSentence)( const char *groupName, int pickMethod, int *picked );
-	int	(*pfnGetFileSize)( char *filename );
-	unsigned int (*pfnGetApproxWavePlayLen)( const char *filepath );
-	int	(*pfnIsCareerMatch)( void );
-	int	(*pfnGetLocalizedStringLength)( const char *label );
-	void	(*pfnRegisterTutorMessageShown)( int mid );
-	int	(*pfnGetTimesTutorMessageShown)( int mid );
-	void	(*pfnProcessTutorMessageDecayBuffer)( int *buffer, int bufferLength );
-	void	(*pfnConstructTutorMessageDecayBuffer)( int *buffer, int bufferLength );
-	void	(*pfnResetTutorMessageDecayData)( void );
+// MARTY - Extensions
+	void	(*pfnUnused1)( void );
+	void	(*pfnUnused2)( void );
+	void	(*pfnUnused3)( void );
+	void	(*pfnUnused4)( void );
+	void	(*pfnUnused5)( void );
+	void	(*pfnUnused6)( void );
+	void	(*pfnUnused7)( void );
+	void	(*pfnUnused8)( void );
+	void	(*pfnUnused9)( void );
+	void	(*pfnUnused10)( void );
+	void	(*pfnUnused11)( void );
+
+	// three useable funcs
 	void	(*pfnQueryClientCvarValue)( const edict_t *player, const char *cvarName );
 	void	(*pfnQueryClientCvarValue2)( const edict_t *player, const char *cvarName, int requestID );
-	int	(*CheckParm)( char *parm, char **ppnext );
+	int	(*pfnCheckParm)( char *parm, char **ppnext );
 } enginefuncs_t;
 // ONLY ADD NEW FUNCTIONS TO THE END OF THIS STRUCT.  INTERFACE VERSION IS FROZEN AT 138
 	

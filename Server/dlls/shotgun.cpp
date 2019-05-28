@@ -41,7 +41,7 @@ enum shotgun_e {
 
 LINK_ENTITY_TO_CLASS( weapon_shotgun, CShotgun );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CShotgun )
 
@@ -386,7 +386,7 @@ void CShotgun::WeaponIdle( void )
 
 class CShotgunAmmo : public CBasePlayerAmmo
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void )
 	{ 
@@ -411,7 +411,7 @@ class CShotgunAmmo : public CBasePlayerAmmo
 };
 LINK_ENTITY_TO_CLASS( ammo_buckshot, CShotgunAmmo );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CShotgunAmmo )
 

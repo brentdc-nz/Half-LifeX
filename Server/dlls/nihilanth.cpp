@@ -28,7 +28,7 @@
 class CNihilanth : public CBaseMonster
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	int		Save( CSave &save );
 	int		Restore( CRestore &restore );
@@ -135,7 +135,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( monster_nihilanth, CNihilanth );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CNihilanth )
 
@@ -232,7 +232,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( nihilanth_energy_ball, CNihilanthHVR );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CNihilanthHVR )
 

@@ -15,18 +15,14 @@
 
 #ifndef KEYDEFS_H
 #define KEYDEFS_H
-//#ifdef _WIN32 //MARTY
-#pragma once
-//#endif
 
-//MARTY START - XBox button struct
-#ifdef _XBOX
+#ifdef _XBOX // Xbox button struct
 typedef struct XBGamepadButtons_s
 {
 	int iKey;
 	int iButtonDown;
 } XBGamepadButtons_t;
-#endif //_XBOX
+#endif
 
 //
 // these are the key numbers that should be passed to Key_Event
@@ -35,6 +31,7 @@ typedef struct XBGamepadButtons_s
 #define K_ENTER		13
 #define K_ESCAPE		27
 #define K_SPACE		32
+#define K_SCROLLOCK		70
 
 // normal keys should be passed as lowercased ascii
 
@@ -142,10 +139,10 @@ typedef struct XBGamepadButtons_s
 #define K_MOUSE4		244
 #define K_MOUSE5		245
 
-//MARTY START - XBox Button Defs
 #ifdef _XBOX
+
 //
-// XBox Gmaepad Buttons
+// Xbox Gamepad Buttons
 //
 #define K_XBOX_A		246
 #define K_XBOX_B		247
@@ -155,7 +152,7 @@ typedef struct XBGamepadButtons_s
 #define K_XBOX_START	251
 #define K_XBOX_BLACK	252
 #define K_XBOX_WHITE	253
-#define K_DPAD_UP		254 //MARTY - Break for K_PAUSE! 
+#define K_DPAD_UP		254
 #define K_DPAD_DOWN		256
 #define K_DPAD_LEFT		257
 #define K_DPAD_RIGHT	258
@@ -163,7 +160,6 @@ typedef struct XBGamepadButtons_s
 #define K_XBOX_RTRIG	260
 #define K_XBOX_QCOMBO	261
 
-#endif //_XBOX
-//MARTY END
+#endif
 
 #endif // KEYDEFS_H

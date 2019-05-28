@@ -38,7 +38,7 @@ public:
 };
 LINK_ENTITY_TO_CLASS( monster_rat, CRat );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CRat )
 

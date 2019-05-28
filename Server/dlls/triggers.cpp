@@ -43,7 +43,7 @@ extern Vector VecBModelOrigin( entvars_t* pevBModel );
 class CFrictionModifier : public CBaseEntity
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void		Spawn( void );
 	void		KeyValue( KeyValueData *pkvd );
@@ -60,7 +60,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( func_friction, CFrictionModifier );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CFrictionModifier )
 
@@ -275,14 +275,14 @@ void CTriggerRelay::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE
 class CMultiManager : public CBaseToggle
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void KeyValue( KeyValueData *pkvd );
 	void Spawn ( void );
 	void EXPORT ManagerThink ( void );
 	void EXPORT ManagerUse   ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 	void EXPORT ManagerReport( void );
 #endif
 
@@ -314,7 +314,7 @@ private:
 };
 LINK_ENTITY_TO_CLASS( multi_manager, CMultiManager );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CMultiManager )
 
@@ -473,7 +473,7 @@ void CMultiManager :: ManagerUse ( CBaseEntity *pActivator, CBaseEntity *pCaller
 	pev->nextthink = gpGlobals->time;
 }
 
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 void CMultiManager :: ManagerReport ( void )
 {
 	int	cIndex;
@@ -609,7 +609,7 @@ void CBaseTrigger :: KeyValue( KeyValueData *pkvd )
 class CTriggerHurt : public CBaseTrigger
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void EXPORT RadiationThink( void );
@@ -617,7 +617,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( trigger_hurt, CTriggerHurt );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CTriggerHurt )
 
@@ -1090,14 +1090,14 @@ if a trigger has a NETNAME, that NETNAME will become the TARGET of the triggered
 class CTriggerMultiple : public CBaseTrigger
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 };
 
 LINK_ENTITY_TO_CLASS( trigger_multiple, CTriggerMultiple );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CTriggerMultiple )
 
@@ -1151,14 +1151,14 @@ sounds
 class CTriggerOnce : public CTriggerMultiple
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 };
 
 LINK_ENTITY_TO_CLASS( trigger_once, CTriggerOnce );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CTriggerOnce )
 
@@ -1390,7 +1390,7 @@ void CFireAndDie::Think( void )
 class CChangeLevel : public CBaseTrigger
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void KeyValue( KeyValueData *pkvd );
@@ -1417,7 +1417,7 @@ public:
 };
 LINK_ENTITY_TO_CLASS( trigger_changelevel, CChangeLevel );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CChangeLevel )
 
@@ -1864,7 +1864,7 @@ void CLadder :: Spawn( void )
 class CTriggerPush : public CBaseTrigger
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void KeyValue( KeyValueData *pkvd );
@@ -1872,7 +1872,7 @@ public:
 };
 LINK_ENTITY_TO_CLASS( trigger_push, CTriggerPush );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CTriggerPush )
 
@@ -2014,13 +2014,13 @@ void CBaseTrigger :: TeleportTouch( CBaseEntity *pOther )
 class CTriggerTeleport : public CBaseTrigger
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 };
 LINK_ENTITY_TO_CLASS( trigger_teleport, CTriggerTeleport );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CTriggerTeleport )
 
@@ -2045,7 +2045,7 @@ LINK_ENTITY_TO_CLASS( info_teleport_destination, CPointEntity );
 class CTriggerSave : public CBaseTrigger
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void EXPORT SaveTouch( CBaseEntity *pOther );
@@ -2053,7 +2053,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( trigger_autosave, CTriggerSave );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CTriggerSave )
 
@@ -2173,7 +2173,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( trigger_gravity, CTriggerGravity );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CTriggerGravity )
 
@@ -2271,7 +2271,7 @@ void CTriggerChangeTarget::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, U
 class CTriggerCamera : public CBaseDelay
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void KeyValue( KeyValueData *pkvd );
@@ -2302,7 +2302,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( trigger_camera, CTriggerCamera );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CTriggerCamera )
 

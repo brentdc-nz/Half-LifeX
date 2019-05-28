@@ -23,7 +23,7 @@ typedef enum { matGlass = 0, matWood, matMetal, matFlesh, matCinderBlock, matCei
 class CBreakable : public CBaseDelay
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	// basic functions
 	void Spawn( void );

@@ -467,7 +467,7 @@ void LoadVModel ( char *szViewModel, CBasePlayer *m_pPlayer );
 class CGlock : public CBasePlayerWeapon
 {
 public:
-	DECLARE_DATADESC(); //MARTY	
+	DECLARE_DATADESC(); // MARTY	
 
 	void Spawn( void );
 	void Precache( void );
@@ -502,7 +502,7 @@ private:
 class CCrowbar : public CBasePlayerWeapon
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -533,7 +533,7 @@ private:
 class CPython : public CBasePlayerWeapon
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -600,7 +600,7 @@ private:
 class CCrossbow : public CBasePlayerWeapon
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -675,7 +675,7 @@ private:
 
 class CLaserSpot : public CBaseEntity
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -692,7 +692,7 @@ public:
 class CRpg : public CBasePlayerWeapon
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 #ifndef CLIENT_DLL
 	int		Save( CSave &save );
@@ -739,7 +739,7 @@ private:
 class CRpgRocket : public CGrenade
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	int		Save( CSave &save );
 	int		Restore( CRestore &restore );
@@ -759,7 +759,7 @@ public:
 class CGauss : public CBasePlayerWeapon
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 #ifndef CLIENT_DLL
 	int		Save( CSave &save );
@@ -914,7 +914,7 @@ private:
 class CHandGrenade : public CBasePlayerWeapon
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -940,7 +940,7 @@ public:
 class CSatchel : public CBasePlayerWeapon
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 #ifndef CLIENT_DLL
 	int		Save( CSave &save );
@@ -978,7 +978,7 @@ public:
 class CTripmine : public CBasePlayerWeapon
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -1013,7 +1013,7 @@ private:
 class CSqueak : public CBasePlayerWeapon
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );

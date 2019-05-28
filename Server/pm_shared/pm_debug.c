@@ -43,7 +43,7 @@ static int PM_boxpnt[6][4] =
 
 void PM_ShowClipBox( void )
 {
-#if 0//defined( _DEBUG ) //MARTY
+#if 0//defined( _DEBUG ) // MARTY
 	vec3_t org;
 	vec3_t offset = { 0, 0, 0 };
 

@@ -84,7 +84,7 @@ void CShower::Touch( CBaseEntity *pOther )
 class CEnvExplosion : public CBaseMonster
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( );
 	void EXPORT Smoke ( void );
@@ -108,7 +108,7 @@ TYPEDESCRIPTION	CEnvExplosion::m_SaveData[] =
 IMPLEMENT_SAVERESTORE( CEnvExplosion, CBaseMonster );
 LINK_ENTITY_TO_CLASS( env_explosion, CEnvExplosion );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CEnvExplosion )
 

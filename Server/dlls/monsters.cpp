@@ -426,7 +426,7 @@ CSound* CBaseMonster :: PBestSound ( void )
 	if ( iThisSound == SOUNDLIST_EMPTY )
 	{
 		ALERT ( at_aiconsole, "ERROR! monster %s has no audible sounds!\n", STRING(pev->classname) );
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 		ALERT( at_error, "NULL Return from PBestSound\n" );
 #endif
 		return NULL;
@@ -454,7 +454,7 @@ CSound* CBaseMonster :: PBestSound ( void )
 		pSound = CSoundEnt::SoundPointerForIndex( iBestSound );
 		return pSound;
 	}
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 	ALERT( at_error, "NULL Return from PBestSound\n" );
 #endif
 	return NULL;
@@ -477,7 +477,7 @@ CSound* CBaseMonster :: PBestScent ( void )
 	if ( iThisScent == SOUNDLIST_EMPTY )
 	{
 		ALERT ( at_aiconsole, "ERROR! PBestScent() has empty soundlist!\n" );
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 		ALERT( at_error, "NULL Return from PBestSound\n" );
 #endif
 		return NULL;
@@ -506,7 +506,7 @@ CSound* CBaseMonster :: PBestScent ( void )
 
 		return pSound;
 	}
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 	ALERT( at_error, "NULL Return from PBestScent\n" );
 #endif
 	return NULL;
@@ -558,7 +558,7 @@ void CBaseMonster :: MonsterThink ( void )
 	{
 		Move( flInterval );
 	}
-#if 0//_DEBUG //MARTY	
+#if 0//_DEBUG // MARTY	
 	else 
 	{
 		if ( !TaskIsRunning() && !TaskIsComplete() )
@@ -740,7 +740,7 @@ BOOL CBaseMonster::MoveToNode( Activity movementAct, float waitTime, const Vecto
 }
 
 
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 void DrawRoute( entvars_t *pev, WayPoint_t *m_Route, int m_iRouteIndex, int r, int g, int b )
 {
 	int			i;
@@ -2250,7 +2250,7 @@ BOOL CBaseMonster :: FindCover ( Vector vecThreat, Vector vecViewOffset, float f
 
 	if ( flMinDist > 0.5 * flMaxDist)
 	{
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 		ALERT ( at_console, "FindCover MinDist (%.0f) too close to MaxDist (%.0f)\n", flMinDist, flMaxDist );
 #endif
 		flMinDist = 0.5 * flMaxDist;
@@ -2355,7 +2355,7 @@ BOOL CBaseMonster :: BuildNearestRoute ( Vector vecThreat, Vector vecViewOffset,
 
 	if ( flMinDist > 0.5 * flMaxDist)
 	{
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 		ALERT ( at_console, "FindCover MinDist (%.0f) too close to MaxDist (%.0f)\n", flMinDist, flMaxDist );
 #endif
 		flMinDist = 0.5 * flMaxDist;
@@ -2624,12 +2624,12 @@ void CBaseMonster :: HandleAnimEvent( MonsterEvent_t *pEvent )
 		{
 			pev->deadflag = DEAD_DYING;
 			// Kill me now! (and fade out when CineCleanup() is called)
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 			ALERT( at_aiconsole, "Death event: %s\n", STRING(pev->classname) );
 #endif
 			pev->health = 0;
 		}
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 		else
 			ALERT( at_aiconsole, "INVALID death event:%s\n", STRING(pev->classname) );
 #endif

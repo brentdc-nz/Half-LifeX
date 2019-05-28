@@ -172,7 +172,7 @@ IMPLEMENT_SAVERESTORE( CBaseTurret, CBaseMonster );
 class CTurret : public CBaseTurret
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn(void);
 	void Precache(void);
@@ -215,7 +215,7 @@ public:
 LINK_ENTITY_TO_CLASS( monster_turret, CTurret );
 LINK_ENTITY_TO_CLASS( monster_miniturret, CMiniTurret );
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CTurret )
 
@@ -229,7 +229,7 @@ BEGIN_DATADESC( CTurret )
 
 END_DATADESC()
 
-//=================== //MARTY MARTY BLOCK
+//=================== // MARTY MARTY BLOCK
 
 BEGIN_DATADESC( CMiniTurret )
 
@@ -1193,7 +1193,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( monster_sentry, CSentry );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CSentry )
 

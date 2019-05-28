@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 
 // Deadzone for thumbsticks
-#define XBINPUT_DEADZONE 0.24f
+const SHORT XBINPUT_DEADZONE = (SHORT)( 0.24f * FLOAT(0x7FFF) );
 
 // Global instance of XInput polling parameters
 XINPUT_POLLING_PARAMETERS g_PollingParameters = 

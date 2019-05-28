@@ -24,7 +24,7 @@
 #include "..\game_shared\mathlib.h"
 #include "..\common\usercmd.h"
 #include "..\common\entity_state.h"
-//#include "cdll_exp.h" //MARTY
+//#include "cdll_exp.h" // MARTY
 
 int developer_level;
 int g_iXashEngineBuildNumber;
@@ -43,25 +43,26 @@ Called when the DLL is first loaded.
 ==========================
 */
 
-extern "C"
+extern "C" 
 {
-int		/*DLLEXPORT*/ StaticInitialize( cl_enginefunc_t *pEnginefuncs, int iVersion ); //MARTY - Renamed Static
-int		/*DLLEXPORT*/ StaticHUD_VidInit( void ); //MARTY - Renamed Static
-void	/*DLLEXPORT*/ StaticHUD_Init( void ); //MARTY - Renamed Static
-int		/*DLLEXPORT*/ StaticHUD_Redraw( float flTime, int intermission ); //MARTY - Renamed Static
-int		/*DLLEXPORT*/ StaticHUD_UpdateClientData( client_data_t *cdata, float flTime ); //MARTY - Renamed Static
-void	/*DLLEXPORT*/ StaticHUD_Reset ( void ); //MARTY - Renamed Static
-void	/*DLLEXPORT*/ StaticHUD_PlayerMove( struct playermove_s *ppmove, int server ); //MARTY - Renamed Static
-void	/*DLLEXPORT*/ StaticHUD_PlayerMoveInit( struct playermove_s *ppmove ); //MARTY - Renamed Static
-char	/*DLLEXPORT*/ StaticHUD_PlayerMoveTexture( char *name ); //MARTY - Renamed Static
-int		/*DLLEXPORT*/ StaticHUD_ConnectionlessPacket( const struct netadr_s *net_from, const char *args, char *response_buffer, int *response_buffer_size );  //MARTY - Renamed Static
-int		/*DLLEXPORT*/ StaticHUD_GetHullBounds( int hullnumber, float *mins, float *maxs ); //MARTY - Renamed Static
-void	/*DLLEXPORT*/ StaticHUD_Frame( double time ); //MARTY - Renamed Static
-void	/*DLLEXPORT*/ StaticHUD_VoiceStatus(int entindex, qboolean bTalking); //MARTY - Renamed Static
-void	/*DLLEXPORT*/ StaticHUD_DirectorMessage( int iSize, void *pbuf ); //MARTY - Renamed Static
+// Renamed to static
+int		/*DLLEXPORT*/ StaticInitialize( cl_enginefunc_t *pEnginefuncs, int iVersion );
+int		/*DLLEXPORT*/ StaticHUD_VidInit( void );
+void	/*DLLEXPORT*/ StaticHUD_Init( void );
+int		/*DLLEXPORT*/ StaticHUD_Redraw( float flTime, int intermission );
+int		/*DLLEXPORT*/ StaticHUD_UpdateClientData( client_data_t *cdata, float flTime );
+void	/*DLLEXPORT*/ StaticHUD_Reset ( void );
+void	/*DLLEXPORT*/ StaticHUD_PlayerMove( struct playermove_s *ppmove, int server );
+void	/*DLLEXPORT*/ StaticHUD_PlayerMoveInit( struct playermove_s *ppmove );
+char	/*DLLEXPORT*/ StaticHUD_PlayerMoveTexture( char *name );
+int		/*DLLEXPORT*/ StaticHUD_ConnectionlessPacket( const struct netadr_s *net_from, const char *args, char *response_buffer, int *response_buffer_size );
+int		/*DLLEXPORT*/ StaticHUD_GetHullBounds( int hullnumber, float *mins, float *maxs );
+void	/*DLLEXPORT*/ StaticHUD_Frame( double time );
+void	/*DLLEXPORT*/ StaticHUD_VoiceStatus(int entindex, qboolean bTalking);
+void	/*DLLEXPORT*/ StaticHUD_DirectorMessage( int iSize, void *pbuf );
 
 //nicknekit: xashmod exports (for client working without "void DLLEXPORT F"). Commented funcs declared from other places
-void	/*DLLEXPORT*/ StaticHUD_Shutdown( void ); //MARTY - Renamed Static
+void	/*DLLEXPORT*/ StaticHUD_Shutdown( void );
 //void	DLLEXPORT IN_ActivateMouse( void );
 //void	DLLEXPORT IN_DeactivateMouse( void );
 //void	DLLEXPORT IN_MouseEvent( int mstate );
@@ -75,24 +76,26 @@ void	/*DLLEXPORT*/ StaticHUD_Shutdown( void ); //MARTY - Renamed Static
 //void	DLLEXPORT V_CalcRefdef( struct ref_params_s *pparams );
 //int 	DLLEXPORT HUD_AddEntity( int type, struct cl_entity_s *ent, const char *modelname ); 
 //void	DLLEXPORT HUD_CreateEntities( void );
-void	/*DLLEXPORT*/ StaticHUD_DrawNormalTriangles( void ); //MARTY - Renamed Static
-void	/*DLLEXPORT*/ StaticHUD_DrawTransparentTriangles( void ); //MARTY - Renamed Static
+void	/*DLLEXPORT*/ StaticHUD_DrawNormalTriangles( void );
+void	/*DLLEXPORT*/ StaticHUD_DrawTransparentTriangles( void );
 //void	DLLEXPORT HUD_StudioEvent( const struct mstudioevent_s *event, const struct cl_entity_s *entity );
-void	/*DLLEXPORT*/ StaticHUD_PostRunCmd( struct local_state_s*, local_state_s *, struct usercmd_s*, int, double, unsigned int ); //MARTY - Renamed Static
+void	/*DLLEXPORT*/ StaticHUD_PostRunCmd( struct local_state_s*, local_state_s *, struct usercmd_s*, int, double, unsigned int );
 //void	DLLEXPORT HUD_TxferLocalOverrides( struct entity_state_s *state, const struct clientdata_s *client );
 //void	DLLEXPORT HUD_ProcessPlayerState( struct entity_state_s *dst, const struct entity_state_s *src );
 //void	DLLEXPORT HUD_TxferPredictionData( entity_state_t *ps, const entity_state_t *pps, clientdata_t *pcd, const clientdata_t *ppcd, weapon_data_t *wd, const weapon_data_t *pwd );
-void	/*DLLEXPORT*/ StaticDemo_ReadBuffer( int size, unsigned char *buffer ); //MARTY - Renamed Static
+void	/*DLLEXPORT*/ StaticDemo_ReadBuffer( int size, unsigned char *buffer );
 
-int 	/*DLLEXPORT*/ StaticHUD_Key_Event( int eventcode, int keynum, const char *pszCurrentBinding ); //MARTY - Renamed Static
-/*void	DLLEXPORT HUD_TempEntUpdate(
+int 	/*DLLEXPORT*/ StaticHUD_Key_Event( int eventcode, int keynum, const char *pszCurrentBinding );
+/*
+void	DLLEXPORT HUD_TempEntUpdate(
         double frametime,   // Simulation time
         double client_time, // Absolute time on client
         double cl_gravity,  // True gravity on client
         TEMPENTITY **ppTempEntFree,   // List of freed temporary ents
         TEMPENTITY **ppTempEntActive, // List
         int  (*Callback_AddVisibleEntity)( cl_entity_t *pEntity ),
-        void (*Callback_TempEntPlaySound)( TEMPENTITY *pTemp, float damp )); */
+        void (*Callback_TempEntPlaySound)( TEMPENTITY *pTemp, float damp ));
+*/
 //cl_entity_t	DLLEXPORT HUD_GetUserEntity( int index );
 //int 	DLLEXPORT HUD_GetStudioModelInterface( int version, struct r_studio_interface_s **ppinterface, struct engine_studio_api_s *pstudio );
 //int 	DLLEXPORT HUD_GetRenderInterface( int version, render_api_t *renderfuncs, render_interface_t *callback );
@@ -105,7 +108,7 @@ HUD_GetHullBounds
 Engine calls this to enumerate player collision hulls, for prediction.  Return 0 if the hullnumber doesn't exist.
 ================================
 */
-int StaticHUD_GetHullBounds( int hullnumber, float *mins, float *maxs ) //MARTY - Renamed Static
+int StaticHUD_GetHullBounds( int hullnumber, float *mins, float *maxs )
 {
 	int iret = 0;
 
@@ -138,7 +141,7 @@ Return 1 if the packet is valid.  Set response_buffer_size if you want to send a
 Incoming, it holds the max size of the response_buffer, so you must zero it out if you choose not to respond.
 ================================
 */
-int StaticHUD_ConnectionlessPacket( const struct netadr_s *, const char *, char *, int *response_buffer_size )  //MARTY - Renamed Static
+int StaticHUD_ConnectionlessPacket( const struct netadr_s *, const char *, char *, int *response_buffer_size )
 {
 	// Parse stuff from args
 	int max_buffer_size = *response_buffer_size;
@@ -152,22 +155,22 @@ int StaticHUD_ConnectionlessPacket( const struct netadr_s *, const char *, char 
 	return 0;
 }
 
-void StaticHUD_PlayerMoveInit( struct playermove_s *ppmove ) //MARTY - Renamed Static
+void StaticHUD_PlayerMoveInit( struct playermove_s *ppmove )
 {
 	PM_Init( ppmove );
 }
 
-char StaticHUD_PlayerMoveTexture( char *name ) //MARTY - Renamed Static
+char StaticHUD_PlayerMoveTexture( char *name )
 {
 	return PM_FindTextureType( name );
 }
 
-void StaticHUD_PlayerMove( struct playermove_s *ppmove, int server ) //MARTY - Renamed Static
+void StaticHUD_PlayerMove( struct playermove_s *ppmove, int server )
 {
 	PM_Move( ppmove, server );
 }
 
-int StaticInitialize( cl_enginefunc_t *pEnginefuncs, int iVersion ) //MARTY - Renamed static
+int StaticInitialize( cl_enginefunc_t *pEnginefuncs, int iVersion )
 {
 	gEngfuncs = *pEnginefuncs;
 
@@ -179,8 +182,10 @@ int StaticInitialize( cl_enginefunc_t *pEnginefuncs, int iVersion ) //MARTY - Re
 	// get developer level
 	developer_level = (int)CVAR_GET_FLOAT( "developer" );
 
-//	if( !CVAR_GET_POINTER( "host_clientloaded" )) //MARTY - Check not required
-//		return 0;	// Not a Xash3D engine
+#ifndef _XBOX // Check not required
+	if( !CVAR_GET_POINTER( "host_clientloaded" ))
+		return 0; // Not a Xash3D engine
+#endif
 
 	g_iXashEngineBuildNumber = (int)CVAR_GET_FLOAT( "build" ); // 0 for old builds or GoldSrc
 
@@ -198,7 +203,7 @@ and whenever the vid_mode is changed
 so the HUD can reinitialize itself.
 ==========================
 */
-int StaticHUD_VidInit( void ) //MARTY - Renamed Static
+int StaticHUD_VidInit( void )
 {
 	gHUD.VidInit();
 
@@ -214,13 +219,13 @@ to a server.  Reinitializes all
 the hud variables.
 ==========================
 */
-void StaticHUD_Init( void ) //MARTY - Renamed Static
+void StaticHUD_Init( void )
 {
 	InitInput();
 	gHUD.Init();
 }
 
-void StaticHUD_Shutdown( void ) //MARTY - Renamed Static
+void StaticHUD_Shutdown( void )
 {
 	ShutdownInput();
 }
@@ -233,7 +238,7 @@ called every screen frame to
 redraw the HUD.
 ===========================
 */
-int StaticHUD_Redraw( float time, int intermission )  //MARTY - Renamed Static
+int StaticHUD_Redraw( float time, int intermission )
 {
 	return gHUD.Redraw( time, intermission );
 }
@@ -250,7 +255,7 @@ to modify the data.
 returns 1 if anything has been changed, 0 otherwise.
 ==========================
 */
-int StaticHUD_UpdateClientData( client_data_t *pcldata, float flTime ) //MARTY - Renamed Static
+int StaticHUD_UpdateClientData( client_data_t *pcldata, float flTime )
 {
 	return gHUD.UpdateClientData( pcldata, flTime );
 }
@@ -262,7 +267,7 @@ int StaticHUD_UpdateClientData( client_data_t *pcldata, float flTime ) //MARTY -
 Called at start and end of demos to restore to "non"HUD state.
 ==========================
 */
-void StaticHUD_Reset( void )  //MARTY - Renamed Static
+void StaticHUD_Reset( void )
 {
 	gHUD.VidInit();
 }
@@ -274,45 +279,45 @@ HUD_Frame
 Called by engine every frame that client .dll is loaded
 ==========================
 */
-void StaticHUD_Frame( double time ) //MARTY - Renamed Static
+void StaticHUD_Frame( double time )
 {
 }
 
-int StaticHUD_Key_Event( int eventcode, int keynum, const char *pszCurrentBinding ) //MARTY - Renamed Static
+int StaticHUD_Key_Event( int eventcode, int keynum, const char *pszCurrentBinding )
 {
 	return 1;
 }
 
-void StaticHUD_PostRunCmd( struct local_state_s*, local_state_s *, struct usercmd_s*, int, double, unsigned int ) //MARTY - Renamed Static
+void StaticHUD_PostRunCmd( struct local_state_s*, local_state_s *, struct usercmd_s*, int, double, unsigned int )
 {
 }
 
-void StaticHUD_VoiceStatus( int entindex, qboolean bTalking ) //MARTY - Renamed Static
+void StaticHUD_VoiceStatus( int entindex, qboolean bTalking )
 {
 }
 
-void StaticHUD_DirectorMessage( int iSize, void *pbuf ) //MARTY - Renamed Static
+void StaticHUD_DirectorMessage( int iSize, void *pbuf )
 {
 }
 
-void StaticHUD_DrawNormalTriangles( void ) //MARTY - Renamed Static
+void StaticHUD_DrawNormalTriangles( void )
 {
 }
 
-void StaticHUD_DrawTransparentTriangles( void ) //MARTY - Renamed Static
+void StaticHUD_DrawTransparentTriangles( void )
 {
 }
 
-void StaticDemo_ReadBuffer( int size, unsigned char *buffer ) //MARTY - Renamed Static
+void StaticDemo_ReadBuffer( int size, unsigned char *buffer )
 {
 }
 
-extern "C" cl_entity_t *StaticHUD_GetUserEntity( int index ) //MARTY - Renamed Static
+extern "C" cl_entity_t *StaticHUD_GetUserEntity( int index )
 {
 	return NULL;
 }
 
-#ifndef _XBOX //MARTY 
+#ifndef _XBOX
 
 cldll_func_t cldll_func =
 {

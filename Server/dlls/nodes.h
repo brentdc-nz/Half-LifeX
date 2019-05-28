@@ -206,7 +206,7 @@ public:
 
 	inline	CNode &Node( int i )
 	{
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 		if ( !m_pNodes || i < 0 || i > m_cNodes )
 			ALERT( at_error, "Bad Node!\n" );
 #endif
@@ -215,7 +215,7 @@ public:
 
 	inline	CLink &Link( int i )
 	{
-#if 0//_DEBUG //MARTY
+#if 0//_DEBUG // MARTY
 		if ( !m_pLinkPool || i < 0 || i > m_cLinks )
 			ALERT( at_error, "Bad link!\n" );
 #endif

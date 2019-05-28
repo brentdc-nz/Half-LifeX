@@ -117,7 +117,7 @@ dynpitchvol_t rgdpvpreset[CDPVPRESETMAX] =
 class CAmbientGeneric : public CBaseEntity
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void KeyValue( KeyValueData* pkvd);
 	void Spawn( void );
@@ -140,7 +140,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( ambient_generic, CAmbientGeneric );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CAmbientGeneric )
 
@@ -1804,7 +1804,7 @@ float TEXTURETYPE_PlaySound(TraceResult *ptr,  Vector vecSrc, Vector vecEnd, int
 class CSpeaker : public CBaseEntity
 {
 public:
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void KeyValue( KeyValueData* pkvd);
 	void Spawn( void );
@@ -1823,7 +1823,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( speaker, CSpeaker );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CSpeaker )
 

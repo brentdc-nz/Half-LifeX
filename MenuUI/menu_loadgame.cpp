@@ -133,6 +133,9 @@ static void UI_LoadGame_GetGameList( void )
 
 	filenames = FS_SEARCH( "save\\*.sav", &numFiles, TRUE ); //MARTY - Fixed Slashes
 
+	// sort the saves in reverse order (oldest past at the end)
+	qsort( filenames, numFiles, sizeof( char* ), (cmpfunc)COM_CompareSaves );
+
 	for ( i = 0; i < numFiles; i++ )
 	{
 		if( i >= UI_MAXGAMES ) break;
@@ -218,6 +221,8 @@ static void UI_LoadGame_Callback( void *self, int event )
 			char	cmd[128];
 			sprintf( cmd, "load \"%s\"\n", uiLoadGame.saveName[uiLoadGame.savesList.curItem] );
 
+			BACKGROUND_TRACK( NULL, NULL );
+
 			CLIENT_COMMAND( FALSE, cmd );
 		}
 		break;
@@ -274,10 +279,10 @@ static void UI_LoadGame_Ownerdraw( void *self )
 			sprintf( saveshot, "save\\%s.bmp", uiLoadGame.saveName[uiLoadGame.savesList.curItem] ); //MARTY - Fixed slashes
 
 			if( !FILE_EXISTS( saveshot ))
-				UI_DrawPicAdditive( x, y, w, h, uiColorWhite, "{GRAF001" );
+				UI_DrawPicAdditive( x, y, w, h, uiColorWhite, EMPTY_SAVE_PIC );
 			else UI_DrawPic( x, y, w, h, uiColorWhite, saveshot );
 		}
-		else UI_DrawPicAdditive( x, y, w, h, uiColorWhite, "{GRAF001" );
+		else UI_DrawPicAdditive( x, y, w, h, uiColorWhite, EMPTY_SAVE_PIC );
 
 		// draw the rectangle
 		UI_DrawRectangle( item->x, item->y, item->width, item->height, uiInputFgColor );

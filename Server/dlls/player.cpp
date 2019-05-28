@@ -238,7 +238,7 @@ void LinkUserMessages( void )
 
 LINK_ENTITY_TO_CLASS( player, CBasePlayer );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CBasePlayer )
 
@@ -4609,7 +4609,7 @@ void CDeadHEV::KeyValue( KeyValueData *pkvd )
 
 LINK_ENTITY_TO_CLASS( monster_hevsuit_dead, CDeadHEV );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CDeadHEV )
 
@@ -4708,7 +4708,7 @@ private:
 
 LINK_ENTITY_TO_CLASS( player_loadsaved, CRevertSaved );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CRevertSaved )
 

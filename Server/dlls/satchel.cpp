@@ -42,7 +42,7 @@ enum satchel_radio_e {
 
 class CSatchelCharge : public CGrenade
 {
-	DECLARE_DATADESC(); //MARTY
+	DECLARE_DATADESC(); // MARTY
 
 	void Spawn( void );
 	void Precache( void );
@@ -57,7 +57,7 @@ public:
 
 LINK_ENTITY_TO_CLASS( monster_satchel, CSatchelCharge );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CSatchelCharge )
 
@@ -187,7 +187,7 @@ void CSatchelCharge :: BounceSound( void )
 
 LINK_ENTITY_TO_CLASS( weapon_satchel, CSatchel );
 
-//=================== //MARTY BLOCK
+//=================== // MARTY BLOCK
 
 BEGIN_DATADESC( CSatchel )
 
