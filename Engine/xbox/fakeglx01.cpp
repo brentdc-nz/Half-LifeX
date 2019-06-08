@@ -88,13 +88,15 @@ int gVideoMode = 0;
 class FakeGL;
 static FakeGL* gFakeGL;
 
+#define TEXARRAYSIZE 2000
+
 class TextureEntry
 {
 public:
 	TextureEntry()
 	{
-		m_id = 0;
-		m_mipMap = 0;
+		m_id = -1;
+		m_mipMap = NULL;
 		m_format = D3DFMT_UNKNOWN;
 		m_internalFormat = 0;
 
@@ -103,8 +105,6 @@ public:
 		m_glTexParameter2DWrapS = GL_CLAMP;						//FakeGL 2009 sets it to WRAP -> CLAMP
 		m_glTexParameter2DWrapT = GL_CLAMP;
 		m_maxAnisotropy = 4.0;									//we also can bump up the anisotropy level to make things look nicer
-		
-		m_bReuse = false;
 	}
 	~TextureEntry()
 	{
@@ -125,9 +125,15 @@ public:
 	GLint m_glTexParameter2DWrapS;
 	GLint m_glTexParameter2DWrapT;
 	float m_maxAnisotropy;
+};
 
-	TextureEntry *next;
-	bool m_bReuse;
+class TextureEntryLinked : public TextureEntry
+{
+public:
+	TextureEntryLinked::TextureEntryLinked(){ m_pNext = NULL; };
+	TextureEntryLinked::~TextureEntryLinked(){};
+
+	TextureEntryLinked *m_pNext;
 };
 
 class TextureTable 
@@ -137,8 +143,7 @@ public:
 	{
 		m_count = 0;
 		m_size = 0;
-		m_textures = NULL;
-
+		m_texturesOverflow = NULL;
 		m_currentTexture = 0;
 		m_currentID = 0;
 		BindTexture(0);
@@ -151,94 +156,131 @@ public:
 		// All textures released from call in wglDeleteContext
 	}
 
-	TextureEntry* D3D_AllocTexture()
-	{
-		// find a free texture
-		for (TextureEntry* tex = m_textures; tex; tex = tex->next)
-		{
-			// Checked if flagged for reuse
-			if (tex->m_bReuse)
-			{
-				tex->m_bReuse = false;
-				return tex;
-			}
-		}
-
-		// Nothing to reuse so create a new one
-		// Clear to 0 is required so that D3D_SAFE_RELEASE is valid
-		tex = new TextureEntry;
-
-		// Link in
-		tex->next = m_textures;
-		m_textures = tex;
-
-		// Return the new one
-		return tex;
-	}
-
 	void BindTexture(GLuint id)
 	{
 		m_currentID = id;
-
-		// initially nothing
-		m_currentTexture = NULL;
-
-		// find a texture
-		// these searches could be optimised with another lookup table, but we don't know how big it would need to be
-		for (TextureEntry* tex = m_textures; tex; tex = tex->next)
+	
+		if(id < TEXARRAYSIZE)
 		{
-			if (tex->m_id == id)
+			if(m_textureArray[id].m_id != -1)
 			{
-				m_currentTexture = tex;
-				break;
+				m_currentTexture = &m_textureArray[id];
+				return;
+			}
+		}
+		else // If we have overflowed check the slower linked list
+		{
+			for (TextureEntryLinked* tex = m_texturesOverflow; tex; tex = tex->m_pNext)
+			{
+				if (tex->m_id == id)
+				{
+					m_currentTexture = tex;
+					return;
+				}
 			}
 		}
 
-		// did we find it?
-		if (!m_currentTexture)
-		{
-			// nope, so fill in a new one (this will make it work with texture_extension_number)
-			// (i don't know if the spec formally allows this but id seem to have gotten away with it...)
-			m_currentTexture = D3D_AllocTexture();
+		// If we don't have the texture loaded already
 
-			// reserve this slot
-			m_currentTexture->m_id = id;
-			m_currentTexture->m_mipMap = NULL;
+		if(id < TEXARRAYSIZE)
+		{
+			m_textureArray[id].m_id = id;
+			m_textureArray[id].m_mipMap = NULL;
+
+			m_currentTexture = &m_textureArray[id];
+		}
+		else // If we have overflowed add to the slower linked list
+		{
+			// Find a free texture
+			for (TextureEntryLinked* tex = m_texturesOverflow; tex; tex = tex->m_pNext)
+			{
+				// Checked if flagged for reuse
+				if (tex->m_id == -1)
+				{
+					tex->m_id = id;
+					m_currentTexture = tex;
+					return;
+				}
+			}
+			
+			// Nothing for reuse?
+			tex = new TextureEntryLinked;
+
+			// Link it in
+			tex->m_pNext = m_texturesOverflow;
+			m_texturesOverflow = tex;
+
+			tex->m_id = id;
+			tex->m_mipMap = NULL;
+
+			m_currentTexture = tex;
 		}
 
-		// this should never happen
+		// This should never happen 
 		if (!m_currentTexture) LocalDebugBreak(); //glBindTexture: out of textures!!!
 	}
 
-	void ReleaseAllTextures() //Release when quitting the game
+	void ReleaseAllTextures() // Release when quitting the game
 	{
-		for (TextureEntry* tex = m_textures; tex; tex = tex->next)
+		// Free the main texture array
+		for(int i = 0; i < TEXARRAYSIZE; i++)
 		{
-			if (tex)
+			if(m_textureArray[i].m_id != -1)
 			{
-//MARTY FIXME
-//				tex->Release();
-//				tex->m_mipMap = NULL;
-//				delete tex
+				DeleteSubImageCache(m_textureArray[i].m_id);
+
+				if(m_textureArray[i].m_mipMap)
+				{
+					m_textureArray[i].m_mipMap->Release();
+					m_textureArray[i].m_mipMap = NULL;
+					m_textureArray[i].m_id = -1;
+				}
+			}
+		}
+
+		// Now free the overflow linked list
+		TextureEntryLinked* tmpNode;
+
+		while(m_texturesOverflow != NULL)
+		{
+			tmpNode = m_texturesOverflow;
+			m_texturesOverflow = m_texturesOverflow->m_pNext;
+
+			if(tmpNode)
+			{
+				DeleteSubImageCache(tmpNode->m_id);
+				tmpNode->m_mipMap = NULL;
+				delete tmpNode;
 			}
 		}
 	}
 
 	void DeleteTextures(GLsizei n, const GLuint *textures)
 	{
-		for (TextureEntry* tex = m_textures; tex; tex = tex->next)
+		for (int i = 0; i < n; i++)
 		{
-			for (int i = 0; i < n; i++)
+			DeleteSubImageCache(textures[i]);
+
+			if(textures[i] < TEXARRAYSIZE)
 			{
-				if (tex->m_id == textures[i])
+				if(m_textureArray[textures[i]].m_mipMap)
 				{
-					DeleteSubImageCache(tex->m_id); //MARTY
-
-					tex->m_bReuse = true;
-					tex->m_id = 0;
-					tex->Release();
-
-					break;
+					m_textureArray[textures[i]].m_mipMap->Release();
+					m_textureArray[textures[i]].m_mipMap = NULL;
+					m_textureArray[textures[i]].m_id = -1;
+				}
+			}
+			else // It's in the linked list
+			{
+				for (TextureEntryLinked* tex = m_texturesOverflow; tex; tex = tex->m_pNext)
+				{
+					if (tex->m_id == textures[i])
+					{
+						tex->m_id = -1;
+						tex->Release();
+						tex->m_mipMap = NULL;
+						break;
+					}
 				}
 			}
 		}
@@ -305,53 +347,44 @@ public:
 
 	TextureEntry* GetEntry(GLuint id)
 	{
-		if ( m_currentID == id && m_currentTexture ) 
+		if (m_currentID == id && m_currentTexture) 
 			return m_currentTexture;
 		
-		for (TextureEntry* tex = m_textures; tex; tex = tex->next)
-		{
-			if (tex->m_id == id)
-				return tex;
-		}
-
-		return NULL;
+		return &m_textureArray[id];
 	}
 
-	IDirect3DTexture8*  GetMipMap()
+	IDirect3DTexture8* GetMipMap()
 	{
-		if ( m_currentTexture )
-		{
+		if(m_currentTexture)
 			return m_currentTexture->m_mipMap;
-		}
+
 		return 0;
 	}
 
-	IDirect3DTexture8*  GetMipMap(int id)
+	IDirect3DTexture8* GetMipMap(int id)
 	{
 		TextureEntry* entry = GetEntry(id);
-		if ( entry ) 
-		{
+
+		if(entry) 
 			return entry->m_mipMap;
-		}
+
 		return 0;
 	}
 
 	D3DFORMAT GetSurfaceFormat()
 	{
-		if ( m_currentTexture ) 
-		{
+		if(m_currentTexture) 
 			return m_currentTexture->m_format;
-		}
+
 		return D3DFMT_UNKNOWN;
 	}
 
 	void SetTexture(IDirect3DTexture8* mipMap, D3DFORMAT d3dFormat, GLint internalFormat)
 	{
-		if ( !m_currentTexture )
-		{
+		if(!m_currentTexture)
 			BindTexture(0);
-		}
-		RELEASENULL ( m_currentTexture->m_mipMap );
+
+		RELEASENULL(m_currentTexture->m_mipMap);
 		m_currentTexture->m_mipMap = mipMap;
 		m_currentTexture->m_format = d3dFormat;
 		m_currentTexture->m_internalFormat = internalFormat;
@@ -359,10 +392,9 @@ public:
 
 	GLint GetInternalFormat() 
 	{
-		if ( m_currentTexture ) 
-		{
+		if(m_currentTexture) 
 			return m_currentTexture->m_internalFormat;
-		}
+
 		return 0;
 	}
 
@@ -386,7 +418,8 @@ private:
 	DWORD m_count;
 	DWORD m_size;
 
-	TextureEntry* m_textures;
+	TextureEntry m_textureArray[TEXARRAYSIZE];
+	TextureEntryLinked* m_texturesOverflow;
 	TextureEntry* m_currentTexture;
 
 	std::vector<subImage_s*> m_SubImageCache;
@@ -2239,7 +2272,7 @@ public:
 		char* goodSizeBits = (char*) pixels;
 		if ( dxWidth != (DWORD) width || dxHeight != (DWORD) height )
 		{
-			// Most likely this is because there is a 256 x 256 limit on the texture size.
+			// Most likely this is because there is a 256 x 256 limit on the texture size
 			goodSizeBits = new char[sizeof(DWORD) * dxWidth * dxHeight]; 
 			DWORD* dest = ((DWORD*) goodSizeBits);
 			for ( DWORD y = 0; y < dxHeight; y++) 
