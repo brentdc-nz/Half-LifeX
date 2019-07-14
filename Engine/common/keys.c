@@ -636,7 +636,7 @@ void Key_Event( int key, qboolean down )
 	// console key is hardcoded, so the user can never unbind it
 	if( key == '`' || key == '~' )
 	{
-#ifndef _XBOX //MARTY
+#ifndef _XBOX
 		// we are in typing mode. So don't switch to console
 		if( (word)GetKeyboardLayout( 0 ) == (word)0x419 )
 		{

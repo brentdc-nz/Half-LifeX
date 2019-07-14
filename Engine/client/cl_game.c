@@ -138,7 +138,7 @@ static dllfunc_t cdll_new_exports[] = 	// allowed only in SDK 2.3 and higher
 { "HUD_GetStudioModelInterface", (void **)&clgame.dllFuncs.pfnGetStudioModelInterface },
 { "HUD_DirectorMessage", (void **)&clgame.dllFuncs.pfnDirectorMessage },
 { "HUD_VoiceStatus", (void **)&clgame.dllFuncs.pfnVoiceStatus },
-// MARTY - Extensions
+// Extensions
 { "HUD_ChatInputPosition", (void **)&clgame.dllFuncs.pfnChatInputPosition },
 { "HUD_GetRenderInterface", (void **)&clgame.dllFuncs.pfnGetRenderInterface },	// Xash3D ext
 { "HUD_ClipMoveToEntity", (void **)&clgame.dllFuncs.pfnClipMoveToEntity },	// Xash3D ext
@@ -1009,7 +1009,7 @@ static void CL_DrawLoading( float percent )
 	height *= yscale;
 
 	if( cl_allow_levelshots->value )
-  	{
+	{
 		/*p*/glColor4ub( 128, 128, 128, 255 );
 		GL_SetRenderMode( kRenderTransTexture );
 		R_DrawStretchPic( x, y, width, height, 0, 0, 1, 1, cls.loadingBar );
@@ -3922,7 +3922,7 @@ static cl_enginefunc_t gEngfuncs =
 	pfnGetMousePos,
 	pfnSetMousePos,
 	pfnSetMouseEnable,
-// MARTY - Extensions
+// Extensions
 	pfnEngineStub,
 	pfnEngineStub,
 	pfnEngineStub,

@@ -379,7 +379,7 @@ extern	server_t		sv;			// local server
 extern	svgame_static_t	svgame;			// persistant game info
 extern	areanode_t	sv_areanodes[];		// AABB dynamic tree
 
-#ifdef _XBOX //MARTY
+#ifdef _XBOX
 extern	convar_t	sv_autosave;
 #endif
 extern convar_t		mp_logecho;

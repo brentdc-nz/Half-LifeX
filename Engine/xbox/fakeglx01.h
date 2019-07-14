@@ -1085,7 +1085,7 @@ void d3dSetGammaRamp(const unsigned char* gammaTable);
 void d3dInitSetForce16BitTextures(int force16bitTextures);
 void d3dHint_GenerateMipMaps(int value);
 float d3dGetD3DDriverVersion();
-
+LPDIRECT3DDEVICE8 d3dGetDevice();
 
 /*
 ===================================================================================================================

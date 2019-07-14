@@ -293,7 +293,7 @@ qboolean V_PreRender( void )
 		return false;
 	}
 	
-	R_BeginFrame( !cl.paused );
+	R_BeginFrame( !cl.paused && ( cls.state == ca_active ));
 
 	return true;
 }
@@ -382,7 +382,7 @@ void V_PostRender( void )
 		SCR_RSpeeds();
 		SCR_NetSpeeds();
 		SCR_DrawNetGraph();
-#if defined(_XBOX) && defined(_DEBUG) // MARTY
+#if defined(_XBOX)// && defined(_DEBUG) // MARTY
 		SCR_DrawMemory();
 #endif
 		SV_DrawOrthoTriangles();

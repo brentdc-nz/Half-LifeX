@@ -15,6 +15,9 @@ GNU General Public License for more details.
 
 #include "imagelib.h"
 #include "mathlib.h"
+#ifdef _XBOX
+#include "xgraphics.h"
+#endif
 
 #ifdef _XBOX // Pulled from WinGDI.h
 
@@ -344,26 +347,31 @@ qboolean Image_LoadBMP( const char *name, const byte *buffer, size_t filesize )
 	return true;
 }
 
-//MARTY -	Temp bmp save function until the Xash3D function is fixed.
-//			This is writing a bogus header, disabled the check above 
-//			for now as it still works..
-#if 1
+#ifdef _XBOX // Let's use the XDK/DirectX to write our save snapshot on Xbox
+
+extern LPDIRECT3DDEVICE8 d3dGetDevice();
+
+typedef struct
+{
+    byte r, g, b, a;
+}RGBA;
+
 qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
 {
-	file_t		*pfile = NULL;
-	BITMAPFILEHEADER	bmfh;
-	BITMAPINFOHEADER	bmih;
-	dword		cbBmpBits;
-	dword		cbPalBytes = 0;
-	dword		biTrueWidth;
-	int		pixel_size;
+	char strPath[MAX_SYSPATH] = "D:\\valve\\";
+	LPDIRECT3DDEVICE8 pD3dDevice = NULL;
+	LPDIRECT3DSURFACE8 locksurf;
+	D3DLOCKED_RECT lockrect;
+	byte *srcdata, *dstdata;
+	HRESULT hr;
+	int x, y;
+	int pixel_size = 3;
+	int dst_pixel_size = 4;
 
-	if( FS_FileExists( name, false ) && !Image_CheckFlag( IL_ALLOW_OVERWRITE ))
-		return false; // already existed
+	pD3dDevice = d3dGetDevice();
 
-	// bogus parameter check
-	if( !pix->buffer )
-		return false;
+	if(!pD3dDevice) return FALSE;
+	if(!pix) return FALSE;
 
 	// get image description
 	switch( pix->type )
@@ -379,56 +387,58 @@ qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
 		pixel_size = 4;
 		break;	
 	default:
-//		Con_Printf( D_ERROR, "Image_SaveBMP: unsupported image type %s\n", PFDesc[pix->type].name );
 		return false;
 	}
 
-	pfile = FS_Open( name, "wb", false );
-	if( !pfile ) return false;
+	hr = IDirect3DDevice8_CreateImageSurface(pD3dDevice, pix->width, pix->height, D3DFMT_LIN_X8R8G8B8, &locksurf);
+	hr = IDirect3DSurface8_LockRect(locksurf, &lockrect, NULL, 0);
 
-	// NOTE: align transparency column will sucessfully removed
-	// after create sprite or lump image, it's just standard requiriments 
-	biTrueWidth = ((pix->width + 3) & ~3);
-	cbBmpBits = biTrueWidth * pix->height * pixel_size;
-	if( pixel_size == 1 ) cbPalBytes = 256 * sizeof( RGBQUAD );
+	if(FAILED(hr))
+		return FALSE;
 
-	bmfh.bfType = MAKEWORD( 'B', 'M' );
-	bmfh.bfSize = sizeof( bmfh ) + sizeof( bmih ) + cbBmpBits + cbPalBytes;
-	bmfh.bfReserved1 = 0;
-	bmfh.bfReserved2 = 0;
-	bmfh.bfOffBits = sizeof( bmfh ) + sizeof( bmih ) + cbPalBytes;
+	srcdata = (byte*)pix->buffer + (pix->width*pix->height*pixel_size);
+	dstdata = (byte*)lockrect.pBits;
 
-	// BMP Structures   
-	bmih.biSize = sizeof(bmih);
-	bmih.biWidth = biTrueWidth;
-	bmih.biHeight = pix->height;
-	bmih.biPlanes = 1;
-	bmih.biBitCount = pixel_size * 8;
-	bmih.biCompression = BI_RGB;
-	bmih.biSizeImage = cbBmpBits;
-	bmih.biXPelsPerMeter = 0;
-	bmih.biYPelsPerMeter = 0;
-	bmih.biClrUsed = ( pixel_size == 1 ) ? 256 : 0;
-	bmih.biClrImportant = 0;   
+	if(pixel_size == 1)
+	{
+		// TODO: Not used in HLx ATM tho
+	}
+	else
+	{
+		for(y = 0; y < pix->height; y++)
+		{
+			for(x = 0; x < + pix->width; x++)
+			{
+				RGBA pixel;
+				pixel.r = srcdata[0];
+				pixel.g = srcdata[1];
+				pixel.b = srcdata[2];
 
-	// BMP Compress
-	FS_Write( pfile, &bmfh, 8 );
-	FS_Write( pfile, &bmfh.bfReserved2, sizeof(bmfh.bfReserved2) ); 
-	FS_Write( pfile, &bmfh.bfOffBits, sizeof(bmfh.bfOffBits) ); 
-	FS_Write( pfile, &bmih, sizeof(bmih) );
-	FS_Write( pfile, pix->buffer, cbBmpBits );
+				if( pixel_size == 4 ) // write alpha channel
+					pixel.a = srcdata[3];
+				else
+					pixel.a = 0; // no alpha
+			
+				memcpy(&dstdata[lockrect.Pitch * y + dst_pixel_size * x], &pixel, dst_pixel_size);
 
-	FS_Close( pfile );
+				srcdata -= pixel_size;
+			}
+		}
+	}
 
-	return true;
+	IDirect3DSurface8_UnlockRect(locksurf);
+
+	strcat(strPath, name);
+	XGWriteSurfaceToFile(locksurf, strPath);
+
+	if(locksurf)
+		IDirect3DSurface8_Release(locksurf);
+
+	return TRUE; // Pix is freed downstream
 }
-#endif
 
-//MARTY FIXME WIP - The below function is broken, using the above for now
-//					although it's writing a bogus header atm, disabled the 
-//					check above for now..
+#else // #ifndef _XBOX
 
-#if 0
 qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
 {
 	file_t		*pfile = NULL;
@@ -629,4 +639,5 @@ qboolean Image_SaveBMP( const char *name, rgbdata_t *pix )
 
 	return true;
 }
+
 #endif

@@ -483,7 +483,7 @@ library_error:
 
 	return NULL;
 }
-#endif //_HARDLINKED
+#endif
 
 /*
 ---------------------------------------------------------------
@@ -771,7 +771,7 @@ table_error:
 	return false;
 }
 
-#endif //_HARDLINKED
+#endif
 
 /*
 ================
@@ -820,9 +820,9 @@ void *COM_LoadLibrary( const char *dllname, int build_ordinals_table, qboolean d
 
 	Con_Reportf( "LoadLibrary: Loading %s - ok\n", dllname );
 #else 
-	hInst = &FakeDLL; // MARTY
+	hInst = &FakeDLL;
 
-#endif //_HARDLINKED
+#endif
 	return hInst;
 }
 
@@ -871,7 +871,7 @@ void COM_FreeLibrary( void *hInstance )
 	hInst = &FakeDLL;
 	hInst->hInstance = NULL;
 	hInst = NULL;
-#endif //_HARDLINKED
+#endif
 }
 
 #ifndef _HARDLINKED // MARTY - Not used, done in the dll for HLx
@@ -897,7 +897,7 @@ dword COM_FunctionFromName( void *hInstance, const char *pName )
 
 	return 0;
 }
-#endif //_HARDLINKED
+#endif
 
 #ifndef _HARDLINKED // MARTY - Not used, done in the dll for HLx
 const char *COM_NameForFunction( void *hInstance, dword function )
@@ -921,4 +921,4 @@ const char *COM_NameForFunction( void *hInstance, dword function )
 
 	return NULL;
 }
-#endif //_HARDLINKED
+#endif

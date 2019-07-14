@@ -871,7 +871,7 @@ Changes all '/' characters into '\' characters, in place.
 */
 void COM_FixSlashes( char *pname )
 {
-#ifndef _XBOX // MARTY - Screws some things up on Xbox atm
+#ifndef _XBOX // Screws some things up on Xbox atm
 	while( *pname )
 	{
 		if( *pname == '\\' )

@@ -1459,6 +1459,14 @@ public:
 		RELEASENULL(m_textureMatrixStack);
 	}
 
+	LPDIRECT3DDEVICE8 GetD3DDevice()
+	{
+		if(m_pD3DDev)
+			return m_pD3DDev;
+
+		return NULL;
+	}
+
 	void glAlphaFunc (GLenum func, GLclampf ref)
 	{
 		if ( m_glAlphaFunc != func || m_glAlphaFuncRef != ref )
@@ -2114,7 +2122,7 @@ public:
 		D3DLOCKED_RECT lockrect;
 		D3DSURFACE_DESC desc;
 
-		m_pD3DDev->GetBackBuffer ( 0, D3DBACKBUFFER_TYPE_MONO, &bbsurf);
+		m_pD3DDev->GetBackBuffer ( -1, D3DBACKBUFFER_TYPE_MONO, &bbsurf);
 
 		if (!bbsurf)
 		{
@@ -3763,6 +3771,11 @@ void d3dHint_GenerateMipMaps(int value)
 float d3dGetD3DDriverVersion()
 {
 	return 0.81f;
+}
+
+LPDIRECT3DDEVICE8 d3dGetDevice()
+{
+	return gFakeGL->GetD3DDevice();
 }
 
 /*

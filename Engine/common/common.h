@@ -1006,7 +1006,7 @@ void Cmd_Null_f( void );
 // soundlib shared exports
 qboolean S_Init( void );
 void S_Shutdown( void );
-#ifndef _XBOX // MARTY - Not needed on Xbox
+#ifndef _XBOX // Not needed on Xbox
 void S_Activate( qboolean active, void *hInst );
 #endif
 void S_StopSound( int entnum, int channel, const char *soundname );

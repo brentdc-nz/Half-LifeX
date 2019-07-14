@@ -977,6 +977,7 @@ void CL_InitClientMove( void );
 void CL_PredictMovement( qboolean repredicting );
 void CL_CheckPredictionError( void );
 qboolean CL_IsPredicted( void );
+int CL_TruePointContents( const vec3_t p );
 int CL_PointContents( const vec3_t p );
 int CL_WaterEntity( const float *rgflPos );
 cl_entity_t *CL_GetWaterEntity( const float *rgflPos );

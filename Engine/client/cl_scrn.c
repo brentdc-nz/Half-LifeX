@@ -265,8 +265,9 @@ SCR_MakeScreenShot
 create a requested screenshot type
 ================
 */
-void SCR_MakeScreenShot( void ) // MARTY TODO - Most useful for save game screenshots
+void SCR_MakeScreenShot( void )
 {
+	static int iFrames = 0;
 	qboolean	iRet = false;
 	int	viewsize;
 
@@ -274,9 +275,25 @@ void SCR_MakeScreenShot( void ) // MARTY TODO - Most useful for save game screen
 		viewsize = cls.envshot_viewsize;
 	else viewsize = cl_envshot_size->value;
 
+	// We need this hack as we can't capture the back buffer due to multisample
+	// been used with FGL on Xbox so we capture the front buffer and delay
+	// it by 2 frames to make sure we are out of the menu UI and ingame again
+#if _XBOX	  
+	if(!UI_IsVisible() && (cls.scrshot_action == scrshot_savegame))
+	{
+		if(iFrames < 1)
+		{
+			iFrames++;
+			return;
+		}
+
+		iFrames = 0;
+	}
+#endif
+
 	switch( cls.scrshot_action )
 	{
-/*	case scrshot_normal:
+	case scrshot_normal:
 		iRet = VID_ScreenShot( cls.shotname, VID_SCREENSHOT );
 		break;
 	case scrshot_snapshot:
@@ -285,10 +302,14 @@ void SCR_MakeScreenShot( void ) // MARTY TODO - Most useful for save game screen
 	case scrshot_plaque:
 		iRet = VID_ScreenShot( cls.shotname, VID_LEVELSHOT );
 		break;
-	case scrshot_savegame:
+// FIXME:		
+// Disabled for now as there is a leak in the Xash3D menu game ui
+// code where the save game snapshots are never released, need to fix
+// before renabling savegame snapshots
+/*	case scrshot_savegame:
 		iRet = VID_ScreenShot( cls.shotname, VID_MINISHOT );
 		break;
-	case scrshot_envshot:
+*/	case scrshot_envshot:
 		iRet = VID_CubemapShot( cls.shotname, viewsize, cls.envshot_vieworg, false );
 		break;
 	case scrshot_skyshot:
@@ -296,7 +317,7 @@ void SCR_MakeScreenShot( void ) // MARTY TODO - Most useful for save game screen
 		break;
 	case scrshot_mapshot:
 		iRet = VID_ScreenShot( cls.shotname, VID_MAPSHOT );
-*/		break;
+		break;
 
 	case scrshot_inactive:
 		return;
@@ -341,8 +362,12 @@ SCR_BeginLoadingPlaque
 */
 void SCR_BeginLoadingPlaque( qboolean is_background )
 {
+	float	oldclear;
+
 	S_StopAllSounds( true );
 	cl.audio_prepped = false;			// don't play ambients
+	cl.video_prepped = false;
+	oldclear = gl_clear->value;
 
 	if( CL_IsInMenu( ) && !cls.changedemo && !is_background )
 	{
@@ -357,12 +382,14 @@ void SCR_BeginLoadingPlaque( qboolean is_background )
 	if( cls.key_dest == key_console )
 		return;
 
+	gl_clear->value = 0.0f;
 	if( is_background ) IN_MouseSavePos( );
 	cls.draw_changelevel = !is_background;
 	SCR_UpdateScreen();
 	cls.disable_screen = host.realtime;
 	cls.disable_servercount = cl.servercount;
 	cl.background = is_background;		// set right state before svc_serverdata is came
+	gl_clear->value = oldclear;
 //	SNDDMA_LockSound();
 }
 

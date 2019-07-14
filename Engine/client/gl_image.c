@@ -72,12 +72,13 @@ void GL_Bind( GLint tmu, GLenum texnum )
 	gl_texture_t	*texture;
 	GLuint		glTarget;
 
-	Assert( texnum >= 0 && texnum < MAX_TEXTURES );
-
 	// missed or invalid texture?
 	if( texnum <= 0 || texnum >= MAX_TEXTURES )
+	{
+		if( texnum != 0 )
+			Con_DPrintf( S_ERROR "GL_Bind: invalid texturenum %d\n", texnum );
 		texnum = tr.defaultTexture;
-
+	}
 	if( tmu != GL_KEEP_UNIT )
 		GL_SelectTexture( tmu );
 	else tmu = glState.activeTMU;
@@ -202,7 +203,7 @@ void GL_ApplyTextureParams( gl_texture_t *tex )
 		if( tex->target == GL_TEXTURE_3D || tex->target == GL_TEXTURE_CUBE_MAP_ARB )
 			/*p*/glTexParameteri( tex->target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER );
 
-#ifndef _XBOX // MARTY TODO
+#ifndef _XBOX // TODO
 		/*p*/glTexParameterfv( tex->target, GL_TEXTURE_BORDER_COLOR, border );
 #endif	
 	}
@@ -398,6 +399,8 @@ static size_t GL_CalcTextureSize( GLenum format, int width, int height, int dept
 	case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
 	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
 	case GL_COMPRESSED_RED_GREEN_RGTC2_EXT:
+	case GL_COMPRESSED_LUMINANCE_ALPHA_ARB:
+	case GL_COMPRESSED_LUMINANCE_ALPHA_3DC_ATI:
 		size = (((width + 3) >> 2) * ((height + 3) >> 2) * 16) * depth;
 		break;
 	case GL_RGBA8:
@@ -453,10 +456,14 @@ static size_t GL_CalcTextureSize( GLenum format, int width, int height, int dept
 		size = width * height * depth * 8;
 		break;
 	case GL_RGB16F_ARB:
+		size = width * height * depth * 6;
+		break;
 	case GL_RGBA16F_ARB:
 		size = width * height * depth * 8;
 		break;
 	case GL_RGB32F_ARB:
+		size = width * height * depth * 12;
+		break;
 	case GL_RGBA32F_ARB:
 		size = width * height * depth * 16;
 		break;
@@ -663,7 +670,11 @@ static void GL_SetTextureFormat( gl_texture_t *tex, pixformat_t format, int chan
 		case PF_DXT1: tex->format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT; break;	// never use DXT1 with 1-bit alpha
 		case PF_DXT3: tex->format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; break;
 		case PF_DXT5: tex->format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; break;
-		case PF_ATI2: tex->format = GL_COMPRESSED_RED_GREEN_RGTC2_EXT; break;
+		case PF_ATI2:
+			if( glConfig.hardware_type == GLHW_RADEON )
+				tex->format = GL_COMPRESSED_LUMINANCE_ALPHA_3DC_ATI;
+			else tex->format = GL_COMPRESSED_RED_GREEN_RGTC2_EXT;
+			break;
 		}
 		return;
 	}
@@ -1692,6 +1703,7 @@ creates texture from buffer
 */
 int GL_CreateTexture( const char *name, int width, int height, const void *buffer, texFlags_t flags )
 {
+	qboolean	update = FBitSet( flags, TF_UPDATE ) ? true : false;
 	int	datasize = 1;
 	rgbdata_t	r_empty;
 
@@ -1700,6 +1712,7 @@ int GL_CreateTexture( const char *name, int width, int height, const void *buffe
 	else if( FBitSet( flags, TF_ARB_FLOAT ))
 		datasize = 4;
 
+	ClearBits( flags, TF_UPDATE );
 	memset( &r_empty, 0, sizeof( r_empty ));
 	r_empty.width = width;
 	r_empty.height = height;
@@ -1725,7 +1738,7 @@ int GL_CreateTexture( const char *name, int width, int height, const void *buffe
 		r_empty.size *= 6;
 	}
 
-	return GL_LoadTextureInternal( name, &r_empty, flags );
+	return GL_LoadTextureFromBuffer( name, &r_empty, flags, update );
 }
 
 /*
@@ -1934,7 +1947,7 @@ void R_InitDlightTexture( void )
 {
 #ifdef _USEFAKEGL01
 	static byte	data2D[65536]; // 128x128x4
-#endif	
+#endif
 	rgbdata_t	r_image;
 
 	if( tr.dlightTexture != 0 )
@@ -2079,6 +2092,7 @@ void R_TextureList_f( void )
 			Con_Printf( "DXT5  " );
 			break;
 		case GL_COMPRESSED_RED_GREEN_RGTC2_EXT:
+		case GL_COMPRESSED_LUMINANCE_ALPHA_3DC_ATI:
 			Con_Printf( "ATI2  " );
 			break;
 		case GL_RGBA:

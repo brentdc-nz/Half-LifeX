@@ -390,7 +390,7 @@ void Host_GetCommands( void )
 	if( host.type != HOST_DEDICATED )
 		return;
 
-#ifdef _XBOX // MARTY - Disabled atm, virtual keyboard in future maybe
+#ifdef _XBOX // Disabled atm, virtual keyboard in future maybe
 	cmd = NULL;
 #else
 	cmd = Con_Input();
