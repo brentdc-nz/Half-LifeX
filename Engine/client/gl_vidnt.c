@@ -113,6 +113,10 @@ typedef struct vidmode_s
 
 vidmode_t vidmode[] =
 {
+#ifdef _XBOX // Let's only load Xbox friendly resolutions
+{ "640 x 480",		640,	480,	false	},
+{ "1280 x 720",	    1280,	720,	true	},
+#else
 { "640 x 480",		640,	480,	false	},
 { "800 x 600",		800,	600,	false	},
 { "960 x 720",		960,	720,	false	},
@@ -139,6 +143,7 @@ vidmode_t vidmode[] =
 { "2560 x 1600 (wide)",	2560,	1600,	true	},
 { "1600 x 900 (wide)",	1600,	 900,	true	},
 { "3840 x 2160 (wide)",	3840,	2160,	true	},
+#endif //_XBOX
 };
 
 #ifndef _HARDLINKED
@@ -1336,7 +1341,7 @@ rserr_t R_ChangeDisplaySettings( int vid_mode, qboolean fullscreen )
 #ifndef _XBOX
 	HDC	hDC;
 #endif
-	
+
 	R_SaveVideoMode( vid_mode );
 
 	width = glState.width;
@@ -1383,8 +1388,12 @@ rserr_t R_ChangeDisplaySettings( int vid_mode, qboolean fullscreen )
 
 		cds_result = ChangeDisplaySettings( &dm, CDS_FULLSCREEN );
 #else
-		cds_result = d3dSetMode(width, height, 16, 16 , true);
-//		cds_result = ChangeDisplaySettings_FakeGL(/* &dm*/ NULL, /*CDS_FULLSCREEN*/0  );
+#ifdef _USEFAKEGL01
+		cds_result = d3dSetMode( width, height/*, 32, 16*/, TRUE );
+#endif
+#ifdef _USEFAKEGL09
+		cds_result = ChangeDisplaySettings_FakeGL( /*&dm*/NULL, /*CDS_FULLSCREEN*/TRUE );
+#endif
 #endif
 		if( cds_result == DISP_CHANGE_SUCCESSFUL )
 		{
@@ -1453,7 +1462,10 @@ rserr_t R_ChangeDisplaySettings( int vid_mode, qboolean fullscreen )
 		}
 #endif
 	}
-#ifndef _XBOX
+#ifdef _XBOX
+	if(cds_result)
+		return rserr_invalid_fullscreen;
+#else
 	else
 	{
 		ChangeDisplaySettings( 0, 0 );
@@ -1507,11 +1519,21 @@ qboolean VID_SetMode( void )
 #endif
 	SetBits( gl_vsync->flags, FCVAR_CHANGED );
 
-	if(( err = R_ChangeDisplaySettings( /*vid_mode->value*/0, fullscreen )) == rserr_ok ) // MARTY
+	if(( err = R_ChangeDisplaySettings( vid_mode->value, fullscreen )) == rserr_ok )
 	{
-		glConfig.prev_mode = 0;//vid_mode->value; // MARTY
+		glConfig.prev_mode = vid_mode->value;
 	}
-#ifndef _XBOX
+#ifdef _XBOX
+	else
+	{
+		// Fallback to SD 480p/i if initalizing 720p fails
+		if(( err = R_ChangeDisplaySettings( 0, fullscreen )) != rserr_ok )
+		{
+			Con_Printf( S_ERROR "VID_SetMode: could not revert to safe mode\n" );
+			return false;
+		}
+	}
+#else
 	else
 	{
 		if( err == rserr_invalid_fullscreen )

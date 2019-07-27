@@ -1015,6 +1015,7 @@ typedef int	BOOL;
 #define    D3D_TEXTURE_MAXANISOTROPY 0xf70001
 
 #define DISP_CHANGE_SUCCESSFUL 0
+#define DISP_CHANGE_FAILED     1
 
 //===========================================
 
@@ -1079,7 +1080,7 @@ void /*APIENTRY*/ glHint (GLenum target, GLenum mode);
 const GLubyte* /*APIENTRY*/ glGetString (GLenum name);
 PROC /*APIENTRY*/ wglGetProcAddress(LPCSTR s);
 
-int d3dSetMode(int width, int height, int bpp, int zbpp, int vmode);
+int d3dSetMode(int width, int height/*, int bpp, int zbpp*/, int vmode);
 void FGL01_SetSubTexture();
 void d3dSetGammaRamp(const unsigned char* gammaTable);
 void d3dInitSetForce16BitTextures(int force16bitTextures);

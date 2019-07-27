@@ -102,6 +102,11 @@ void SCR_DrawFPS( int height )
 	Con_DrawString( glState.width - offset - 4, height, fpsstring, color );
 }
 
+/*
+==============
+SCR_DrawMemory
+==============
+*/
 #if 1//defined(_XBOX) && defined(_DEBUG)
 void SCR_DrawMemory( void )
 {

@@ -3728,11 +3728,18 @@ BOOL /*WINAPI*/ wglMakeCurrent(/*HDC hdc, HGLRC hglrc*/)
 	return TRUE;
 }
 
-int d3dSetMode(int width, int height, int bpp, int zbpp, int vmode)
+int d3dSetMode(int width, int height/*, int bpp, int zbpp*/, int vmode)
 {
 	gWidth = width;
 	gHeight = height;
 	gVideoMode = vmode;
+
+	// Check if HD is possible if selected
+	if(gWidth >= 1280 && gHeight >= 720) 
+	{
+		if(!(XGetAVPack() == XC_AV_PACK_HDTV) || !(XGetVideoFlags() & XC_VIDEO_FLAGS_HDTV_720p))
+			return DISP_CHANGE_FAILED;
+	}
 
 	return DISP_CHANGE_SUCCESSFUL;
 }
