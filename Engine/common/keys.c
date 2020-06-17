@@ -115,8 +115,10 @@ keyname_t keynames[] =
 {"XBOX_DPAD_DOWN",	K_DPAD_DOWN,	""	},
 {"XBOX_DPAD_LEFT",	K_DPAD_LEFT,	""	},
 {"XBOX_DPAD_RIGHT",	K_DPAD_RIGHT,	""	},
-{"XBOX_LTRIG",	K_XBOX_LTRIG,	""	},
 {"XBOX_RTRIG",	K_XBOX_RTRIG,	""	},
+{"XBOX_LTRIG",	K_XBOX_LTRIG,	""	},
+{"XBOX_LSTICK",	K_XBOX_LSTICK,	""	},
+{"XBOX_RSTICK",	K_XBOX_RSTICK,	""	},
 
 #endif
 
@@ -224,7 +226,7 @@ const char *Key_KeynumToString( int keynum )
 	int		i, j;
 
 	if ( keynum == -1 ) return "<KEY NOT FOUND>";
-	if ( keynum < 0 || keynum > 255 ) return "<OUT OF RANGE>";
+	if ( keynum < 0 || keynum > KEYCOUNT ) return "<OUT OF RANGE>";
 
 	// check for printable ascii (don't use quote)
 	if( keynum > 32 && keynum < 127 && keynum != '"' && keynum != ';' && keynum != K_SCROLLOCK )

@@ -386,12 +386,16 @@ void Sys_SendKeyEvents( void )
 #ifdef _XBOX
 	XBGamepadButtons_t XBGamepadButton;
 
-	if(clgame.dllFuncs.IN_XBoxGamepadButtons(&XBGamepadButton))
+	int i;
+	for(i = 0; i <= 15; i++) //check all the buttons
 	{
-		if(XBGamepadButton.iKey == K_XBOX_QCOMBO)
-			Sys_Quit();
+		if(clgame.dllFuncs.IN_XBoxGamepadButtons(&XBGamepadButton, i))
+		{
+			if(XBGamepadButton.iKey == K_XBOX_QCOMBO)
+				Sys_Quit();
 
-		Key_Event(XBGamepadButton.iKey, XBGamepadButton.iButtonDown);
+			Key_Event(XBGamepadButton.iKey, XBGamepadButton.iButtonDown);
+		}
 	}
 #else // Win32
 	MSG	msg;

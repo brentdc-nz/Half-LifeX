@@ -21,7 +21,7 @@ typedef struct XBGamepadInfo_s
 	float fThumbRY;
 } XBGamepadInfo_t;
 
-int UpdateGamepad(XBGamepadInfo_t *pGamepadInfo);
+int UpdateGamepad(XBGamepadInfo_t *pGamepadInfo, int key);
 
 #ifdef __cplusplus
 }
