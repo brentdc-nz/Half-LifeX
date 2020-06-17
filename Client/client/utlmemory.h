@@ -553,13 +553,13 @@ inline int UtlMemory_CalcNewAllocationCount( int nAllocationCount, int nGrowSize
 
 	return nAllocationCount;
 }
-
+//Gbrownie -- Updated
 template< class T, class I >
 void CUtlMemory<T,I>::Grow( int num )
 {
 	assert( num > 0 );
 
-	if ( IsExternallyAllocated() )
+	if (IsExternallyAllocated())
 	{
 		// Can't grow a buffer whose memory was externally allocated 
 		assert(0);
@@ -569,40 +569,39 @@ void CUtlMemory<T,I>::Grow( int num )
 	// Make sure we have at least numallocated + num allocations.
 	// Use the grow rules specified for this memory (in m_nGrowSize)
 	int nAllocationRequested = m_nAllocationCount + num;
-
-	m_nAllocationCount = UtlMemory_CalcNewAllocationCount( m_nAllocationCount, m_nGrowSize, nAllocationRequested, sizeof(T) );
-
-	// if m_nAllocationRequested wraps index type I, recalculate
-	if ( ( int )( I )m_nAllocationCount < nAllocationRequested )
+	while (m_nAllocationCount < nAllocationRequested)
 	{
-		if ( ( int )( I )m_nAllocationCount == 0 && ( int )( I )( m_nAllocationCount - 1 ) >= nAllocationRequested )
+		if ( m_nAllocationCount != 0 )
 		{
-			--m_nAllocationCount; // deal w/ the common case of m_nAllocationCount == MAX_USHORT + 1
+			if (m_nGrowSize)
+			{
+				m_nAllocationCount += m_nGrowSize;
+			}
+			else
+			{
+				m_nAllocationCount += m_nAllocationCount;
+			}
 		}
 		else
 		{
-			if ( ( int )( I )nAllocationRequested != nAllocationRequested )
-			{
-				// we've been asked to grow memory to a size s.t. the index type can't address the requested amount of memory
-				assert( 0 );
-				return;
-			}
-			while ( ( int )( I )m_nAllocationCount < nAllocationRequested )
-			{
-				m_nAllocationCount = ( m_nAllocationCount + nAllocationRequested ) / 2;
-			}
+			// Compute an allocation which is at least as big as a cache line...
+			m_nAllocationCount = (31 + sizeof(T)) / sizeof(T);
+			assert(m_nAllocationCount != 0);
 		}
 	}
 
 	if (m_pMemory)
 	{
-		m_pMemory = (T*)realloc( m_pMemory, m_nAllocationCount * sizeof(T) );
-		assert( m_pMemory );
+		T* pTempMemory = ( T* )realloc( m_pMemory, m_nAllocationCount * sizeof( T ) );
+
+		if( !pTempMemory )
+			return;
+
+		m_pMemory = pTempMemory;
 	}
 	else
 	{
 		m_pMemory = (T*)malloc( m_nAllocationCount * sizeof(T) );
-		assert( m_pMemory );
 	}
 }
 
@@ -624,10 +623,16 @@ inline void CUtlMemory<T,I>::EnsureCapacity( int num )
 	}
 
 	m_nAllocationCount = num;
-
+	
+	//Gbrownie -- Updated
 	if (m_pMemory)
 	{
-		m_pMemory = (T*)realloc( m_pMemory, m_nAllocationCount * sizeof(T) );
+		T* pTempMemory = ( T* )realloc( m_pMemory, m_nAllocationCount * sizeof( T ) );
+
+		if( !pTempMemory )
+			return;
+
+		m_pMemory = pTempMemory;
 	}
 	else
 	{

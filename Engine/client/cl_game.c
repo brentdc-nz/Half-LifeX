@@ -80,7 +80,7 @@ void /*DLLEXPORT*/ StaticHUD_VoiceStatus(int entindex, qboolean bTalking);
 void /*DLLEXPORT*/ StaticHUD_DirectorMessage( int iSize, void *pbuf );
 
 #ifdef _XBOX //MARTY - Custom XBox only call to pump gamepad button messages
-int /*DLLEXPORT*/ StaticIN_XBoxGamepadButtons( XBGamepadButtons_t *pGamepadButtons );
+int /*DLLEXPORT*/ StaticIN_XBoxGamepadButtons( XBGamepadButtons_t *pGamepadButtons, int key );
 #endif
 
 #endif //_HARDLINKED

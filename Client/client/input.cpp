@@ -422,7 +422,7 @@ void IN_MLookUp( void )
 
 	if(!( in_mlook.state & 1 ) && lookspring->value )
 	{
-		V_StartPitchDrift();
+	//	V_StartPitchDrift();
 	}
 }
 
@@ -513,7 +513,7 @@ void CL_AdjustAngles( float frametime, Vector &viewangles )
 
 	if( in_klook.state & BUTTON_DOWN )
 	{
-		V_StopPitchDrift ();
+		//V_StopPitchDrift ();
 		viewangles[PITCH] -= speed * cl_pitchspeed->value * CL_KeyState( &in_forward );
 		viewangles[PITCH] += speed * cl_pitchspeed->value * CL_KeyState( &in_back );
 	}
@@ -524,8 +524,8 @@ void CL_AdjustAngles( float frametime, Vector &viewangles )
 	viewangles[PITCH] -= speed * cl_pitchspeed->value * up;
 	viewangles[PITCH] += speed * cl_pitchspeed->value * down;
 
-	if( up || down )
-		V_StopPitchDrift ();
+//	if( up || down )
+//		V_StopPitchDrift ();
 
 	viewangles[PITCH] = bound( -cl_pitchup->value, viewangles[PITCH], cl_pitchdown->value );
 	viewangles[ROLL] = bound( -50, viewangles[ROLL], 50 );

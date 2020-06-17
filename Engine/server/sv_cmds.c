@@ -460,11 +460,6 @@ void SV_AutoSave_f( void )
 		return;
 	}
 
-#ifdef _XBOX
-	if(!sv_autosave.value)
-		return;
-#endif
-
 	SV_SaveGame( "autosave" );
 }
 

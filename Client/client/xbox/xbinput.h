@@ -18,6 +18,7 @@
 // Name: enum XBGAMEPAD_EVENT
 // Desc: Cooked event codes for gamepad button presses
 //-----------------------------------------------------------------------------
+/*
 enum XBGAMEPAD_EVENT
 {
     XBGAMEPAD_NONE = 0,
@@ -36,7 +37,7 @@ enum XBGAMEPAD_EVENT
     XBGAMEPAD_LEFT_TRIGGER,
     XBGAMEPAD_RIGHT_TRIGGER,
 };
-
+*/
 
 
 
@@ -67,7 +68,7 @@ struct XBGAMEPAD : public XINPUT_GAMEPAD
     BOOL            bPressedAnalogButtons[8];
 
     // A cooked event, useful for UI navigation
-    XBGAMEPAD_EVENT Event;
+   // XBGAMEPAD_EVENT Event;
 
     // Rumble properties
     XINPUT_RUMBLE   Rumble;

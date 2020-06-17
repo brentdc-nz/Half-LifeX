@@ -145,7 +145,7 @@ extern "C" void *StaticKB_Find( const char *name );
 extern "C" void StaticCL_CreateMove( float frametime, struct usercmd_s *cmd, int active );
 
 #ifdef _XBOX // MARTY - Custom Xbox only call to pump gamepad key messages.
-extern "C" int /*DLLEXPORT*/ StaticIN_XBoxGamepadButtons( XBGamepadButtons_t *pGamepadButtons );
+extern "C" int /*DLLEXPORT*/ StaticIN_XBoxGamepadButtons( XBGamepadButtons_t *pGamepadButtons, int key );
 #endif
 
 //extern "C" int HUD_GetRenderInterface( int version, render_api_t *renderfuncs, render_interface_t *callback );

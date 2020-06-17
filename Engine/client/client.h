@@ -531,7 +531,7 @@ typedef struct
 	void	(*pfnClipMoveToEntity)( physent_t *pe, const vec3_t start, vec3_t mins, vec3_t maxs, const vec3_t end, pmtrace_t *tr );
 
 #ifdef _XBOX // MARTY - Custom XBox only call to pump gamepad key messages
-	int		(*IN_XBoxGamepadButtons) ( XBGamepadButtons_t *pGamepadButtons );
+	int		(*IN_XBoxGamepadButtons) ( XBGamepadButtons_t *pGamepadButtons, int key );
 #endif
 
 } cldll_func_t;

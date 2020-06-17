@@ -675,13 +675,15 @@ void UI_DrawMenu( menuFramework_s *menu )
 
 	// draw status bar
 	item = (menuCommon_s *)UI_ItemAtCursor( menu );
-	if( item != lastItem )
-	{
+	//Gbrownie - Fix highligh disappearing, its hard to tell what your doing otherwise
+	//Pc's have mice so its not a big deal.
+	//if( item != lastItem ) 
+	//{
 		// flash on selected button (like in GoldSrc)
 		if( item ) item->lastFocusTime = uiStatic.realTime;
-		statusFadeTime = uiStatic.realTime;
+		//statusFadeTime = uiStatic.realTime;
 		lastItem = item;
-	}
+	//}
 
 	if( item && ( item->flags & QMF_HASMOUSEFOCUS && !( item->flags & QMF_NOTIFY )) && ( item->statusText != NULL ))
 	{
@@ -712,7 +714,7 @@ const char *UI_DefaultKey( menuFramework_s *menu, int key, int down )
 	int		cursorPrev;
 
 	// menu system key
-	if( down && key == K_ESCAPE || key == K_XBOX_B ) // MARTY
+	if( down && (key == K_ESCAPE || key == K_XBOX_B )) // MARTY, GBrownie - fixed parenthesis
 	{
 		UI_PopMenu();
 		return uiSoundOut;
