@@ -13,6 +13,8 @@ Gbrownie
 -Fixed menu highlight to mimic vanilla half life more closely
 	-Highlights stay active as if you held the mouse on it (previously the highlight would fade out after a few seconds
 
+-Enabled autosave ability 
+
 -Other small changes
 ----
 
