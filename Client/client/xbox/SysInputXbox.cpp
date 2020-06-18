@@ -166,7 +166,7 @@ else
 	else if(m_DefaultGamepad.wButtons ^ (1<<key) )
 	{
 		if(key > 0) key++; //skip pause 
-		pGamepadInfo->iKey = key+K_DIGITAL;
+		pGamepadInfo->iKey = xinputKey+K_DIGITAL;
 		pGamepadInfo->iButtonDown = 0;
 		return true;
 	}
