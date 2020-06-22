@@ -3,6 +3,12 @@
 ==========================
 
 Gbrownie
+6/22/2020
+-Added ability to load intro cutscenes in XMV format (sierra.xmv, valve.xmv, logo.xmv)
+     -Press any button to skip to the next cutscene or simply don't include the XMV's in your game directory to skip them completely
+     -Check releases for xmv files
+
+----------------------
 -Fixed controls
 	-Fixed overly sensitive thumbsticks (would instantly go to max speed at slightest nudge)
 	-Fixed weird camera jerking if thumbsticks were held at certain angles
