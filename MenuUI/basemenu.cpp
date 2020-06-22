@@ -22,6 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // ui_menu.c -- main menu interface
 #define OEMRESOURCE		// for OCR_* cursor junk
 
+//Intro defines
+#define INTRO_SIERRA 0
+#define INTRO_VALVE  1
+#define INTRO_LOGO   2
+
 #include "extdll.h"
 #include "basemenu.h"
 #include ".\common\keydefs.h"
@@ -49,6 +54,8 @@ const char	*uiSoundGlow	= "media\\launch_glow1.wav";
 const char	*uiSoundBuzz	= "media\\launch_deny2.wav";
 const char	*uiSoundKey	= "media\\launch_select1.wav";
 const char	*uiSoundRemoveKey	= "media\\launch_deny1.wav";
+
+mpArgs* args;
 
 const char	*uiSoundMove	= "";		// Xash3D not use movesound
 const char	*uiSoundNull	= "";
@@ -423,7 +430,7 @@ void UI_LoadBackgroundImage( void )
 		if( g_engfuncs.pfnFileExists( "gfx\\shell\\splash.bmp", TRUE )) //MARTY
 		{
 			// if we doesn't have logo.avi in gamedir we don't want to draw it
-			if( !g_engfuncs.pfnFileExists( "media\\logo.avi", TRUE )) //MARTY
+			if( !g_engfuncs.pfnFileExists( "media\\logo.x", TRUE )) //MARTY
 				uiStatic.m_fDisableLogo = TRUE;
 		}
 	}
@@ -617,6 +624,129 @@ wrap:
 	}
 }
 
+//Frees an XMV. Called directly with TerminatePlayback to end XMV early
+void clearVid()
+{
+	// Wait for the thread to terminate.
+	WaitForSingleObject( args->handle, INFINITE );
+
+	// Clean up our thread handles to free all thread resources.
+	// This has to be done after we finish waiting on the handle.
+	CloseHandle( args->handle);
+	//args->handle = NULL;
+
+	// Free all of the movie data.
+	XMVDecoder_CloseDecoder( args->pDecoder );
+
+	args->hasHandle = false;
+}
+
+//XMV player thread
+DWORD __stdcall MoviePlayerThread( mpArgs* args)
+{
+    // Play the movie
+    XMVDecoder_Play( args->pDecoder, args->flag, args->pRect );
+    return 0;
+}
+
+
+//-----------------------------------------------------------------------------
+// Name: PlayVideo()
+// Desc: Plays specified video file.
+//-----------------------------------------------------------------------------
+HANDLE PlayVideo( const CHAR* strFilename, mpArgs* args )
+{
+	//Check if we're at the menu logo video
+	if(args->curIntro <= INTRO_LOGO) 
+		args->curIntro++; //Go to the next video
+
+
+    HRESULT hr = XMVDecoder_CreateDecoderForFile( 0, strFilename, &args->pDecoder);
+    if( FAILED( hr ) )  
+        return NULL;
+
+    // Play the video
+    XMVVIDEO_DESC VideoDescriptor;
+    XMVDecoder_GetVideoDescriptor( args->pDecoder, &VideoDescriptor );
+
+    // Enable audio if there is any.
+    if( VideoDescriptor.AudioStreamCount )
+    {
+        XMVDecoder_EnableAudioStream( args->pDecoder, 0, 0, NULL, NULL );
+    }
+
+	args->hasHandle = true;
+
+    // Start the movie playing thread - this should always succeed.
+	return CreateThread( 0, 0, (LPTHREAD_START_ROUTINE)&MoviePlayerThread, args, 0, 0 );
+}
+
+//Controller for intro XMVs
+void UI_PlayIntro()
+{
+	
+	if((!args->hasHandle) && (args->curIntro == INTRO_SIERRA))
+	{
+		args->pRect->right = ScreenWidth;
+		args->pRect->bottom = ScreenHeight;
+
+		args->handle = PlayVideo("D:\\valve\\media\\sierra.xmv", args);
+	}
+	
+	if((!args->hasHandle) && (args->curIntro == INTRO_VALVE))
+	{
+		args->pRect->right = ScreenWidth;
+		args->pRect->bottom = ScreenHeight;
+
+		args->handle = PlayVideo("D:\\valve\\media\\valve.xmv", args);
+	}
+	 
+	if((!args->hasHandle) && (args->curIntro >= INTRO_LOGO))
+	{
+
+			//For intro title logo
+			args->pRect->top = 70 * (ScreenHeight/480); //70 is magic number
+			args->pRect->right = ScreenWidth;
+			args->pRect->bottom = args->pRect->top + 100*(ScreenWidth/640);
+			args->flag = XMVFLAG_FULL_LOOP;
+			args->curIntro = 3;
+
+			if(uiStatic.menuDepth == 1)
+				args->handle = PlayVideo("D:\\valve\\media\\logo.xmv", args);
+	}
+
+	if((args->hasHandle) && (args->curIntro >= INTRO_LOGO))
+	{
+		//If not on top menu page
+		if(uiStatic.menuDepth != 1)
+		{
+				//stop the logo animation
+				args->pDecoder->TerminatePlayback();
+				clearVid();
+		}
+	}
+
+	//check if we're done playing current vid
+	closeVideoHandle();	
+}
+
+//Will check to see if the XMV has ended on it own and if it needs to be freed
+void closeVideoHandle()
+{
+	//Check if we have a video handle
+	if(args->hasHandle)
+	{
+        // WAIT_OBJECT_0 means the thread exited and we should exit.
+		DWORD waitResult = WaitForSingleObject( args->handle, 1000 / 60 );
+        if (  waitResult == WAIT_OBJECT_0 )
+		{
+			clearVid();
+		}
+	}
+}
+
+
+
 /*
 =================
 UI_DrawMenu
@@ -624,6 +754,17 @@ UI_DrawMenu
 */
 void UI_DrawMenu( menuFramework_s *menu )
 {
+	//Start a new video if one is available
+	UI_PlayIntro();
+	
+	if(args->curIntro <= INTRO_LOGO)
+	{
+		//Clear the screen so it looks nicer between videos
+		FillRGBA(0, 0, ScreenWidth, ScreenHeight, 0, 0, 0, 255);
+		return;
+	}
+
+
 	static long	statusFadeTime;
 	static menuCommon_s	*lastItem;
 	menuCommon_s	*item;
@@ -712,6 +853,12 @@ const char *UI_DefaultKey( menuFramework_s *menu, int key, int down )
 	const char	*sound = NULL;
 	menuCommon_s	*item;
 	int		cursorPrev;
+
+#ifdef _XBOX
+	//Don't process key presses on menu if playing intro vids
+	if(args->curIntro <= INTRO_LOGO)
+		return 0;
+#endif
 
 	// menu system key
 	if( down && (key == K_ESCAPE || key == K_XBOX_B )) // MARTY, GBrownie - fixed parenthesis
@@ -919,6 +1066,12 @@ void UI_CloseMenu( void )
 	memset( uiStatic.serverNames, 0, sizeof( uiStatic.serverNames ));
 
 	UI_ClearButtonStack ();
+	
+	if(args->hasHandle)
+	{
+		args->pDecoder->TerminatePlayback();
+		clearVid();
+	}
 
 //	KEY_ClearStates ();
 	KEY_SetDest ( KEY_GAME );
@@ -1033,6 +1186,7 @@ void UI_UpdateMenu( float flTime )
 
 	if( CVAR_GET_FLOAT( "cl_background" ) && !g_engfuncs.pfnClientInGame())
 		return;	// don't draw menu while level is loading
+	
 
 	if( uiStatic.firstDraw )
 	{
@@ -1100,6 +1254,14 @@ void UI_KeyEvent( int key, int down )
 
 	if(down && iKeyCount > 1)
 		return;
+
+	//Skip current intro video if a button is pressed
+	if(!down && (args->hasHandle && args->curIntro <= INTRO_LOGO))
+	{
+		args->pDecoder->TerminatePlayback();
+		clearVid();
+		return;
+	}
 
 	iKeyCount++;
 #endif
@@ -1547,7 +1709,8 @@ UI_Init
 =================
 */
 void UI_Init( void )
-{
+{	
+
 	// register our cvars and commands
 	ui_precache = CVAR_REGISTER( "ui_precache", "0", FCVAR_ARCHIVE );
 	ui_showmodels = CVAR_REGISTER( "ui_showmodels", "0", FCVAR_ARCHIVE );
@@ -1581,6 +1744,18 @@ void UI_Init( void )
 
 	//CR
 	UI_InitTitleAnim();
+
+		//Init intro movie arguments
+	args = new mpArgs();
+	args->pRect = new RECT();
+	args->pRect->left = 0;
+	args->pRect->top = 0;
+	args->pRect->right = ScreenWidth;
+	args->pRect->bottom = ScreenHeight;
+	args->handle = NULL;
+	args->hasHandle = false;
+	args->curIntro = 0;
+	args->flag = XMVFLAG_NONE;
 }
 
 /*

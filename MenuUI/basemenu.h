@@ -32,6 +32,7 @@ GNU General Public License for more details.
 #define ColorIndex( c )		((( c ) - '0' ) & 7 )
 #define IsColorString( p )		( p && *( p ) == '^' && *(( p ) + 1) && *(( p ) + 1) >= '0' && *(( p ) + 1 ) <= '9' )
 
+#include <xmv.h>
 #include ".\common\netadr.h"
 
 #ifdef _XBOX_NOAVILOGO //MARTY
@@ -286,6 +287,18 @@ typedef struct
 	int		keepSlider;	// when mouse button is holds
 } menuSlider_s;
 
+typedef struct mpArgs //Movie Player arguments
+{
+	XMVDecoder* pDecoder;
+	RECT* pRect;
+	HANDLE handle;
+	DWORD flag;
+	int curIntro;
+	bool hasHandle;
+} mpArgs;
+
+
+
 void UI_ScrollList_Init( menuScrollList_s *sl );
 const char *UI_ScrollList_Key( menuScrollList_s *sl, int key, int down );
 void UI_ScrollList_Draw( menuScrollList_s *sl );
@@ -437,6 +450,7 @@ const char *UI_ActivateItem( menuFramework_s *menu, menuCommon_s *item );
 void UI_RefreshServerList( void );
 int UI_CreditsActive( void );
 void UI_DrawFinalCredits( void );
+void closeVideoHandle( void );
 
 void UI_CloseMenu( void );
 void UI_PushMenu( menuFramework_s *menu );
