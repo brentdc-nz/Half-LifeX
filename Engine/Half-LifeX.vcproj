@@ -193,7 +193,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="xapilib.lib d3d8.lib d3dx8.lib xgraphics.lib dsound.lib dmusic.lib xacteng.lib xsndtrk.lib xvoice.lib xonlines.lib xboxkrnl.lib hl.lib hlcl.lib mpeg.lib menuui.lib"
+				AdditionalDependencies="xapilib.lib d3d8.lib d3dx8.lib xgraphics.lib dsound.lib dmusic.lib xacteng.lib xsndtrk.lib xvoice.lib xonlines.lib xboxkrnl.lib xmv.lib hl.lib hlcl.lib mpeg.lib menuui.lib"
 				OutputFile="$(OutDir)/$(ProjectName).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="common\soundlib\;..\Client\client\Release;..\Server\dlls\Releasehl;..\MenuUI\Release"
