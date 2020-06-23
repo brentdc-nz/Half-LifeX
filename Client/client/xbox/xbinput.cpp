@@ -199,23 +199,22 @@ VOID XBInput_GetInput( XBGAMEPAD* pGamepads )
             {
                 // Turn the 8-bit polled value into a boolean value
                 BOOL bPressed = ( pGamepads[i].bAnalogButtons[b] > XINPUT_GAMEPAD_MAX_CROSSTALK );
-
-                if( bPressed )
-                    pGamepads[i].bPressedAnalogButtons[b] = !pGamepads[i].bLastAnalogButtons[b];
-                else
-                    pGamepads[i].bPressedAnalogButtons[b] = FALSE;
+				pGamepads[i].bLastAnalogButtons[b] = pGamepads[i].bPressedAnalogButtons[b];
+                pGamepads[i].bPressedAnalogButtons[b] = bPressed;
                 
                 // Store the current state for the next time
-                pGamepads[i].bLastAnalogButtons[b] = bPressed;
+               // pGamepads[i].bLastAnalogButtons[b] = bPressed;
 
                 bAnyButtonPressed |= bPressed;
             }
 
+
             // Cook the event
-            pGamepads[i].Event = XBGAMEPAD_NONE;
+//            pGamepads[i].Event = XBGAMEPAD_NONE;
 
             if( bAnyButtonPressed )
             {
+				/*
                 if( pGamepads[i].wPressedButtons & XINPUT_GAMEPAD_START )
                     pGamepads[i].Event = XBGAMEPAD_START;
                 else if( pGamepads[i].wPressedButtons & XINPUT_GAMEPAD_BACK )
@@ -243,7 +242,7 @@ VOID XBInput_GetInput( XBGAMEPAD* pGamepads )
                 else if( pGamepads[i].bPressedAnalogButtons[XINPUT_GAMEPAD_LEFT_TRIGGER] )
                     pGamepads[i].Event = XBGAMEPAD_LEFT_TRIGGER;
                 else if( pGamepads[i].bPressedAnalogButtons[XINPUT_GAMEPAD_RIGHT_TRIGGER] )
-                    pGamepads[i].Event = XBGAMEPAD_RIGHT_TRIGGER;
+                    pGamepads[i].Event = XBGAMEPAD_RIGHT_TRIGGER;*/
             }
         }
     }

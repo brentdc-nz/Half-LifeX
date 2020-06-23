@@ -221,7 +221,9 @@ void V_Init( void )
 
 	ADD_COMMAND( "thirdperson", V_ThirdPerson );
 	ADD_COMMAND( "firstperson", V_FirstPerson );
-	ADD_COMMAND( "centerview", V_StartPitchDrift );
+	//Gbrownie - Remove all pitch drift (caused rthumb to jerk wildly 
+	//if it and Lthumb were move at some angles
+	//ADD_COMMAND( "centerview", V_StartPitchDrift );
 }
 
 //==========================
@@ -272,6 +274,7 @@ struct
 	double	laststop;
 } pd;
 
+#ifndef _XBOX
 //==========================
 // V_StartPitchDrift
 //==========================
@@ -331,8 +334,10 @@ void V_DriftPitch( struct ref_params_s *pparams )
 			pd.driftmove += pparams->frametime;
 		}
 
+#ifndef _XBOX
 		if( pd.driftmove > v_centermove->value )
 			V_StartPitchDrift ();
+#endif
 		return;
 	}
 	
@@ -368,7 +373,7 @@ void V_DriftPitch( struct ref_params_s *pparams )
 		pparams->cl_viewangles[PITCH] -= move;
 	}
 }
-
+#endif
 //==========================
 // V_CalcGunAngle
 //==========================
@@ -917,7 +922,7 @@ void V_InterpolatePos( struct ref_params_s *pparams )
 //==========================
 void V_CalcFirstPersonRefdef( struct ref_params_s *pparams )
 {
-	V_DriftPitch( pparams );
+//	V_DriftPitch( pparams );
 
 	float bob = V_CalcBob( pparams );
 

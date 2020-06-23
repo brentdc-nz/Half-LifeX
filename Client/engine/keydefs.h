@@ -148,21 +148,28 @@ typedef struct XBGamepadButtons_s
 //
 // XBox Gmaepad Buttons
 //
+	//Analog Buttons
+#define K_ANALOG        246 //Gbrownie - Should equal the first analog button
 #define K_XBOX_A		246
 #define K_XBOX_B		247
 #define K_XBOX_X		248
 #define K_XBOX_Y		249
-#define K_XBOX_BACK		250
-#define K_XBOX_START	251
-#define K_XBOX_BLACK	252
-#define K_XBOX_WHITE	253
-#define K_DPAD_UP		254 //MARTY - Break for K_PAUSE!
+#define K_XBOX_BLACK	250
+#define K_XBOX_WHITE	251
+#define K_XBOX_LTRIG	252
+#define K_XBOX_RTRIG	253
+	//Digital Buttons
+#define K_DIGITAL       254 //Gbrownie - Shoudl equal the first digital button
+#define K_DPAD_UP		254//MARTY - Break for K_PAUSE!
 #define K_DPAD_DOWN		256
 #define K_DPAD_LEFT		257
 #define K_DPAD_RIGHT	258
-#define K_XBOX_LTRIG	259
-#define K_XBOX_RTRIG	260
-#define K_XBOX_QCOMBO	261
+#define K_XBOX_START	259
+#define K_XBOX_BACK		260 
+#define K_XBOX_LSTICK	261
+#define K_XBOX_RSTICK	262
+	//IGR
+#define K_XBOX_QCOMBO	263
 
 #endif //_XBOX
 //MARTY END

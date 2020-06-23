@@ -119,7 +119,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
+				Optimization="3"
 				GlobalOptimizations="TRUE"
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"

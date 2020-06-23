@@ -273,10 +273,10 @@ void IN_UpdateThumbStickAxes(float frametime, usercmd_t *cmd, float rawvalue, in
 			viewangles[iAxis] -= svalue * aspeed * 0.15;
 		}
 	}
-	else if(lookspring->value == 0.0)
-	{
-		V_StopPitchDrift();
-	}
+//	else if(lookspring->value == 0.0)
+//	{
+//		V_StopPitchDrift();
+//	}
 
 	// bounds check pitch
 	if (viewangles[PITCH] > 80.0)
@@ -322,19 +322,19 @@ void IN_XBoxGamepadThumbs ( float frametime, usercmd_t *cmd ) //MARTY
 IN_XBoxGamepad
 ===========
 */
-int StaticIN_XBoxGamepadButtons ( XBGamepadButtons_t *pGamepadButtons )
+int StaticIN_XBoxGamepadButtons ( XBGamepadButtons_t *pGamepadButtons, int key )
 {
 	//XBGamepadInfo_t gamepadInfo; // MARTY - Made global
-	UpdateGamepad(&g_gamepadInfo);
+	int ret = UpdateGamepad(&g_gamepadInfo, key);
 	
 	// Put the button pointers into a button only struct
 	if(pGamepadButtons)
 	{
 		pGamepadButtons->iKey = g_gamepadInfo.iKey;
 		pGamepadButtons->iButtonDown = g_gamepadInfo.iButtonDown;
-		return TRUE;
+		return ret;
 	}
-	return FALSE;
+	return ret;
 }
 #endif //_XBOX
 //MARTY END
@@ -492,7 +492,7 @@ IN_Move
 */
 void IN_Move( float frametime, usercmd_t *cmd )
 {
-	IN_MouseMove( frametime, cmd );
+	//IN_MouseMove( frametime, cmd );
 
 #ifdef _XBOX //MARTY
 	IN_XBoxGamepadThumbs( frametime, cmd);
