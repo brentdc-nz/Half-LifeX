@@ -156,7 +156,7 @@ typedef struct XBGamepadButtons_s
 #define K_XBOX_RTRIG	253
 	//Digital Buttons
 #define K_DIGITAL       254 //Gbrownie - Should equal first digital button
-#define K_DPAD_UP		254//MARTY - Break for K_PAUSE!
+#define K_DPAD_UP		254 //MARTY - Break for K_PAUSE!
 #define K_DPAD_DOWN		256
 #define K_DPAD_LEFT		257
 #define K_DPAD_RIGHT	258

@@ -878,7 +878,10 @@ prevent data to out of range
 */
 int Delta_ClampIntegerField( delta_t *pField, int iValue, qboolean bSigned, int numbits )
 {
+#ifdef _XBOX	
 	int oldIVal = iValue;
+#endif	
+	
 #ifdef _DEBUG
 	if( numbits < 32 && abs( iValue ) >= (uint)BIT( numbits ))
 		Con_Reportf( "%s %d overflow %d\n", pField->name, abs( iValue ), (uint)BIT( numbits ));
@@ -959,12 +962,15 @@ int Delta_ClampIntegerField( delta_t *pField, int iValue, qboolean bSigned, int 
 		break;
 #endif
 	}
-//Gbrownie - Fixes left joystic from going instantly to max speed.
-if(pField->name == "forwardmove" || pField->name == "sidemove")
-{
-	iValue = (oldIVal*400)/32767;
-	//Con_Reportf( "%s %d FWDMOVE %d\n", pField->name, abs( iValue ), (uint)BIT( numbits ));
-}
+	
+#ifdef _XBOX	
+	// Gbrownie - Fixes left joystic from going instantly to max speed.
+	if(pField->name == "forwardmove" || pField->name == "sidemove")
+	{
+		iValue = (oldIVal*400)/32767;
+		//Con_Reportf( "%s %d FWDMOVE %d\n", pField->name, abs( iValue ), (uint)BIT( numbits ));
+	}
+#endif
 
 	return iValue; // clamped;
 } 
