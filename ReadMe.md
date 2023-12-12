@@ -1,4 +1,4 @@
-# Half-LifeX - Pre-Beta 0.85
+# Half-LifeX - Beta 0.90
 
 This is a port of Half-Life 1 to the original Xbox using Xash3D and FakeGLx.
 
