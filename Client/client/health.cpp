@@ -83,6 +83,16 @@ int CHudHealth::VidInit( void )
 	m_HUD_dmg_bio = gHUD.GetSpriteIndex( "dmg_bio" );
 	m_HUD_cross = gHUD.GetSpriteIndex( "cross" );
 
+	m_HUD_dmg[DMG_IMAGE_POISON] = gHUD.GetSpriteIndex( "dmg_bio" );
+	m_HUD_dmg[DMG_IMAGE_ACID]   = gHUD.GetSpriteIndex( "dmg_acid" );
+	m_HUD_dmg[DMG_IMAGE_COLD]   = gHUD.GetSpriteIndex( "dmg_cold" );
+	m_HUD_dmg[DMG_IMAGE_DROWN]  = gHUD.GetSpriteIndex( "dmg_drown" );
+	m_HUD_dmg[DMG_IMAGE_BURN]   = gHUD.GetSpriteIndex( "dmg_burn" );
+	m_HUD_dmg[DMG_IMAGE_NERVE]  = gHUD.GetSpriteIndex( "dmg_nerve" );
+	m_HUD_dmg[DMG_IMAGE_RAD]    = gHUD.GetSpriteIndex( "dmg_rad" );
+	m_HUD_dmg[DMG_IMAGE_SHOCK]  = gHUD.GetSpriteIndex( "dmg_shock" );
+	m_HUD_dmg[DMG_IMAGE_NUCLEAR]= gHUD.GetSpriteIndex( "dmg_nuc" );
+
 	giDmgHeight = gHUD.GetSpriteRect( m_HUD_dmg_bio ).right - gHUD.GetSpriteRect( m_HUD_dmg_bio ).left;
 	giDmgWidth = gHUD.GetSpriteRect( m_HUD_dmg_bio ).bottom - gHUD.GetSpriteRect( m_HUD_dmg_bio ).top;
 	return 1;
@@ -385,8 +395,8 @@ int CHudHealth::DrawDamage( float flTime )
 		if( m_bitsDamage & giDmgFlags[i] )
 		{
 			pdmg = &m_dmg[i];
-			SPR_Set( gHUD.GetSprite( m_HUD_dmg_bio + i ), r, g, b );
-			SPR_DrawAdditive( 0, pdmg->x, pdmg->y, &gHUD.GetSpriteRect( m_HUD_dmg_bio + i ));
+			SPR_Set( gHUD.GetSprite( m_HUD_dmg[i] ), r, g, b );
+			SPR_DrawAdditive( 0, pdmg->x, pdmg->y, &gHUD.GetSpriteRect( m_HUD_dmg[i] ));
 		}
 	}
 

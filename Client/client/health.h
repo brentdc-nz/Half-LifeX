@@ -56,6 +56,7 @@ public:
 	float	m_fFade;
 	int	m_iHealth;
 	int	m_HUD_dmg_bio;
+	int	m_HUD_dmg[NUM_DMG_TYPES];
 	int	m_HUD_cross;
 private:
 	HSPRITE	m_hSprite;
